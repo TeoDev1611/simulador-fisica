@@ -623,14 +623,42 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   }
 
   function exportState() {
-    const bSnap = bodies.map(b => {
+    const bSnap = bodies.map((b) => {
       // Excluye "body" (Planck Object) y cosas dinámicas como normalForce, weightForce, tension
       // Guardar position, angleRad explícitamente para recrear.
-      const { id, kind, label, width, height, mass, friction, restitution, color, position, angleRad, points, appliedForce } = b
-      return { id, kind, label, width, height, mass, friction, restitution, color, position, angleRad, points, appliedForce }
+      const {
+        id,
+        kind,
+        label,
+        width,
+        height,
+        mass,
+        friction,
+        restitution,
+        color,
+        position,
+        angleRad,
+        points,
+        appliedForce
+      } = b
+      return {
+        id,
+        kind,
+        label,
+        width,
+        height,
+        mass,
+        friction,
+        restitution,
+        color,
+        position,
+        angleRad,
+        points,
+        appliedForce
+      }
     })
 
-    const rSnap = ropes.map(r => {
+    const rSnap = ropes.map((r) => {
       // Excluye "joint"
       const { id, kind, bodyAId, bodyBId, wheelId, frequencyHz, dampingRatio } = r
       return { id, kind, bodyAId, bodyBId, wheelId, frequencyHz, dampingRatio }
@@ -659,7 +687,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
           addAnchor(b.position.x, b.position.y, b.id)
         }
       }
-      
+
       for (const b of data.bodies) {
         if (b.kind === 'box') {
           addBox({
@@ -682,11 +710,16 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       // 2. Restaurar cuerdas y conexiones
       for (const r of data.ropes) {
         if (r.kind === 'rope') addRope(r.bodyAId, r.bodyBId, r.id)
-        else if (r.kind === 'spring') addSpring(r.bodyAId, r.bodyBId, { frequencyHz: r.frequencyHz, dampingRatio: r.dampingRatio, idOverride: r.id })
+        else if (r.kind === 'spring')
+          addSpring(r.bodyAId, r.bodyBId, {
+            frequencyHz: r.frequencyHz,
+            dampingRatio: r.dampingRatio,
+            idOverride: r.id
+          })
         else if (r.kind === 'pulley') addPulley(r.bodyAId, r.bodyBId, r.wheelId, r.id)
         else if (r.kind === 'track') addCircularTrack(r.bodyAId, r.bodyBId, r.id)
       }
-      
+
       return true
     } catch (err) {
       console.error('[Physics] Error importando estado:', err)

@@ -64,7 +64,7 @@ function renderRecordingFrame() {
     const isDark = document.documentElement.classList.contains('dark')
     ctx.fillStyle = isDark ? '#030712' : '#f9fafb'
     ctx.fillRect(0, 0, canvas.width, canvas.height)
-    
+
     // Draw track
     ctx.strokeStyle = isDark ? '#374151' : '#d1d5db'
     ctx.lineWidth = 4
@@ -72,14 +72,14 @@ function renderRecordingFrame() {
     ctx.moveTo(50, canvas.height / 2)
     ctx.lineTo(canvas.width - 50, canvas.height / 2)
     ctx.stroke()
-    
+
     // Draw block
     const span = trackMaxX.value - trackMinX.value
     let relPos = 0.5
     if (span > 0) relPos = (positionValue.value - trackMinX.value) / span
-    
+
     const x = 50 + relPos * (canvas.width - 100)
-    
+
     ctx.fillStyle = '#10b981'
     ctx.shadowColor = '#34d399'
     ctx.shadowBlur = 10
@@ -118,7 +118,8 @@ async function exportEquationsPng() {
 }
 
 function exportEquationsTxt() {
-  const content = `Ecuaciones de Cinemática 1D\n\n` +
+  const content =
+    `Ecuaciones de Cinemática 1D\n\n` +
     `Posición:\n x(t) = ${debouncedEquation.value}\n\n` +
     `Velocidad:\n v(t) = ${velocityExprStr.value}\n\n` +
     `Aceleración:\n a(t) = ${accelerationExprStr.value}\n`
@@ -897,7 +898,11 @@ onBeforeUnmount(() => {
           <button
             @click="toggleRecording1D"
             class="text-[10px] font-semibold px-2 py-1.5 rounded-lg border shadow-sm transition-colors flex items-center gap-1"
-            :class="isRecording1D ? 'bg-red-500/90 border-red-700 text-white animate-pulse' : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'"
+            :class="
+              isRecording1D
+                ? 'bg-red-500/90 border-red-700 text-white animate-pulse'
+                : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'
+            "
             title="Grabar Animación 1D (WebM)"
           >
             {{ isRecording1D ? '⏹ Detener' : '🔴 Grabar 1D' }}

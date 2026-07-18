@@ -466,7 +466,7 @@ function handleCanvasUp({ x, y }) {
       else if (activeTool.value === 'circular') addCircularTrack(jointStartBodyId, endBodyId)
       else if (activeTool.value === 'spring')
         addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
-      
+
       saveHistoryState()
     }
     jointStartBodyId = null
@@ -540,6 +540,14 @@ onBeforeUnmount(() => {
         ref="containerRef"
         class="relative select-none flex-1 min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       >
+        <!-- Aviso Móvil -->
+        <div class="absolute top-16 left-4 right-4 md:hidden pointer-events-none z-30 opacity-90">
+          <div class="bg-amber-100/95 dark:bg-amber-900/95 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 p-3 rounded-xl text-[11px] shadow-lg backdrop-blur text-center flex flex-col gap-1 leading-tight">
+            <span class="font-bold uppercase tracking-wider">⚠️ Uso en móviles limitado</span>
+            <span>El motor físico de colisiones y creación de objetos fue diseñado nativamente para funcionar con eventos de ratón.</span>
+          </div>
+        </div>
+
         <PhysicsCanvas
           ref="canvasRef"
           class="absolute inset-0 w-full h-full"
@@ -621,7 +629,11 @@ onBeforeUnmount(() => {
               type="button"
               @click="toggleRecording"
               class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors flex items-center gap-1"
-              :class="isRecording ? 'bg-red-500/90 border-red-700 text-white animate-pulse' : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'"
+              :class="
+                isRecording
+                  ? 'bg-red-500/90 border-red-700 text-white animate-pulse'
+                  : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'
+              "
               title="Grabar Video WebM"
             >
               {{ isRecording ? '⏹ Detener' : '🔴 Grabar' }}

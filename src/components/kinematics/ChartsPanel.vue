@@ -43,20 +43,29 @@ function closeExpandedChart() {
 function exportChart(type) {
   let chart = null
   let name = ''
-  if (type === 'position') { chart = sChart; name = 'posicion_xt' }
-  else if (type === 'velocity') { chart = vChart; name = 'velocidad_vt' }
-  else if (type === 'acceleration') { chart = aChart; name = 'aceleracion_at' }
-  else if (type === 'expanded') { chart = expandedChartInstance; name = `grafica_ampliada` }
+  if (type === 'position') {
+    chart = sChart
+    name = 'posicion_xt'
+  } else if (type === 'velocity') {
+    chart = vChart
+    name = 'velocidad_vt'
+  } else if (type === 'acceleration') {
+    chart = aChart
+    name = 'aceleracion_at'
+  } else if (type === 'expanded') {
+    chart = expandedChartInstance
+    name = `grafica_ampliada`
+  }
 
   if (!chart) return
-  
+
   // Guardamos el color original del canvas (transparente) y pintamos fondo
   const ctx = chart.canvas.getContext('2d')
   ctx.save()
   ctx.globalCompositeOperation = 'destination-over'
   ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#030712' : '#f9fafb'
   ctx.fillRect(0, 0, chart.canvas.width, chart.canvas.height)
-  
+
   const url = chart.canvas.toDataURL('image/png')
   ctx.restore()
   // Restaurar forzando redibujado (para quitar el fondo que acabamos de pintar y volver a transparente)
