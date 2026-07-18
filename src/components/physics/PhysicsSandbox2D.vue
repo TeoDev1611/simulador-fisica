@@ -34,13 +34,102 @@ const {
   queryPoint,
   startMouseDrag,
   updateMouseDrag,
-  stopMouseDrag
+  stopMouseDrag,
+  exportState,
+  importState
 } = usePlanckWorld(GRAVITY)
 
 const canvasRef = ref(null)
 const containerRef = ref(null)
 const isRunning = ref(true)
 const activeTool = ref('drag')
+
+const history = ref([])
+const historyIndex = ref(-1)
+
+function saveHistoryState() {
+  const json = exportState()
+  if (historyIndex.value < history.value.length - 1) {
+    history.value.splice(historyIndex.value + 1)
+  }
+  history.value.push(json)
+  if (history.value.length > 50) history.value.shift()
+  historyIndex.value = history.value.length - 1
+}
+
+function undo() {
+  if (historyIndex.value > 0) {
+    historyIndex.value--
+    importState(history.value[historyIndex.value])
+    colorIdx = bodies.length // approximate
+  }
+}
+
+function redo() {
+  if (historyIndex.value < history.value.length - 1) {
+    historyIndex.value++
+    importState(history.value[historyIndex.value])
+  }
+}
+
+function exportSceneFile() {
+  const json = exportState()
+  const blob = new Blob([json], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'escena_newton.json'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function importSceneFile() {
+  const input = document.createElement('input')
+  input.type = 'file'
+  input.accept = '.json'
+  input.onchange = (e) => {
+    const file = e.target.files[0]
+    if (!file) return
+    const reader = new FileReader()
+    reader.onload = (ev) => {
+      if (importState(ev.target.result)) {
+        saveHistoryState()
+      }
+    }
+    reader.readAsText(file)
+  }
+  input.click()
+}
+
+const isRecording = ref(false)
+let mediaRecorder = null
+let recordedChunks = []
+
+function toggleRecording() {
+  if (isRecording.value) {
+    mediaRecorder?.stop()
+    isRecording.value = false
+  } else {
+    const stream = canvasRef.value?.$el?.captureStream(60)
+    if (!stream) return
+    recordedChunks = []
+    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' })
+    mediaRecorder.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks.push(e.data)
+    }
+    mediaRecorder.onstop = () => {
+      const blob = new Blob(recordedChunks, { type: 'video/webm' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'newton_lab_recording.webm'
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    mediaRecorder.start()
+    isRecording.value = true
+  }
+}
 // La explicación detallada (objetivo, ventajas) ahora vive en la página de
 // bienvenida (HomePage.vue), así que aquí ya no se abre sola al entrar.
 // "Ayuda" solo muestra una referencia rápida de herramientas.
@@ -142,6 +231,9 @@ function handleReset() {
   selectedGroundId.value = null
   pendingPulley.value = null
   buildInitialScene()
+  history.value = []
+  historyIndex.value = -1
+  saveHistoryState()
 }
 
 // Fricción del PRÓXIMO suelo que se dibuje (mientras la herramienta activa
@@ -233,6 +325,7 @@ function handleCanvasDown({ x, y }) {
       label: `Caja ${boxEntries.value.length + 1}`
     })
     selectedBoxId.value = id
+    saveHistoryState()
   } else if (activeTool.value === 'delete') {
     // includeStatic: ahora "Borrar" también funciona sobre suelos y anclajes,
     // no solo sobre cajas — necesario para poder quitar un trozo de suelo
@@ -242,6 +335,7 @@ function handleCanvasDown({ x, y }) {
       removeBody(targetId)
       if (selectedBoxId.value === targetId) selectedBoxId.value = null
       if (selectedGroundId.value === targetId) selectedGroundId.value = null
+      saveHistoryState()
     }
   } else if (activeTool.value === 'ground') {
     groundDrawPoints.value = [{ x, y }]
@@ -295,8 +389,26 @@ function handleCanvasMove({ x, y }) {
       if (distSq(last, { x, y }) > 0.15 * 0.15) pts.push({ x, y })
     }
   } else if (previewLine.value) {
+    const hoverId = queryPoint(x, y, { includeStatic: true })
+    if (hoverId && hoverId !== jointStartBodyId && activeTool.value !== 'force') {
+      const entry = bodies.find((b) => b.id === hoverId)
+      if (entry) {
+        let center = { x: entry.position.x, y: entry.position.y }
+        if (entry.kind === 'anchor') {
+          center = { x: entry.position.x, y: entry.position.y }
+        } else if (entry.body) {
+          const wc = entry.body.getWorldCenter()
+          center = { x: wc.x, y: wc.y }
+        }
+        previewLine.value.x2 = center.x
+        previewLine.value.y2 = center.y
+        previewLine.value.targetId = hoverId
+        return
+      }
+    }
     previewLine.value.x2 = x
     previewLine.value.y2 = y
+    previewLine.value.targetId = null
   }
 }
 
@@ -304,13 +416,17 @@ function handleCanvasUp({ x, y }) {
   if (activeTool.value === 'drag' && isDragging) {
     stopMouseDrag()
     isDragging = false
+    saveHistoryState()
   } else if (activeTool.value === 'drag' && isDraggingAnchor) {
     isDraggingAnchor = false
     draggedAnchorId = null
+    saveHistoryState()
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
     // AGREGA un trozo de suelo nuevo, sin borrar los que ya existían — así
-    // se pueden construir escenas con "mesa" + "piso" a distinta altura.
-    if (groundDrawPoints.value.length >= 2) addGround(groundDrawPoints.value, groundFriction.value)
+    if (groundDrawPoints.value.length >= 2) {
+      addGround(groundDrawPoints.value, groundFriction.value)
+      saveHistoryState()
+    }
     groundDrawPoints.value = null
   } else if (activeTool.value === 'force' && forceDragBodyId) {
     const dx = x - forceDragOrigin.x
@@ -333,6 +449,7 @@ function handleCanvasUp({ x, y }) {
     if (pendingPulley.value && endId === pendingPulley.value.wheelId) {
       addPulley(pendingPulley.value.idA, jointStartBodyId, pendingPulley.value.wheelId)
       pendingPulley.value = null
+      saveHistoryState()
     } else {
       const wheelId = endEntry && endEntry.kind === 'anchor' ? endId : addAnchor(x, y)
       pendingPulley.value = { idA: jointStartBodyId, wheelId }
@@ -349,6 +466,8 @@ function handleCanvasUp({ x, y }) {
       else if (activeTool.value === 'circular') addCircularTrack(jointStartBodyId, endBodyId)
       else if (activeTool.value === 'spring')
         addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
+      
+      saveHistoryState()
     }
     jointStartBodyId = null
     previewLine.value = null
@@ -392,11 +511,19 @@ function handleGlobalKeyDown(e) {
     activeTool.value = 'force'
   } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '9') {
     activeTool.value = 'delete'
+  } else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+    e.preventDefault()
+    if (e.shiftKey) redo()
+    else undo()
+  } else if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+    e.preventDefault()
+    redo()
   }
 }
 
 onMounted(() => {
   buildInitialScene()
+  saveHistoryState()
   rafId = requestAnimationFrame(loop)
   window.addEventListener('keydown', handleGlobalKeyDown)
 })
@@ -450,6 +577,56 @@ onBeforeUnmount(() => {
             </template>
           </span>
           <div class="pointer-events-auto flex items-center gap-2">
+            <!-- BOTONES DE DESHACER / REHACER -->
+            <button
+              type="button"
+              @click="undo"
+              :disabled="historyIndex <= 0"
+              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors duration-150 flex items-center gap-1 disabled:opacity-50"
+              :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
+              title="Deshacer (Ctrl+Z)"
+            >
+              ↩️
+            </button>
+            <button
+              type="button"
+              @click="redo"
+              :disabled="historyIndex >= history.length - 1"
+              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors duration-150 flex items-center gap-1 disabled:opacity-50"
+              :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
+              title="Rehacer (Ctrl+Y)"
+            >
+              ↪️
+            </button>
+
+            <!-- BOTONES DE ARCHIVO -->
+            <button
+              type="button"
+              @click="exportSceneFile"
+              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center gap-1"
+              title="Exportar Escena"
+            >
+              💾 <span class="hidden md:inline">Exportar</span>
+            </button>
+            <button
+              type="button"
+              @click="importSceneFile"
+              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center gap-1"
+              title="Cargar Escena"
+            >
+              📂 <span class="hidden md:inline">Importar</span>
+            </button>
+
+            <button
+              type="button"
+              @click="toggleRecording"
+              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors flex items-center gap-1"
+              :class="isRecording ? 'bg-red-500/90 border-red-700 text-white animate-pulse' : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'"
+              title="Grabar Video WebM"
+            >
+              {{ isRecording ? '⏹ Detener' : '🔴 Grabar' }}
+            </button>
+
             <button
               type="button"
               @click="showWelcomeModal = true"

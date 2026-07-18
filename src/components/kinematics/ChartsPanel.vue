@@ -40,6 +40,34 @@ function closeExpandedChart() {
   expandedChart.value = null
 }
 
+function exportChart(type) {
+  let chart = null
+  let name = ''
+  if (type === 'position') { chart = sChart; name = 'posicion_xt' }
+  else if (type === 'velocity') { chart = vChart; name = 'velocidad_vt' }
+  else if (type === 'acceleration') { chart = aChart; name = 'aceleracion_at' }
+  else if (type === 'expanded') { chart = expandedChartInstance; name = `grafica_ampliada` }
+
+  if (!chart) return
+  
+  // Guardamos el color original del canvas (transparente) y pintamos fondo
+  const ctx = chart.canvas.getContext('2d')
+  ctx.save()
+  ctx.globalCompositeOperation = 'destination-over'
+  ctx.fillStyle = document.documentElement.classList.contains('dark') ? '#030712' : '#f9fafb'
+  ctx.fillRect(0, 0, chart.canvas.width, chart.canvas.height)
+  
+  const url = chart.canvas.toDataURL('image/png')
+  ctx.restore()
+  // Restaurar forzando redibujado (para quitar el fondo que acabamos de pintar y volver a transparente)
+  chart.update('none')
+
+  const a = document.createElement('a')
+  a.href = url
+  a.download = `${name}.png`
+  a.click()
+}
+
 function buildExpandedChart() {
   if (!expandedCanvasRef.value) return
   const ctx = expandedCanvasRef.value.getContext('2d')
@@ -326,12 +354,21 @@ onBeforeUnmount(() => {
       <div class="bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 rounded-lg p-3 flex flex-col">
         <div class="flex justify-between items-center mb-2 border-b border-gray-300 dark:border-gray-800 pb-2">
           <span class="text-xs font-semibold text-emerald-700 dark:text-emerald-400">Posición x(t) [m]</span>
-          <button
-            @click="openExpandedChart('position')"
-            class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-300/30 dark:bg-emerald-900/30 px-3 py-1 rounded hover:bg-emerald-200 dark:bg-emerald-800 hover:text-gray-900 dark:text-white transition-colors"
-          >
-            🔍 Ampliar Gráfica
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="exportChart('position')"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Descargar Gráfica (PNG)"
+            >
+              💾
+            </button>
+            <button
+              @click="openExpandedChart('position')"
+              class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-300/30 dark:bg-emerald-900/30 px-3 py-1 rounded hover:bg-emerald-200 dark:bg-emerald-800 hover:text-gray-900 dark:text-white transition-colors"
+            >
+              🔍 Ampliar Gráfica
+            </button>
+          </div>
         </div>
         <div class="h-48 relative"><canvas ref="sChartCanvas"></canvas></div>
       </div>
@@ -339,12 +376,21 @@ onBeforeUnmount(() => {
       <div class="bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 rounded-lg p-3 flex flex-col">
         <div class="flex justify-between items-center mb-2 border-b border-gray-300 dark:border-gray-800 pb-2">
           <span class="text-xs font-semibold text-yellow-700 dark:text-yellow-400">Velocidad v(t) [m/s]</span>
-          <button
-            @click="openExpandedChart('velocity')"
-            class="text-[10px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 bg-yellow-300/30 dark:bg-yellow-900/30 px-3 py-1 rounded hover:bg-yellow-200 dark:bg-yellow-800 hover:text-gray-900 dark:text-white transition-colors"
-          >
-            🔍 Ampliar Gráfica
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="exportChart('velocity')"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Descargar Gráfica (PNG)"
+            >
+              💾
+            </button>
+            <button
+              @click="openExpandedChart('velocity')"
+              class="text-[10px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 bg-yellow-300/30 dark:bg-yellow-900/30 px-3 py-1 rounded hover:bg-yellow-200 dark:bg-yellow-800 hover:text-gray-900 dark:text-white transition-colors"
+            >
+              🔍 Ampliar Gráfica
+            </button>
+          </div>
         </div>
         <div class="h-48 relative"><canvas ref="vChartCanvas"></canvas></div>
       </div>
@@ -352,12 +398,21 @@ onBeforeUnmount(() => {
       <div class="bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 rounded-lg p-3 flex flex-col">
         <div class="flex justify-between items-center mb-2 border-b border-gray-300 dark:border-gray-800 pb-2">
           <span class="text-xs font-semibold text-blue-700 dark:text-blue-400">Aceleración a(t) [m/s²]</span>
-          <button
-            @click="openExpandedChart('acceleration')"
-            class="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 bg-blue-300/30 dark:bg-blue-900/30 px-3 py-1 rounded hover:bg-blue-200 dark:bg-blue-800 hover:text-gray-900 dark:text-white transition-colors"
-          >
-            🔍 Ampliar Gráfica
-          </button>
+          <div class="flex gap-2">
+            <button
+              @click="exportChart('acceleration')"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              title="Descargar Gráfica (PNG)"
+            >
+              💾
+            </button>
+            <button
+              @click="openExpandedChart('acceleration')"
+              class="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 bg-blue-300/30 dark:bg-blue-900/30 px-3 py-1 rounded hover:bg-blue-200 dark:bg-blue-800 hover:text-gray-900 dark:text-white transition-colors"
+            >
+              🔍 Ampliar Gráfica
+            </button>
+          </div>
         </div>
         <div class="h-48 relative"><canvas ref="aChartCanvas"></canvas></div>
       </div>
@@ -384,20 +439,28 @@ onBeforeUnmount(() => {
                   : 'Aceleración a(t)'
             }}
           </h3>
-          <button
-            @click="closeExpandedChart"
-            class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800 rounded-full p-1.5 transition-colors"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              class="w-5 h-5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+          <div class="flex gap-2">
+            <button
+              @click="exportChart('expanded')"
+              class="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm flex items-center gap-1"
             >
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
+              💾 Descargar PNG
+            </button>
+            <button
+              @click="closeExpandedChart"
+              class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800 rounded-full p-1.5 transition-colors"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                class="w-5 h-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
         <div
           class="flex-1 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-800 rounded-lg p-2 min-h-[400px]"

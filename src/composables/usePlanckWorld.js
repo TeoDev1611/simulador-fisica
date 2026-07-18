@@ -133,7 +133,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     friction = 0.3,
     restitution = 0.1,
     color = '#34d399',
-    label = ''
+    label = '',
+    idOverride = null
   }) {
     const area = width * height
     const density = area > 0 ? mass / area : 1
@@ -145,7 +146,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     body.createFixture({ shape: new Box(width / 2, height / 2), density, friction, restitution })
 
-    const id = nextId('box')
+    const id = idOverride || nextId('box')
     bodies.push({
       id,
       kind: 'box',
@@ -261,7 +262,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // (ej. mesa + piso) o con dos rampas separadas.
   let groundIds = []
 
-  function addGround(points, friction = 0.5) {
+  function addGround(points, friction = 0.5, idOverride = null) {
     // Filtrar puntos para evitar vértices superpuestos que rompan Planck
     const validPoints = []
     for (const p of points) {
@@ -280,7 +281,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     const body = world.createBody({ type: 'static' })
     body.createFixture({ shape: new Chain(vecs, false), friction })
 
-    const id = nextId('ground')
+    const id = idOverride || nextId('ground')
     groundIds.push(id)
     bodies.push({
       id,
@@ -314,9 +315,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // ----------------------------------------------------------------
   // Anclajes fijos
   // ----------------------------------------------------------------
-  function addAnchor(x, y) {
+  function addAnchor(x, y, idOverride = null) {
     const body = world.createBody({ type: 'static', position: Vec2(x, y) })
-    const id = nextId('anchor')
+    const id = idOverride || nextId('anchor')
     bodies.push({ id, kind: 'anchor', body: markRaw(body), label: 'Anclaje', position: { x, y }, angleRad: 0 })
     return id
   }
@@ -345,7 +346,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // ----------------------------------------------------------------
   // Conectores
   // ----------------------------------------------------------------
-  function addRope(idA, idB) {
+  function addRope(idA, idB, idOverride = null) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
@@ -363,12 +364,12 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     )
     const created = world.createJoint(joint)
 
-    const id = nextId('rope')
+    const id = idOverride || nextId('rope')
     ropes.push({ id, kind: 'rope', joint: markRaw(created), bodyAId: idA, bodyBId: idB, tension: 0, length })
     return id
   }
 
-  function addSpring(idA, idB, { frequencyHz = 2.0, dampingRatio = 0.1 } = {}) {
+  function addSpring(idA, idB, { frequencyHz = 2.0, dampingRatio = 0.1, idOverride = null } = {}) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
@@ -380,7 +381,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     const joint = new DistanceJoint({ frequencyHz, dampingRatio, length }, entryA.body, entryB.body, anchorA, anchorB)
     const created = world.createJoint(joint)
 
-    const id = nextId('spring')
+    const id = idOverride || nextId('spring')
     ropes.push({
       id,
       kind: 'spring',
@@ -410,7 +411,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // (ej. el problema del bloque en la mesa + bloque colgando). Si no se da,
   // se usa el comportamiento anterior (estimar una altura común) como
   // respaldo para no romper compatibilidad.
-  function addPulley(idA, idB, wheelId = null) {
+  function addPulley(idA, idB, wheelId = null, idOverride = null) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
@@ -453,7 +454,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     )
     const created = world.createJoint(joint)
 
-    const id = nextId('pulley')
+    const id = idOverride || nextId('pulley')
     ropes.push({
       id,
       kind: 'pulley',
@@ -477,7 +478,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // ensartado en un riel/alambre circular (a diferencia de un tazón, el
   // riel empuja hacia ADENTRO o hacia AFUERA según haga falta).
   // Se guarda también el radio para poder dibujar el aro guía completo.
-  function addCircularTrack(boxId, centerId) {
+  function addCircularTrack(boxId, centerId, idOverride = null) {
     const entryBox = bodies.find((b) => b.id === boxId)
     const entryCenter = bodies.find((b) => b.id === centerId)
     if (!entryBox || !entryCenter || entryBox.kind !== 'box') return null
@@ -496,7 +497,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     )
     const created = world.createJoint(joint)
 
-    const id = nextId('track')
+    const id = idOverride || nextId('track')
     ropes.push({
       id,
       kind: 'track',
@@ -621,6 +622,78 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     }
   }
 
+  function exportState() {
+    const bSnap = bodies.map(b => {
+      // Excluye "body" (Planck Object) y cosas dinámicas como normalForce, weightForce, tension
+      // Guardar position, angleRad explícitamente para recrear.
+      const { id, kind, label, width, height, mass, friction, restitution, color, position, angleRad, points, appliedForce } = b
+      return { id, kind, label, width, height, mass, friction, restitution, color, position, angleRad, points, appliedForce }
+    })
+
+    const rSnap = ropes.map(r => {
+      // Excluye "joint"
+      const { id, kind, bodyAId, bodyBId, wheelId, frequencyHz, dampingRatio } = r
+      return { id, kind, bodyAId, bodyBId, wheelId, frequencyHz, dampingRatio }
+    })
+
+    return JSON.stringify({
+      gravity: gravityMagnitude,
+      counter,
+      bodies: bSnap,
+      ropes: rSnap
+    })
+  }
+
+  function importState(jsonStr) {
+    if (!jsonStr) return
+    try {
+      const data = JSON.parse(jsonStr)
+      reset()
+      if (data.counter) counter = data.counter
+
+      // 1. Restaurar bodies estáticos primero (suelos y anclajes) y luego cajas
+      for (const b of data.bodies) {
+        if (b.kind === 'ground') {
+          addGround(b.points, b.friction, b.id)
+        } else if (b.kind === 'anchor') {
+          addAnchor(b.position.x, b.position.y, b.id)
+        }
+      }
+      
+      for (const b of data.bodies) {
+        if (b.kind === 'box') {
+          addBox({
+            x: b.position.x,
+            y: b.position.y,
+            width: b.width,
+            height: b.height,
+            mass: b.mass,
+            angle: b.angleRad,
+            friction: b.friction,
+            restitution: b.restitution,
+            color: b.color,
+            label: b.label,
+            idOverride: b.id
+          })
+          if (b.appliedForce) setAppliedForce(b.id, b.appliedForce)
+        }
+      }
+
+      // 2. Restaurar cuerdas y conexiones
+      for (const r of data.ropes) {
+        if (r.kind === 'rope') addRope(r.bodyAId, r.bodyBId, r.id)
+        else if (r.kind === 'spring') addSpring(r.bodyAId, r.bodyBId, { frequencyHz: r.frequencyHz, dampingRatio: r.dampingRatio, idOverride: r.id })
+        else if (r.kind === 'pulley') addPulley(r.bodyAId, r.bodyBId, r.wheelId, r.id)
+        else if (r.kind === 'track') addCircularTrack(r.bodyAId, r.bodyBId, r.id)
+      }
+      
+      return true
+    } catch (err) {
+      console.error('[Physics] Error importando estado:', err)
+      return false
+    }
+  }
+
   return {
     world,
     bodies,
@@ -649,6 +722,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     queryPoint,
     startMouseDrag,
     updateMouseDrag,
-    stopMouseDrag
+    stopMouseDrag,
+    exportState,
+    importState
   }
 }

@@ -7,6 +7,7 @@ import MathKeyboard from './MathKeyboard.vue'
 import ResultsCards from './kinematics/ResultsCards.vue'
 import Track1D from './kinematics/Track1D.vue'
 import ChartsPanel from './kinematics/ChartsPanel.vue'
+import html2canvas from 'html2canvas'
 
 // ----------------------------
 // Estado reactivo principal
@@ -21,8 +22,114 @@ const isPlaying = ref(false)
 const isLooping = ref(false) // Nuevo estado para el bucle
 let animationFrame = null
 
+// Grabación
+const isRecording1D = ref(false)
+let mediaRecorder1D = null
+let recordedChunks1D = []
+const recordingCanvasRef = ref(null)
+
+function toggleRecording1D() {
+  if (isRecording1D.value) {
+    mediaRecorder1D?.stop()
+    isRecording1D.value = false
+  } else {
+    const canvas = recordingCanvasRef.value
+    if (!canvas) return
+    const stream = canvas.captureStream(60)
+    recordedChunks1D = []
+    mediaRecorder1D = new MediaRecorder(stream, { mimeType: 'video/webm' })
+    mediaRecorder1D.ondataavailable = (e) => {
+      if (e.data.size > 0) recordedChunks1D.push(e.data)
+    }
+    mediaRecorder1D.onstop = () => {
+      const blob = new Blob(recordedChunks1D, { type: 'video/webm' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = 'simulacion_1d.webm'
+      a.click()
+      URL.revokeObjectURL(url)
+    }
+    mediaRecorder1D.start()
+    isRecording1D.value = true
+    renderRecordingFrame()
+  }
+}
+
+function renderRecordingFrame() {
+  if (!isRecording1D.value) return
+  const canvas = recordingCanvasRef.value
+  if (canvas) {
+    const ctx = canvas.getContext('2d')
+    const isDark = document.documentElement.classList.contains('dark')
+    ctx.fillStyle = isDark ? '#030712' : '#f9fafb'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw track
+    ctx.strokeStyle = isDark ? '#374151' : '#d1d5db'
+    ctx.lineWidth = 4
+    ctx.beginPath()
+    ctx.moveTo(50, canvas.height / 2)
+    ctx.lineTo(canvas.width - 50, canvas.height / 2)
+    ctx.stroke()
+    
+    // Draw block
+    const span = trackMaxX.value - trackMinX.value
+    let relPos = 0.5
+    if (span > 0) relPos = (positionValue.value - trackMinX.value) / span
+    
+    const x = 50 + relPos * (canvas.width - 100)
+    
+    ctx.fillStyle = '#10b981'
+    ctx.shadowColor = '#34d399'
+    ctx.shadowBlur = 10
+    ctx.fillRect(x - 20, canvas.height / 2 - 20, 40, 40)
+    ctx.shadowBlur = 0
+    ctx.strokeStyle = '#047857'
+    ctx.strokeRect(x - 20, canvas.height / 2 - 20, 40, 40)
+
+    ctx.fillStyle = isDark ? '#9ca3af' : '#4b5563'
+    ctx.font = '16px monospace'
+    ctx.fillText(`t = ${time.value.toFixed(2)} s`, 10, 20)
+    ctx.fillText(`x = ${positionValue.value.toFixed(2)} m`, 10, 40)
+  }
+  requestAnimationFrame(renderRecordingFrame)
+}
+
 // Modales
 const showEquationsModal = ref(false)
+const equationsModalRef = ref(null)
+
+async function exportEquationsPng() {
+  if (!equationsModalRef.value) return
+  try {
+    const canvas = await html2canvas(equationsModalRef.value, {
+      backgroundColor: document.documentElement.classList.contains('dark') ? '#111827' : '#f3f4f6',
+      scale: 2
+    })
+    const url = canvas.toDataURL('image/png')
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'ecuaciones_cinematica.png'
+    a.click()
+  } catch (err) {
+    console.error('Error exportando PNG', err)
+  }
+}
+
+function exportEquationsTxt() {
+  const content = `Ecuaciones de Cinemática 1D\n\n` +
+    `Posición:\n x(t) = ${debouncedEquation.value}\n\n` +
+    `Velocidad:\n v(t) = ${velocityExprStr.value}\n\n` +
+    `Aceleración:\n a(t) = ${accelerationExprStr.value}\n`
+  const blob = new Blob([content], { type: 'text/plain' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'ecuaciones_cinematica.txt'
+  a.click()
+  URL.revokeObjectURL(url)
+}
 
 // Parámetros de la ecuación
 const parameters = ref({ A: 2, omega: 3, gamma: 0.2 })
@@ -786,6 +893,17 @@ onBeforeUnmount(() => {
       <!-- COLUMNA DERECHA -->
       <section class="lg:col-span-8 flex flex-col gap-6">
         <!-- Pista 1D -->
+        <div class="relative w-full flex justify-end mb-[-1rem] z-10 pr-2 pt-2">
+          <button
+            @click="toggleRecording1D"
+            class="text-[10px] font-semibold px-2 py-1.5 rounded-lg border shadow-sm transition-colors flex items-center gap-1"
+            :class="isRecording1D ? 'bg-red-500/90 border-red-700 text-white animate-pulse' : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'"
+            title="Grabar Animación 1D (WebM)"
+          >
+            {{ isRecording1D ? '⏹ Detener' : '🔴 Grabar 1D' }}
+          </button>
+        </div>
+        <canvas ref="recordingCanvasRef" width="800" height="200" class="hidden"></canvas>
         <Track1D :positionValue="positionValue" :trackMinX="trackMinX" :trackMaxX="trackMaxX" />
 
         <!-- Gráficos -->
@@ -807,23 +925,39 @@ onBeforeUnmount(() => {
             <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider">
               Desarrollo Analítico de Ecuaciones
             </h3>
-            <button
-              @click="showEquationsModal = false"
-              class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800 hover:bg-red-300/50 dark:bg-red-900/50 rounded-full p-2 transition-colors"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                class="w-6 h-6"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
+            <div class="flex items-center gap-2">
+              <button
+                @click="exportEquationsTxt"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition-colors flex items-center gap-1"
+                title="Descargar como Texto"
               >
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
+                📝 <span class="hidden sm:inline">TXT</span>
+              </button>
+              <button
+                @click="exportEquationsPng"
+                class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 shadow-sm transition-colors flex items-center gap-1"
+                title="Descargar como Imagen"
+              >
+                🖼️ <span class="hidden sm:inline">PNG</span>
+              </button>
+              <button
+                @click="showEquationsModal = false"
+                class="text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:text-white bg-gray-200 dark:bg-gray-800 hover:bg-red-300/50 dark:bg-red-900/50 rounded-full p-2 transition-colors ml-2"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  class="w-6 h-6"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
           </div>
 
-          <div class="space-y-6">
+          <div class="space-y-6" ref="equationsModalRef">
             <div class="bg-gray-50 dark:bg-gray-950 p-4 rounded-xl border border-gray-300 dark:border-gray-800">
               <p
                 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-4 uppercase tracking-wide border-b border-gray-300/50 dark:border-gray-800/50 pb-2"

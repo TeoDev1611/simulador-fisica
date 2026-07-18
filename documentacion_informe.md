@@ -17,8 +17,9 @@ A partir de esta ecuación, el sistema calcula de manera automática (mediante d
 ### 1.2 Dinámica Bidimensional (2D)
 A diferencia de la cinemática, la dinámica sí estudia las fuerzas que originan el movimiento. Nuestro entorno interactivo ("Sandbox 2D") permite experimentar con las Leyes de Newton en un plano cartesiano:
 - **Cuerpos Rígidos y Colisiones:** Se implementa un motor de física de "cuerpo rígido" donde los objetos no se deforman al chocar. El sistema calcula los impulsos y transferencias de momento lineal de acuerdo a la masa, geometría y coeficientes de fricción (estática y cinética) de cada cuerpo.
-- **Fuerzas Continuas:** Se permite la aplicación constante de vectores de fuerza a un ángulo determinado, emulando la Segunda Ley de Newton ($F = m \cdot a$).
-- **Sistemas de Restricción (Joints):** Se incorporaron modelos matemáticos de poleas ideales (distribución de tensiones a lo largo de una cuerda inextensible), resortes regidos por la Ley de Hooke ($F = -k \cdot x$, junto con coeficientes de amortiguamiento) y rieles de movimiento circular que restringen a los bloques a moverse con radio constante.
+- **Fuerzas Continuas e Impulsos:** Se permite la aplicación constante de vectores de fuerza o impulsos únicos a un ángulo determinado, emulando la Segunda Ley de Newton ($F = m \cdot a$).
+- **Sistemas de Restricción (Joints):** Se incorporaron modelos matemáticos de poleas ideales (distribución de tensiones a lo largo de una cuerda inextensible), resortes regidos por la Ley de Hooke ($F = -k \cdot x$, junto con coeficientes de amortiguamiento) y rieles de movimiento circular que restringen a los bloques a moverse con radio constante. Además, cuenta con un sistema de **"Snapping" visual interactivo**, el cual asiste inteligentemente conectando automáticamente las restricciones a los centros de masa correctos, previniendo errores de colisión de usuario.
+- **Topografía Múltiple:** El motor admite ahora superposición aditiva de terrenos infinitos o finitos de masa inamovible para crear perfiles topográficos ricos o barreras asimétricas.
 
 ---
 
@@ -45,7 +46,7 @@ Para garantizar la sostenibilidad a largo plazo y la facilidad de lectura técni
    - Los datos y cálculos en tiempo real se exponen en tarjetas modulares (`ResultsCards.vue`).
    - El analizador de ecuaciones (Math.js) cuenta con un árbol de sintaxis abstracta (AST) robusto capaz de distinguir funciones trigonométricas/logarítmicas.
 2. **Submódulo Dinámica 2D (`src/components/physics/`):**
-   - El bucle de animación y orquestador vive en `PhysicsSandbox2D.vue`.
+   - El bucle de animación y orquestador vive en `PhysicsSandbox2D.vue`. Este archivo ahora gestiona una **Pila de Historial (Undo/Redo)** persistiendo los estados del lienzo usando copias profundas, posibilitando control temporal de los experimentos.
    - La barra de herramientas, telemetría y el panel de configuración lateral están aislados en componentes limpios (`ToolRail.vue`, `PhysicsDataPanel.vue`, `ContextPanel.vue`).
    - El HTML5 Canvas para el renderizado no contiene lógica física (`PhysicsCanvas.vue`).
 3. **Módulo de Documentación Interactiva (`WikiPage.vue`):**
@@ -79,9 +80,10 @@ Este manual está dirigido a los evaluadores de la Versión 1. El objetivo es pr
 1. **Ingreso de la Ecuación Base:** Todo comienza escribiendo una ecuación para la posición respecto al tiempo (ej: `x(t) = A * sin(omega * t)`).
 2. **Detección Automática de Parámetros:** Si escribes constantes no nativas (como `A` o `omega`), el panel de "Parámetros" las detectará instantáneamente y te ofrecerá barras deslizables para ajustar sus valores en tiempo real.
 3. **Derivación Analítica Continua:** Al ingresar la ecuación, el sistema genera de forma automática y en notación matemática exacta (LaTeX) las ecuaciones de la Velocidad ($v(t)$) y la Aceleración ($a(t)$).
-4. **Pista de Simulación:** A la derecha, verás un bloque amarillo representando la partícula. Utiliza la barra deslizante de "Tiempo de Simulación" o el botón **Play (▶)** para animar su movimiento. Usa el botón de **Bucle (🔁)** si deseas que la animación se repita indefinidamente.
-5. **Paneles de Gráficas Sincronizadas:** En la parte inferior, tienes las gráficas exactas que reflejan el comportamiento cinemático. Al hacer clic sobre cualquier gráfica, esta se expandirá a pantalla completa, permitiéndote rastrear con tu mouse los valores exactos para cada segundo.
-6. **Atajos de Teclado:** Presiona la tecla **Enter** mientras escribes tu ecuación matemática para recalcular automáticamente los valores y reanudar la simulación al instante.
+4. **Pista de Simulación:** A la derecha, verás un bloque amarillo representando la partícula. Utiliza la barra deslizante de "Tiempo de Simulación" o el botón **Play (▶)** para animar su movimiento. Usa el botón de **Bucle (🔁)** si deseas que la animación se repita indefinidamente. Adicionalmente, cuentas con el botón **🔴 Grabar 1D**, el cual captura mediante un lienzo invisible en memoria RAM toda tu simulación y la expulsa como un video fluido (`.webm`).
+5. **Paneles de Gráficas Sincronizadas:** En la parte inferior, tienes las gráficas exactas que reflejan el comportamiento cinemático. Al hacer clic sobre cualquier gráfica, esta se expandirá a pantalla completa, permitiéndote rastrear con tu mouse los valores exactos para cada segundo. Tienes botones dedicados 💾 para extraer cualquier gráfica inmediatamente como imagen PNG.
+6. **Exportación Estricta:** Dentro del modal de Desarrollo Analítico, cuentas con botones de extracción a texto plano (`📝 TXT`) y a imagen renderizada (`🖼️ PNG`) de las ecuaciones que acabas de formular.
+7. **Atajos de Teclado:** Presiona la tecla **Enter** mientras escribes tu ecuación matemática para recalcular automáticamente los valores y reanudar la simulación al instante.
 
 ### 3.3 Sandbox Físico 2D (Newton Lab)
 Este entorno permite crear colisiones y experimentos de física libremente dibujando sobre el lienzo.
@@ -94,7 +96,9 @@ Este entorno permite crear colisiones y experimentos de física libremente dibuj
 2. **Panel de Herramientas (Inferior Centro) y Atajos Rápidos**
    - **Mover (✋) [Tecla 1]:** Arrastra objetos libremente. Al dar clic en un objeto, se despliega el panel de propiedades (derecha) donde puedes editar con precisión la masa, la fricción y sus dimensiones.
    - **Herramientas de Construcción [Teclas 2-7]:** Tienes acceso inmediato a Cajas [2], Terrenos fijos [3], Cuerdas [4], Resortes [5], Poleas [6] y Rieles circulares [7]. Por ejemplo, las poleas funcionan en dos pasos: ancla primero la rueda y luego traza desde el otro objeto exactamente hacia el anclaje.
-   - **Fuerza Constante (➤) [Tecla 8]:** Puedes aplicar propulsores continuos a los bloques arrastrando un vector.
+   - **Historial (Deshacer y Rehacer):** Puedes presionar `Ctrl + Z` para retroceder ante una equivocación o choque accidental. El Sandbox puede guardar hasta tus últimos 50 movimientos. Usa `Ctrl + Y` para rehacer. También hay botones (↩️ ↪️) en el menú superior.
+   - **Persistencia y Grabación:** Arriba tienes las opciones `💾 Exportar` y `📂 Importar` Escena en formato JSON ligero, así como un botón dedicado de video **🔴 Grabar** para registrar clips directos de tus choques de colisión.
+   - **Fuerza Constante (➤) [Tecla 8]:** Puedes aplicar propulsores continuos o un impacto instantáneo a los bloques arrastrando un vector.
    - **Eliminar Objeto [Tecla 9 o Suprimir/Retroceso]:** Borra rápidamente cualquier objeto o restricción.
 
 3. **Panel de Dinámica y Telemetría**

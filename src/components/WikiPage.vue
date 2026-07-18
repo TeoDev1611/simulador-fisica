@@ -165,6 +165,28 @@ const sections = [
                 </li>
               </ul>
             </div>
+
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
+            >
+              <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <span>📥</span> Exportación y Grabación
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
+                El simulador incluye herramientas nativas para documentar tu experimento:
+              </p>
+              <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li>
+                  <strong>Exportación de Ecuaciones:</strong> Abre el modal de <em>Desarrollo Analítico</em>. Verás opciones para descargar todas las fórmulas en texto plano (<strong>TXT</strong>) o capturarlas como una imagen renderizada matemáticamente perfecta (<strong>PNG</strong>).
+                </li>
+                <li>
+                  <strong>Guardado de Gráficas:</strong> Cada gráfica (pequeña o ampliada) tiene un botón de disquete (💾). Púlsalo para extraer un archivo PNG limpio de las curvas y sus ejes.
+                </li>
+                <li>
+                  <strong>Grabación de la Pista en Video:</strong> Haz clic en el botón <strong>🔴 Grabar 1D</strong> ubicado arriba de la pista para iniciar una captura en segundo plano. Al presionar "Detener", se descargará de inmediato un video fluido en formato <strong>WebM</strong> con el movimiento real de la caja.
+                </li>
+              </ul>
+            </div>
           </div>
         </section>
 
@@ -227,6 +249,29 @@ const sections = [
                   >) y <strong>Velocidad Angular</strong> (<span v-html="m('\\omega')"></span>). Esta telemetría es útil
                   para confirmar experimentalmente si un sistema ha alcanzado el equilibrio estático o si retiene
                   energía residual invisible a simple vista.
+                </li>
+              </ul>
+            </div>
+
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
+            >
+              <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <span>🕰️</span> Historial y Persistencia (Deshacer y Exportar)
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                El entorno tiene un manejo de estado seguro. Nunca perderás tus experimentos.
+              </p>
+              <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li>
+                  <strong>Deshacer y Rehacer:</strong> Presiona <strong>Ctrl + Z</strong> para deshacer el último objeto, choque, o eliminación que hayas realizado. El motor memoriza hasta 50 estados completos anteriores. También puedes usar <strong>Ctrl + Y</strong> para rehacer. 
+                  <em>Nota:</em> También existen botones gráficos (↩️ / ↪️) en el panel superior.
+                </li>
+                <li>
+                  <strong>Guardar y Cargar:</strong> Usa los botones 💾 <strong>Exportar Escena</strong> y 📂 <strong>Importar Escena</strong> para extraer y cargar archivos <code>.json</code>. Esto te permite compartir tus laboratorios con terceros.
+                </li>
+                <li>
+                  <strong>Grabar Video WebM:</strong> Usa el botón parpadeante 🔴 <strong>Grabar</strong> de la cabecera para hacer una captura fluida (60FPS) en formato de video de todo lo que sucede en el lienzo.
                 </li>
               </ul>
             </div>
@@ -336,6 +381,7 @@ const sections = [
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra el ratón libremente por el fondo para esculpir montañas de colisión. Alterna al
                   <strong>Modo Recto</strong> y escribe un ángulo numérico exacto para generar rampas perfectas.
+                  <strong>Novedad:</strong> Cada vez que dibujas, el terreno se *añade* (no se borra el anterior). Esto te permite dibujar múltiples barreras y pisos en el mismo mapa.
                 </p>
               </div>
 
@@ -391,7 +437,7 @@ const sections = [
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra desde el centro de una caja hasta otra para unirlas permanentemente con una cadena
-                  inextensible. Si sueltas en el vacío, se anclará al cielo/fondo creando un péndulo.
+                  inextensible. Al arrastrar, <strong>verás que el sistema inteligente hará "snap"</strong> (atraerá tu ratón al objetivo) y proyectará un brillo verde para confirmar con qué cuerpo vas a enganchar la cuerda.
                 </p>
               </div>
 

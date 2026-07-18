@@ -7,12 +7,15 @@ Este proyecto es una aplicación web interactiva desarrollada para la enseñanza
 1. **Simulador Cinemático 1D:** 
    - Ingreso de ecuaciones matemáticas de posición en tiempo real (`x(t)`).
    - Derivación analítica automática para obtener la velocidad (`v(t)`) y la aceleración (`a(t)`).
-   - Renderizado tipográfico preciso utilizando LaTeX (KaTeX).
-   - Gráficas sincronizadas e interactivas generadas con Chart.js.
-   - Pista de simulación interactiva.
+   - Exportación de ecuaciones analíticas generadas a texto (TXT) e imagen (PNG).
+   - Gráficas sincronizadas e interactivas generadas con Chart.js con soporte nativo de exportación a PNG.
+   - Pista de simulación interactiva con capacidad de grabación de video (WebM).
 2. **Sandbox Físico 2D (Newton Lab):** 
    - Motor de físicas 2D realista construido sobre **Planck.js** (basado en Box2D).
-   - Herramientas de construcción libres: cajas, terrenos poligonales, anclajes, cuerdas, poleas, resortes y fuerzas constantes.
+   - Sistema de **Deshacer y Rehacer (Undo/Redo)** con atajos de teclado (`Ctrl+Z`, `Ctrl+Y`) capaz de memorizar hasta 50 estados.
+   - Herramientas de construcción libres: cajas, terrenos poligonales (múltiples simultáneos), anclajes, cuerdas, poleas, resortes y fuerzas constantes. Snap en vivo para facilitar conexiones.
+   - **Persistencia:** Capacidad para Importar y Exportar el estado completo de la escena en archivos `.json`.
+   - Soporte para grabar el lienzo dinámico directamente a un archivo de video `.webm`.
    - Modificación en caliente de propiedades físicas como masa, fricción, coeficientes elásticos (k) y amortiguamiento, calculando todo 60 veces por segundo.
 3. **Manual / Wiki Integrado:** Documentación interactiva in-app para que el usuario aprenda a utilizar cada módulo.
 4. **Modo Claro / Oscuro:** Soporte completo de temas visuales mediante `darkMode: 'class'` de Tailwind CSS, con un diseño "Glassmorphism" en todos los componentes.
@@ -54,6 +57,7 @@ La física y la representación visual están separadas: `usePlanckWorld.js` pro
 ### 2. Atajos de Teclado Globales (UX)
 Se han implementado accesos directos para agilizar el uso en computadoras:
 - **`Enter` o `Espacio`:** Alterna de forma global entre Reproducir (▶) y Pausar (⏸) el tiempo en el Sandbox 2D. En Cinemática 1D, `Enter` fuerza el cálculo de la ecuación y reproduce la animación.
+- **`Ctrl+Z` / `Ctrl+Y`:** Funciones de Deshacer (Undo) y Rehacer (Redo) el último cambio físico o de dibujo en el Sandbox 2D.
 - **Teclas `1-8`:** Cambian inmediatamente la herramienta en el Sandbox 2D (Mover, Caja, Terreno, Cuerda, Resorte, Polea, Riel, Fuerza).
 - **`Retroceso` / `Suprimir` (`9`):** Elimina el objeto o anclaje seleccionado.
 
@@ -80,7 +84,5 @@ pnpm run build
 
 ## Próximos Pasos (Deuda Técnica / Backlog)
 
-- **Persistencia de Escenas:** Actualmente no es posible guardar o exportar los mapas del Sandbox para cargarlos después.
-- **Historial de Acciones (Ctrl+Z):** No se cuenta con sistema de deshacer/rehacer.
-- **Mejora del Terreno (Chain):** Actualmente dibujar un nuevo terreno borra y reemplaza por completo el anterior. Podría ampliarse para soportar múltiples barreras terrestres simultáneas.
-- **Colisión de previews:** Las herramientas de unión y creación se previsualizan mediante líneas, pero no detectan intersección en vivo antes de soltar el click.
+- **Optimización en móviles:** La interfaz del Sandbox 2D (drag & drop) no soporta de forma nativa pantallas táctiles de manera óptima; la UX está diseñada primordialmente para escritorio (teclado + mouse).
+- **Soporte PWA (Progresive Web App):** Habilitar el guardado sin conexión instalable en dispositivo.

@@ -523,7 +523,13 @@ function draw(bodies, ropes, previewLine, groundPreviewPoints, groundInfo) {
     const p1 = worldToScreen(previewLine.x1, previewLine.y1)
     const p2 = worldToScreen(previewLine.x2, previewLine.y2)
     ctx.save()
-    ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+    if (previewLine.targetId) {
+      ctx.strokeStyle = 'rgba(167,243,208,0.9)' // emerald-200
+      ctx.shadowColor = 'rgba(52,211,153,0.6)'
+      ctx.shadowBlur = 8
+    } else {
+      ctx.strokeStyle = 'rgba(255,255,255,0.4)'
+    }
     ctx.setLineDash([4, 4])
     ctx.lineWidth = 2
     ctx.beginPath()
