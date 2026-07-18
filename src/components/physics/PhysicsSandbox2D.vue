@@ -1,6 +1,6 @@
 <script setup>
 // src/components/physics/PhysicsSandbox2D.vue
-import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { usePlanckWorld } from '../../composables/usePlanckWorld.js'
 import PhysicsCanvas from './PhysicsCanvas.vue'
 import ToolRail from './ToolRail.vue'
@@ -9,9 +9,9 @@ import PhysicsDataPanel from './PhysicsDataPanel.vue'
 
 const GRAVITY = 9.81
 const {
-  bodies, ropes, addBox, updateBoxMass, setAppliedForce, applyImpulse,
-  setGroundPath, setGroundFriction, getGroundId, addAnchor,
-  addRope, addSpring, setSpringStiffness, addPulley,
+  bodies, ropes, addBox, updateBoxMass, updateBoxFriction, setAppliedForce, applyImpulse,
+  addGround, setGroundFriction, getGroundIds, addAnchor, moveAnchor,
+  addRope, addSpring, setSpringStiffness, addPulley, addCircularTrack,
   removeBody, reset, step,
   queryPoint, startMouseDrag, updateMouseDrag, stopMouseDrag
 } = usePlanckWorld(GRAVITY)
@@ -32,17 +32,51 @@ let colorIdx = 0
 function nextColor() { return BOX_COLORS[colorIdx++ % BOX_COLORS.length] }
 
 const groundFriction = ref(0.5)
+const groundMode = ref('free') // 'free' | 'straight'
+const groundAngleDeg = ref(0)  // solo se usa en modo 'straight'
 const springFreq = ref(2.0)
 const springDamping = ref(0.1)
 
 const selectedBoxId = ref(null)
 const selectedBox = computed(() => boxEntries.value.find(b => b.id === selectedBoxId.value) || null)
 
+// Suelo seleccionado con la herramienta "Mover/Seleccionar" (para editar su
+// fricción individual, ahora que puede haber varios trozos de suelo).
+const selectedGroundId = ref(null)
+const selectedGround = computed(() => bodies.find(b => b.id === selectedGroundId.value && b.kind === 'ground') || null)
+
+// Estado de "polea en 2 pasos": el primer cable define dónde queda la rueda
+// (un anclaje); el segundo cable debe soltarse sobre esa misma rueda para
+// que ambos cables compartan un único punto de giro, como una polea real.
+const pendingPulley = ref(null) // { idA, wheelId } | null
+
+const groundLiveInfo = computed(() => {
+  const pts = groundDrawPoints.value
+  if (!pts || pts.length < 2) return null
+  const a = pts[0]
+  const b = pts[pts.length - 1]
+  const dx = b.x - a.x
+  const dy = b.y - a.y
+  return { angleDeg: (Math.atan2(dy, dx) * 180) / Math.PI, length: Math.hypot(dx, dy) }
+})
+
 function buildInitialScene() {
-  setGroundPath([{ x: -14, y: -2 }, { x: 14, y: -2 }], groundFriction.value)
+  addGround([{ x: -14, y: -2 }, { x: 14, y: -2 }], groundFriction.value)
   addBox({ x: -3, y: 2, width: 1, height: 1, mass: 2, friction: 0.3, color: nextColor(), label: 'Caja 1' })
   addBox({ x: 0, y: 4, width: 1, height: 1, mass: 1.5, friction: 0.3, color: nextColor(), label: 'Caja 2' })
 }
+
+// Si el usuario abandona la herramienta "polea" a medio camino (dejó
+// pendiente un primer cable), se descarta para no dejar estado fantasma.
+// Lo mismo si suelta la herramienta "Mover" en medio de un arrastre.
+watch(activeTool, (tool) => {
+  if (tool !== 'pulley') pendingPulley.value = null
+  if (tool !== 'drag') {
+    if (isDragging) { stopMouseDrag(); isDragging = false }
+    isDraggingAnchor = false
+    draggedAnchorId = null
+  }
+})
 
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
@@ -57,13 +91,23 @@ function handleReset() {
   reset()
   colorIdx = 0
   selectedBoxId.value = null
+  selectedGroundId.value = null
+  pendingPulley.value = null
   buildInitialScene()
 }
 
+// Fricción del PRÓXIMO suelo que se dibuje (mientras la herramienta activa
+// es "ground"). Cuando hay un suelo ya seleccionado con "drag", en vez se
+// llama a handleUpdateSelectedGroundFriction (ver abajo).
 function handleUpdateGroundFriction(v) {
   groundFriction.value = v
-  setGroundFriction(v)
 }
+function handleUpdateSelectedGroundFriction(v) {
+  if (!selectedGroundId.value) return
+  setGroundFriction(selectedGroundId.value, v)
+}
+function handleUpdateGroundMode(mode) { groundMode.value = mode }
+function handleUpdateGroundAngle(deg) { groundAngleDeg.value = deg }
 
 function handleSpringPreset(freq) {
   springFreq.value = freq
@@ -84,6 +128,8 @@ function handleApplyImpulse({ magnitude, angleDeg }) {
 }
 
 let isDragging = false
+let isDraggingAnchor = false
+let draggedAnchorId = null
 let jointStartBodyId = null
 const previewLine = ref(null)
 
@@ -100,15 +146,36 @@ function handleCanvasDown({ x, y }) {
   if (activeTool.value === 'drag') {
     if (bodyId) {
       selectedBoxId.value = bodyId
+      selectedGroundId.value = null
       startMouseDrag(bodyId, x, y); isDragging = true
+    } else {
+      // No hay caja bajo el cursor: revisa si hay un anclaje (ej. la rueda
+      // de una polea) para poder arrastrarlo con precisión, o un suelo para
+      // editar su fricción.
+      const staticId = queryPoint(x, y, { includeStatic: true })
+      const entry = staticId ? bodies.find(b => b.id === staticId) : null
+      if (entry && entry.kind === 'anchor') {
+        draggedAnchorId = staticId
+        isDraggingAnchor = true
+        selectedGroundId.value = null
+        selectedBoxId.value = null
+      } else {
+        selectedGroundId.value = entry && entry.kind === 'ground' ? staticId : null
+        selectedBoxId.value = null
+      }
     }
   } else if (activeTool.value === 'box') {
     const id = addBox({ x, y, width: 1, height: 1, mass: 2, friction: 0.3, color: nextColor(), label: `Caja ${boxEntries.value.length + 1}` })
     selectedBoxId.value = id
   } else if (activeTool.value === 'delete') {
-    if (bodyId) {
-      removeBody(bodyId)
-      if (selectedBoxId.value === bodyId) selectedBoxId.value = null
+    // includeStatic: ahora "Borrar" también funciona sobre suelos y anclajes,
+    // no solo sobre cajas — necesario para poder quitar un trozo de suelo
+    // mal trazado cuando ya se pueden tener varios a la vez.
+    const targetId = queryPoint(x, y, { includeStatic: true })
+    if (targetId) {
+      removeBody(targetId)
+      if (selectedBoxId.value === targetId) selectedBoxId.value = null
+      if (selectedGroundId.value === targetId) selectedGroundId.value = null
     }
   } else if (activeTool.value === 'ground') {
     groundDrawPoints.value = [{ x, y }]
@@ -128,16 +195,39 @@ function handleCanvasDown({ x, y }) {
       const b = bodies.find(bx => bx.id === bodyId)
       previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
     }
+  } else if (activeTool.value === 'circular') {
+    // El riel circular solo puede arrancar desde una caja (es la que quedará
+    // ensartada en el aro); el otro extremo del arrastre será su centro.
+    const b = bodies.find(bx => bx.id === bodyId && bx.kind === 'box')
+    if (b) {
+      jointStartBodyId = bodyId
+      previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
+    }
   }
 }
 
 function handleCanvasMove({ x, y }) {
   if (activeTool.value === 'drag' && isDragging) {
     updateMouseDrag(x, y)
+  } else if (activeTool.value === 'drag' && isDraggingAnchor && draggedAnchorId) {
+    moveAnchor(draggedAnchorId, x, y)
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
-    const pts = groundDrawPoints.value
-    const last = pts[pts.length - 1]
-    if (distSq(last, { x, y }) > 0.15 * 0.15) pts.push({ x, y })
+    if (groundMode.value === 'straight') {
+      // Modo recto: el segundo punto queda SIEMPRE sobre la recta que pasa
+      // por el punto inicial con el ángulo elegido en el panel — así se
+      // puede fijar, por ejemplo, una rampa a exactamente 30°, sin depender
+      // del pulso del mouse. La longitud sí sigue libremente al arrastre.
+      const start = groundDrawPoints.value[0]
+      const rad = (groundAngleDeg.value * Math.PI) / 180
+      const dirX = Math.cos(rad)
+      const dirY = Math.sin(rad)
+      const proj = (x - start.x) * dirX + (y - start.y) * dirY
+      groundDrawPoints.value = [start, { x: start.x + proj * dirX, y: start.y + proj * dirY }]
+    } else {
+      const pts = groundDrawPoints.value
+      const last = pts[pts.length - 1]
+      if (distSq(last, { x, y }) > 0.15 * 0.15) pts.push({ x, y })
+    }
   } else if (previewLine.value) {
     previewLine.value.x2 = x
     previewLine.value.y2 = y
@@ -148,8 +238,13 @@ function handleCanvasUp({ x, y }) {
   if (activeTool.value === 'drag' && isDragging) {
     stopMouseDrag()
     isDragging = false
+  } else if (activeTool.value === 'drag' && isDraggingAnchor) {
+    isDraggingAnchor = false
+    draggedAnchorId = null
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
-    if (groundDrawPoints.value.length >= 2) setGroundPath(groundDrawPoints.value, groundFriction.value)
+    // AGREGA un trozo de suelo nuevo, sin borrar los que ya existían — así
+    // se pueden construir escenas con "mesa" + "piso" a distinta altura.
+    if (groundDrawPoints.value.length >= 2) addGround(groundDrawPoints.value, groundFriction.value)
     groundDrawPoints.value = null
   } else if (activeTool.value === 'force' && forceDragBodyId) {
     const dx = x - forceDragOrigin.x
@@ -162,6 +257,22 @@ function handleCanvasUp({ x, y }) {
     forceDragBodyId = null
     forceDragOrigin = null
     previewLine.value = null
+  } else if (jointStartBodyId && activeTool.value === 'pulley') {
+    // Polea en 2 pasos, para que sea UNA sola rueda real y no dos puntos
+    // separados: el primer cable define/reutiliza la rueda (un anclaje); el
+    // segundo cable debe soltarse sobre ESA MISMA rueda para cerrar la polea.
+    const endId = queryPoint(x, y, { includeStatic: true })
+    const endEntry = endId ? bodies.find(b => b.id === endId) : null
+
+    if (pendingPulley.value && endId === pendingPulley.value.wheelId) {
+      addPulley(pendingPulley.value.idA, jointStartBodyId, pendingPulley.value.wheelId)
+      pendingPulley.value = null
+    } else {
+      const wheelId = (endEntry && endEntry.kind === 'anchor') ? endId : addAnchor(x, y)
+      pendingPulley.value = { idA: jointStartBodyId, wheelId }
+    }
+    jointStartBodyId = null
+    previewLine.value = null
   } else if (jointStartBodyId) {
     let endBodyId = queryPoint(x, y)
     if (!endBodyId) {
@@ -169,8 +280,8 @@ function handleCanvasUp({ x, y }) {
     }
     if (endBodyId && endBodyId !== jointStartBodyId) {
       if (activeTool.value === 'rope') addRope(jointStartBodyId, endBodyId)
+      else if (activeTool.value === 'circular') addCircularTrack(jointStartBodyId, endBodyId)
       else if (activeTool.value === 'spring') addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
-      else if (activeTool.value === 'pulley') addPulley(jointStartBodyId, endBodyId)
     }
     jointStartBodyId = null
     previewLine.value = null
@@ -183,7 +294,7 @@ const FIXED_DT = 1 / 60
 function loop() {
   try {
     if (isRunning.value) step(FIXED_DT)
-    canvasRef.value?.draw(bodies, ropes, previewLine.value, groundDrawPoints.value)
+    canvasRef.value?.draw(bodies, ropes, previewLine.value, groundDrawPoints.value, groundLiveInfo.value)
   } catch (err) {
     console.error("[Sandbox] Error crítico recuperado en el bucle principal", err)
   }
@@ -220,6 +331,13 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
         <div class="pointer-events-none absolute top-0 left-0 right-0 flex items-start justify-between p-3 gap-2 flex-wrap z-20">
           <span class="pointer-events-auto text-[10px] font-mono bg-gray-950/90 backdrop-blur px-2 py-1.5 rounded-lg border border-gray-800 text-gray-400">
             Herramienta: <span class="text-emerald-300 font-bold">{{ activeTool.toUpperCase() }}</span>
+            <template v-if="activeTool === 'ground' && groundLiveInfo">
+              &nbsp;·&nbsp;θ = <span class="text-emerald-300 font-bold">{{ groundLiveInfo.angleDeg.toFixed(1) }}°</span>
+              &nbsp;L = <span class="text-emerald-300 font-bold">{{ groundLiveInfo.length.toFixed(2) }} m</span>
+            </template>
+            <template v-if="activeTool === 'pulley' && pendingPulley">
+              &nbsp;·&nbsp;<span class="text-yellow-300 font-bold">Rueda lista — arrastra la 2ª caja hasta el punto amarillo</span>
+            </template>
           </span>
           <div class="pointer-events-auto flex items-center gap-2">
             <button
@@ -261,12 +379,22 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
           <ContextPanel
             :active-tool="activeTool"
             :ground-friction="groundFriction"
+            :ground-mode="groundMode"
+            :ground-angle-deg="groundAngleDeg"
+            :ground-live-info="groundLiveInfo"
             :spring-freq="springFreq"
             :spring-damping="springDamping"
             :selected-box="selectedBox"
+            :selected-ground="selectedGround"
+            :ground-count="getGroundIds().length"
+            :pending-pulley="!!pendingPulley"
             :ropes-count="ropes.length"
             @update-box-mass="updateBoxMass"
+            @update-box-friction="updateBoxFriction"
             @update-ground-friction="handleUpdateGroundFriction"
+            @update-selected-ground-friction="handleUpdateSelectedGroundFriction"
+            @update-ground-mode="handleUpdateGroundMode"
+            @update-ground-angle="handleUpdateGroundAngle"
             @update-spring-preset="handleSpringPreset"
             @update-spring-stiffness="handleSpringDamping"
             @update-force="handleUpdateForce"
@@ -304,11 +432,15 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
                 </div>
                 <div class="flex gap-3">
                   <span class="text-lg">✏️</span>
-                  <p><strong class="text-gray-100">Dibujar Suelo:</strong> Arrastra sobre el lienzo para trazar terrenos personalizados.</p>
+                  <p><strong class="text-gray-100">Dibujar Suelo:</strong> Modo Libre (a mano) o Recto (ángulo exacto, ideal para planos inclinados de un problema).</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-lg">〰️</span>
                   <p><strong class="text-gray-100">Cuerdas y Resortes:</strong> Arrastra desde una caja hasta otra (o hacia el vacío para crear un anclaje fijo).</p>
+                </div>
+                <div class="flex gap-3">
+                  <span class="text-lg">⭕</span>
+                  <p><strong class="text-gray-100">Riel circular:</strong> Arrastra desde una caja hasta el centro deseado — queda ensartada girando a radio fijo, como un collar en un aro.</p>
                 </div>
                 <div class="flex gap-3">
                   <span class="text-lg">➤</span>

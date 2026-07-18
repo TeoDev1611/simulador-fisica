@@ -310,49 +310,101 @@ function drawRopeLogic(rope, bodiesById) {
       }
       ctx.stroke()
 
+  } else if (rope.kind === 'track') {
+      // rope.bodyAId = caja (collar), rope.bodyBId = centro (anclaje)
+      const rPx = rope.radius * props.scale
+      const t = rope.tension || 0
+
+      // Aro guía completo: el "riel" físico por el que se desliza el collar.
+      ctx.strokeStyle = 'rgba(34,211,238,0.35)'
+      ctx.lineWidth = 3
+      ctx.setLineDash([])
+      ctx.beginPath()
+      ctx.arc(pb.sx, pb.sy, rPx, 0, Math.PI * 2)
+      ctx.stroke()
+
+      // Varilla radial (centro → caja): visualiza la restricción rígida y
+      // se colorea como una cuerda con tensión.
+      ctx.strokeStyle = t > 40 ? '#ef4444' : '#22d3ee'
+      ctx.lineWidth = 2.5
+      ctx.setLineDash([3, 3])
+      ctx.beginPath()
+      ctx.moveTo(pb.sx, pb.sy)
+      ctx.lineTo(pa.sx, pa.sy)
+      ctx.stroke()
+
   } else if (rope.kind === 'pulley') {
       const ga = worldToScreen(rope.groundAnchorA.x, rope.groundAnchorA.y)
       const gb = worldToScreen(rope.groundAnchorB.x, rope.groundAnchorB.y)
       const radius = 12
+      // Si viene de un wheelId (rueda única, físicamente correcto), ga y gb
+      // son el mismo punto: se dibuja UNA sola rueda con soporte, en vez de
+      // dos soportes separados con una barra arriba (el estilo "de respaldo").
+      const sameWheel = Math.hypot(ga.sx - gb.sx, ga.sy - gb.sy) < 1.5
 
-      ctx.strokeStyle = '#52525b'
-      ctx.lineWidth = 4
-      ctx.beginPath()
-      ctx.moveTo(ga.sx, ga.sy - 25); ctx.lineTo(ga.sx, ga.sy)
-      ctx.moveTo(gb.sx, gb.sy - 25); ctx.lineTo(gb.sx, gb.sy)
-      ctx.stroke()
+      if (sameWheel) {
+        ctx.strokeStyle = '#3f3f46'
+        ctx.lineWidth = 4
+        ctx.beginPath(); ctx.moveTo(ga.sx, ga.sy - 22); ctx.lineTo(ga.sx, ga.sy); ctx.stroke()
+        ctx.beginPath(); ctx.moveTo(ga.sx - 14, ga.sy - 22); ctx.lineTo(ga.sx + 14, ga.sy - 22); ctx.lineWidth = 6; ctx.stroke()
 
-      ctx.beginPath()
-      ctx.moveTo(ga.sx - 20, ga.sy - 25)
-      ctx.lineTo(gb.sx + 20, gb.sy - 25)
-      ctx.lineWidth = 8
-      ctx.strokeStyle = '#3f3f46'
-      ctx.stroke()
+        ctx.strokeStyle = '#a1a1aa'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(pa.sx, pa.sy)
+        ctx.lineTo(ga.sx - radius * 0.7, ga.sy - radius * 0.3)
+        ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(ga.sx + radius * 0.7, ga.sy - radius * 0.3)
+        ctx.lineTo(pb.sx, pb.sy)
+        ctx.stroke()
 
-      ctx.strokeStyle = '#a1a1aa'
-      ctx.lineWidth = 2
-      ctx.beginPath()
-      ctx.moveTo(pa.sx, pa.sy)
-      ctx.lineTo(ga.sx - radius + 2, ga.sy)
-      ctx.lineTo(gb.sx + radius - 2, gb.sy)
-      ctx.lineTo(pb.sx, pb.sy)
-      ctx.stroke()
+        ctx.fillStyle = '#27272a'
+        ctx.strokeStyle = '#71717a'
+        ctx.lineWidth = 3
+        ctx.beginPath(); ctx.arc(ga.sx, ga.sy, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+        ctx.fillStyle = '#d4d4d8'
+        ctx.beginPath(); ctx.arc(ga.sx, ga.sy, 3, 0, Math.PI * 2); ctx.fill()
+      } else {
+        ctx.strokeStyle = '#52525b'
+        ctx.lineWidth = 4
+        ctx.beginPath()
+        ctx.moveTo(ga.sx, ga.sy - 25); ctx.lineTo(ga.sx, ga.sy)
+        ctx.moveTo(gb.sx, gb.sy - 25); ctx.lineTo(gb.sx, gb.sy)
+        ctx.stroke()
 
-      ctx.fillStyle = '#27272a'
-      ctx.strokeStyle = '#71717a'
-      ctx.lineWidth = 3
-      ctx.beginPath(); ctx.arc(ga.sx, ga.sy, radius, 0, Math.PI*2); ctx.fill(); ctx.stroke()
-      ctx.beginPath(); ctx.arc(gb.sx, gb.sy, radius, 0, Math.PI*2); ctx.fill(); ctx.stroke()
+        ctx.beginPath()
+        ctx.moveTo(ga.sx - 20, ga.sy - 25)
+        ctx.lineTo(gb.sx + 20, gb.sy - 25)
+        ctx.lineWidth = 8
+        ctx.strokeStyle = '#3f3f46'
+        ctx.stroke()
 
-      ctx.fillStyle = '#d4d4d8'
-      ctx.beginPath(); ctx.arc(ga.sx, ga.sy, 3, 0, Math.PI*2); ctx.fill()
-      ctx.beginPath(); ctx.arc(gb.sx, gb.sy, 3, 0, Math.PI*2); ctx.fill()
+        ctx.strokeStyle = '#a1a1aa'
+        ctx.lineWidth = 2
+        ctx.beginPath()
+        ctx.moveTo(pa.sx, pa.sy)
+        ctx.lineTo(ga.sx - radius + 2, ga.sy)
+        ctx.lineTo(gb.sx + radius - 2, gb.sy)
+        ctx.lineTo(pb.sx, pb.sy)
+        ctx.stroke()
+
+        ctx.fillStyle = '#27272a'
+        ctx.strokeStyle = '#71717a'
+        ctx.lineWidth = 3
+        ctx.beginPath(); ctx.arc(ga.sx, ga.sy, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+        ctx.beginPath(); ctx.arc(gb.sx, gb.sy, radius, 0, Math.PI * 2); ctx.fill(); ctx.stroke()
+
+        ctx.fillStyle = '#d4d4d8'
+        ctx.beginPath(); ctx.arc(ga.sx, ga.sy, 3, 0, Math.PI * 2); ctx.fill()
+        ctx.beginPath(); ctx.arc(gb.sx, gb.sy, 3, 0, Math.PI * 2); ctx.fill()
+      }
   }
   ctx.restore()
 }
 
-/** Previsualización mientras se dibuja el terreno a mano libre. */
-function drawGroundPreview(points) {
+/** Previsualización mientras se dibuja el terreno (libre o recto). */
+function drawGroundPreview(points, groundInfo) {
   if (!points || points.length < 2) return
   ctx.save()
   ctx.strokeStyle = 'rgba(156,163,175,0.85)'
@@ -369,9 +421,39 @@ function drawGroundPreview(points) {
   }
   ctx.stroke()
   ctx.restore()
+
+  // Modo recto: etiqueta de ángulo/longitud junto a la línea guía, para leer
+  // el valor exacto sin tener que mirar el panel lateral.
+  if (groundInfo) {
+    const pEnd = worldToScreen(points[points.length - 1].x, points[points.length - 1].y)
+    ctx.save()
+    ctx.fillStyle = '#e5e7eb'
+    ctx.font = 'bold 11px monospace'
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText(`${groundInfo.angleDeg.toFixed(1)}° · ${groundInfo.length.toFixed(2)} m`, pEnd.sx + 8, pEnd.sy - 4)
+    ctx.restore()
+  }
 }
 
-function draw(bodies, ropes, previewLine, groundPreviewPoints) {
+/** Previsualización del riel circular mientras se arrastra desde la caja
+ *  hasta el punto que definirá el centro (radio = distancia actual). */
+function drawCircularPreview(previewLine) {
+  if (!previewLine) return
+  const center = worldToScreen(previewLine.x2, previewLine.y2)
+  const start = worldToScreen(previewLine.x1, previewLine.y1)
+  const rPx = Math.hypot(center.sx - start.sx, center.sy - start.sy)
+  ctx.save()
+  ctx.strokeStyle = 'rgba(34,211,238,0.6)'
+  ctx.lineWidth = 2
+  ctx.setLineDash([4, 4])
+  ctx.beginPath()
+  ctx.arc(center.sx, center.sy, rPx, 0, Math.PI * 2)
+  ctx.stroke()
+  ctx.restore()
+}
+
+function draw(bodies, ropes, previewLine, groundPreviewPoints, groundInfo) {
   if (!ctx) return
   drawEmpty()
 
@@ -390,9 +472,11 @@ function draw(bodies, ropes, previewLine, groundPreviewPoints) {
       ctx.lineTo(p2.sx, p2.sy)
       ctx.stroke()
       ctx.restore()
+
+      if (props.activeTool === 'circular') drawCircularPreview(previewLine)
   }
 
-  drawGroundPreview(groundPreviewPoints)
+  drawGroundPreview(groundPreviewPoints, groundInfo)
 
   for (const entry of bodies) if (entry.kind === 'ground') drawGround(entry)
   for (const entry of bodies) if (entry.kind === 'anchor') drawAnchor(entry)

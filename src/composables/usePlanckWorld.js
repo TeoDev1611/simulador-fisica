@@ -21,7 +21,21 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         return m_groundBody
     }
 
-    function queryPoint(x, y) {
+    // Distancia mínima de un punto a un segmento (para detectar clics sobre
+    // un trozo de suelo dibujado a mano, que no es un polígono con área).
+    function distPointToSegment(px, py, ax, ay, bx, by) {
+        const dx = bx - ax, dy = by - ay
+        const lenSq = dx * dx + dy * dy
+        let t = lenSq > 0 ? ((px - ax) * dx + (py - ay) * dy) / lenSq : 0
+        t = Math.max(0, Math.min(1, t))
+        const cx = ax + t * dx, cy = ay + t * dy
+        return Math.hypot(px - cx, py - cy)
+    }
+
+    // includeStatic: además de cajas (dinámicas), detecta anclajes y trozos de
+    // suelo. Se usa para "seleccionar/borrar suelo" o "borrar anclaje", pero
+    // NO para arrastrar/crear cuerdas (ahí solo interesan las cajas).
+    function queryPoint(x, y, { includeStatic = false } = {}) {
         const point = Vec2(x, y)
         const aabb = new AABB(Vec2(x - 0.05, y - 0.05), Vec2(x + 0.05, y + 0.05))
         let foundId = null
@@ -36,7 +50,23 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
             }
             return true
         })
-        return foundId
+        if (foundId || !includeStatic) return foundId
+
+        const HIT_R = 0.18
+        for (const b of bodies) {
+            if (b.kind === 'anchor') {
+                if (Math.hypot(b.position.x - x, b.position.y - y) <= HIT_R) return b.id
+            }
+        }
+        for (const b of bodies) {
+            if (b.kind === 'ground' && b.points && b.points.length > 1) {
+                for (let i = 0; i < b.points.length - 1; i++) {
+                    const p1 = b.points[i], p2 = b.points[i + 1]
+                    if (distPointToSegment(x, y, p1.x, p1.y, p2.x, p2.y) <= HIT_R) return b.id
+                }
+            }
+        }
+        return null
     }
 
     function startMouseDrag(id, x, y) {
@@ -84,11 +114,23 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         const id = nextId('box')
         bodies.push({
             id, kind: 'box', body: markRaw(body), label: label || id,
-            width, height, mass, color, position: { x, y }, angleRad: angle,
+            width, height, mass, friction, color, position: { x, y }, angleRad: angle,
             normalForce: 0, weightForce: mass * gravityMagnitude,
             appliedForce: { enabled: false, magnitude: 0, angleDeg: 0 }
         })
         return id
+    }
+
+    function updateBoxFriction(id, newFriction) {
+        const entry = bodies.find((b) => b.id === id && b.kind === 'box')
+        if (!entry) return
+        const safeFriction = Math.max(0, Math.min(2, newFriction))
+        const fixture = entry.body.getFixtureList()
+        if (fixture) {
+            fixture.setFriction(safeFriction)
+            entry.body.setAwake(true)
+        }
+        entry.friction = safeFriction
     }
 
     function updateBoxMass(id, newMass) {
@@ -126,12 +168,16 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     }
 
     // ----------------------------------------------------------------
-    // Terreno: dibujado a mano libre
+    // Terreno: uno o varios trozos independientes ("mesa" + "suelo" + ...)
     // ----------------------------------------------------------------
-    let groundId = null
+    // Antes solo podía existir UN suelo (dibujar uno nuevo borraba el
+    // anterior). Ahora cada llamada a addGround AGREGA un trozo nuevo sin
+    // tocar los demás — necesario para ejercicios de polea con dos alturas
+    // (ej. mesa + piso) o con dos rampas separadas.
+    let groundIds = []
 
-    function setGroundPath(points, friction = 0.5) {
-        // MEJORA: Filtrar puntos para evitar vértices superpuestos que rompan Planck
+    function addGround(points, friction = 0.5) {
+        // Filtrar puntos para evitar vértices superpuestos que rompan Planck
         const validPoints = []
         for (const p of points) {
             if (validPoints.length === 0) {
@@ -139,30 +185,21 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
             } else {
                 const prev = validPoints[validPoints.length - 1]
                 const distSq = (p.x - prev.x) ** 2 + (p.y - prev.y) ** 2
-                // Si la distancia es mayor a ~0.1m, lo aceptamos
                 if (distSq > 0.01) validPoints.push(p)
             }
         }
 
         if (validPoints.length < 2) return null
 
-        if (groundId) {
-            const idx = bodies.findIndex((b) => b.id === groundId)
-            if (idx !== -1) {
-                world.destroyBody(bodies[idx].body)
-                bodies.splice(idx, 1)
-            }
-        }
-
         const vecs = validPoints.map((p) => Vec2(p.x, p.y))
         const body = world.createBody({ type: 'static' })
         body.createFixture({ shape: new Chain(vecs, false), friction })
 
         const id = nextId('ground')
-        groundId = id
+        groundIds.push(id)
         bodies.push({
             id, kind: 'ground', body: markRaw(body),
-            label: 'Suelo', points: validPoints.map((p) => ({ x: p.x, y: p.y })),
+            label: `Suelo ${groundIds.length}`, points: validPoints.map((p) => ({ x: p.x, y: p.y })),
             friction, color: '#9ca3af'
         })
 
@@ -170,8 +207,10 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         return id
     }
 
-    function setGroundFriction(friction) {
-        const entry = bodies.find((b) => b.id === groundId)
+    // Ahora recibe el id del trozo de suelo a editar (antes asumía que
+    // solo existía uno). Cada trozo guarda su propia fricción.
+    function setGroundFriction(id, friction) {
+        const entry = bodies.find((b) => b.id === id && b.kind === 'ground')
         if (!entry) return
         const fixture = entry.body.getFixtureList()
         if (fixture) fixture.setFriction(friction)
@@ -179,8 +218,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         for (const b of bodies) if (b.kind === 'box') b.body.setAwake(true)
     }
 
-    function getGroundId() {
-        return groundId
+    function getGroundIds() {
+        return groundIds.slice()
     }
 
     // ----------------------------------------------------------------
@@ -191,6 +230,27 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         const id = nextId('anchor')
         bodies.push({ id, kind: 'anchor', body: markRaw(body), label: 'Anclaje', position: { x, y }, angleRad: 0 })
         return id
+    }
+
+    // Reposiciona un anclaje ya existente (ej. la rueda de una polea) para
+    // poder ajustarla con precisión DESPUÉS de crearla, sin tener que borrar
+    // todo y volver a dibujar. Un anclaje es estático, así que se mueve
+    // directamente (no hay MouseJoint); si hay poleas que usan este anclaje
+    // como su rueda, se reconstruyen (Planck no permite mover el ancla de
+    // una PulleyJoint ya creada) conservando las mismas cajas conectadas.
+    function moveAnchor(id, x, y) {
+        const entry = bodies.find(b => b.id === id && b.kind === 'anchor')
+        if (!entry) return
+        entry.body.setPosition(Vec2(x, y))
+        entry.position.x = x
+        entry.position.y = y
+
+        const affected = ropes.filter(r => r.kind === 'pulley' && r.wheelId === id)
+        for (const r of affected) {
+            const { bodyAId, bodyBId } = r
+            removeRope(r.id)
+            addPulley(bodyAId, bodyBId, id)
+        }
     }
 
     // ----------------------------------------------------------------
@@ -240,7 +300,13 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         for (const b of bodies) if (b.kind === 'box') b.body.setAwake(true)
     }
 
-    function addPulley(idA, idB) {
+    // wheelId (opcional): id de un anclaje que marca dónde está la RUEDA real
+    // de la polea. Si se da, ambos cables (A y B) comparten ese mismo punto —
+    // que es físicamente lo correcto para una polea de una sola rueda
+    // (ej. el problema del bloque en la mesa + bloque colgando). Si no se da,
+    // se usa el comportamiento anterior (estimar una altura común) como
+    // respaldo para no romper compatibilidad.
+    function addPulley(idA, idB, wheelId = null) {
         const entryA = bodies.find(b => b.id === idA)
         const entryB = bodies.find(b => b.id === idB)
         if (!entryA || !entryB) return null
@@ -248,13 +314,26 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         const anchorA = entryA.body.getWorldCenter()
         const anchorB = entryB.body.getWorldCenter()
 
-        let groundY
-        if (entryB.kind === 'anchor') groundY = anchorB.y
-        else if (entryA.kind === 'anchor') groundY = anchorA.y
-        else groundY = Math.max(anchorA.y, anchorB.y) + 4
+        let groundAnchorA = null
+        let groundAnchorB = null
 
-        const groundAnchorA = Vec2(anchorA.x, groundY)
-        const groundAnchorB = Vec2(anchorB.x, groundY)
+        if (wheelId) {
+            const wheelEntry = bodies.find(b => b.id === wheelId)
+            if (wheelEntry) {
+                const wp = wheelEntry.body.getWorldCenter()
+                groundAnchorA = Vec2(wp.x, wp.y)
+                groundAnchorB = Vec2(wp.x, wp.y)
+            }
+        }
+
+        if (!groundAnchorA) {
+            let groundY
+            if (entryB.kind === 'anchor') groundY = anchorB.y
+            else if (entryA.kind === 'anchor') groundY = anchorA.y
+            else groundY = Math.max(anchorA.y, anchorB.y) + 4
+            groundAnchorA = Vec2(anchorA.x, groundY)
+            groundAnchorB = Vec2(anchorB.x, groundY)
+        }
 
         const lengthA = Math.max(0.1, Vec2.distance(anchorA, groundAnchorA))
         const lengthB = Math.max(0.1, Vec2.distance(anchorB, groundAnchorB))
@@ -270,10 +349,44 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         const id = nextId('pulley')
         ropes.push({
             id, kind: 'pulley', joint: markRaw(created),
-            bodyAId: idA, bodyBId: idB,
+            bodyAId: idA, bodyBId: idB, wheelId,
             groundAnchorA: { x: groundAnchorA.x, y: groundAnchorA.y },
             groundAnchorB: { x: groundAnchorB.x, y: groundAnchorB.y },
             tension: 0
+        })
+        return id
+    }
+
+    // ----------------------------------------------------------------
+    // Riel circular ("collar" deslizando en un aro sin fricción)
+    // ----------------------------------------------------------------
+    // Físicamente es una varilla rígida desde un centro fijo hasta la caja
+    // (DistanceJoint con frequencyHz: 0): mantiene el radio constante mientras
+    // permite giro libre, que es exactamente el comportamiento de un cuerpo
+    // ensartado en un riel/alambre circular (a diferencia de un tazón, el
+    // riel empuja hacia ADENTRO o hacia AFUERA según haga falta).
+    // Se guarda también el radio para poder dibujar el aro guía completo.
+    function addCircularTrack(boxId, centerId) {
+        const entryBox = bodies.find(b => b.id === boxId)
+        const entryCenter = bodies.find(b => b.id === centerId)
+        if (!entryBox || !entryCenter || entryBox.kind !== 'box') return null
+
+        const anchorBox = entryBox.body.getWorldCenter()
+        const anchorCenter = entryCenter.body.getWorldCenter()
+        const radius = Vec2.distance(anchorBox, anchorCenter)
+        if (radius < 0.05) return null
+
+        const joint = new DistanceJoint(
+            { frequencyHz: 0, dampingRatio: 0, length: radius },
+            entryBox.body, entryCenter.body, anchorBox, anchorCenter
+        )
+        const created = world.createJoint(joint)
+
+        const id = nextId('track')
+        ropes.push({
+            id, kind: 'track', joint: markRaw(created),
+            bodyAId: boxId, bodyBId: centerId,
+            tension: 0, radius
         })
         return id
     }
@@ -286,7 +399,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         }
         world.destroyBody(bodies[idx].body)
         bodies.splice(idx, 1)
-        if (id === groundId) groundId = null
+        groundIds = groundIds.filter((gid) => gid !== id)
     }
 
     function removeRope(id) {
@@ -306,7 +419,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         bodies.splice(0, bodies.length)
         ropes.splice(0, ropes.length)
         counter = 0
-        groundId = null
+        groundIds = []
     }
 
     function syncTransforms() {
@@ -379,10 +492,10 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     return {
         world, bodies, ropes,
-        addBox, updateBoxMass, setAppliedForce, applyImpulse,
-        setGroundPath, setGroundFriction, getGroundId,
-        addAnchor,
-        addRope, addSpring, setSpringStiffness, addPulley,
+        addBox, updateBoxMass, updateBoxFriction, setAppliedForce, applyImpulse,
+        addGround, setGroundFriction, getGroundIds,
+        addAnchor, moveAnchor,
+        addRope, addSpring, setSpringStiffness, addPulley, addCircularTrack,
         removeBody, removeRope, reset, step,
         queryPoint, startMouseDrag, updateMouseDrag, stopMouseDrag
     }

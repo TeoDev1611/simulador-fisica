@@ -9,17 +9,28 @@ import { ref, watch } from 'vue'
 const props = defineProps({
   activeTool: { type: String, required: true },
   groundFriction: { type: Number, required: true },
+  groundMode: { type: String, default: 'free' }, // 'free' | 'straight'
+  groundAngleDeg: { type: Number, default: 0 },
+  groundLiveInfo: { type: Object, default: null }, // { angleDeg, length } mientras se arrastra
   springFreq: { type: Number, required: true },
   springDamping: { type: Number, required: true },
   selectedBox: { type: Object, default: null }, // caja objetivo explícito (o null)
+  selectedGround: { type: Object, default: null }, // trozo de suelo seleccionado con "drag"
+  groundCount: { type: Number, default: 0 }, // cuántos trozos de suelo existen ya
+  pendingPulley: { type: Boolean, default: false }, // true = ya se definió la rueda, falta el 2º cable
   ropesCount: { type: Number, default: 0 }
 })
 
 const emit = defineEmits([
-  'update-box-mass', 'update-ground-friction',
+  'update-box-mass', 'update-box-friction', 'update-ground-friction', 'update-selected-ground-friction',
+  'update-ground-mode', 'update-ground-angle',
   'update-spring-preset', 'update-spring-stiffness',
   'update-force', 'apply-impulse'
 ])
+
+// Ángulos típicos de problemas de plano inclinado (con su reflejo negativo
+// disponible desde el botón ± junto al campo numérico).
+const anglePresets = [0, 15, 30, 37, 45, 53, 60, 90]
 
 const springPresets = [
   { label: 'Suave', freq: 1.0 },
@@ -57,10 +68,11 @@ function applyForceNow(enabled) {
 <template>
   <div class="pointer-events-auto w-64 bg-gray-950/90 backdrop-blur border border-gray-800 rounded-xl p-4 shadow-xl">
 
-    <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa aquí mismo -->
+    <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa;
+         si hay un trozo de SUELO seleccionado, ajustar su fricción individual -->
     <template v-if="activeTool === 'drag'">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">Caja seleccionada</h3>
       <template v-if="selectedBox">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">Caja seleccionada</h3>
         <p class="text-sm font-mono font-bold mb-3" :style="{ color: selectedBox.color }">● {{ selectedBox.label }}</p>
         <label class="text-[11px] text-gray-400 flex justify-between mb-1">
           <span>Masa (kg)</span>
@@ -72,16 +84,116 @@ function applyForceNow(enabled) {
           @input="emit('update-box-mass', selectedBox.id, Number($event.target.value))"
           class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
         />
+
+        <label class="text-[11px] text-gray-400 flex justify-between mb-1 mt-3">
+          <span>Fricción (μ) de esta caja</span>
+          <span class="font-mono text-emerald-300">{{ (selectedBox.friction ?? 0.3).toFixed(2) }}</span>
+        </label>
+        <input
+          type="range" min="0" max="1.5" step="0.05"
+          :value="selectedBox.friction ?? 0.3"
+          @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
+          class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+        />
+        <p class="mt-1 text-[10px] text-gray-500 italic">
+          Fricción de la caja consigo misma contra lo que toque (suelo, otra
+          caja). El coeficiente efectivo en el contacto combina el de ambas
+          superficies.
+        </p>
+      </template>
+      <template v-else-if="selectedGround">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-300 mb-2">{{ selectedGround.label }} seleccionado</h3>
+        <label class="text-[11px] text-gray-400 flex justify-between mb-1">
+          <span>Fricción (μ) de este trozo</span>
+          <span class="font-mono text-emerald-300">{{ selectedGround.friction.toFixed(2) }}</span>
+        </label>
+        <input
+          type="range" min="0" max="1" step="0.05"
+          :value="selectedGround.friction"
+          @input="emit('update-selected-ground-friction', Number($event.target.value))"
+          class="w-full h-2 bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+        />
+        <p class="mt-2 text-[10px] text-gray-500 italic">
+          Este ajuste solo afecta a este trozo de suelo (puede haber varios con
+          fricciones distintas, por ejemplo mesa lisa + piso rugoso).
+        </p>
       </template>
       <p v-else class="text-[11px] text-gray-500 italic">
-        Haz clic en una caja del lienzo para seleccionarla y ajustar su masa.
+        Haz clic en una caja para ajustar su masa/fricción, en un trozo de
+        suelo para su fricción, o arrastra un punto amarillo (anclaje/rueda de
+        polea) para reposicionarlo con precisión.
       </p>
     </template>
 
     <!-- Herramienta: Dibujar suelo -->
     <template v-else-if="activeTool === 'ground'">
       <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">Terreno</h3>
-      <p class="text-[11px] text-gray-400 mb-3">Arrastra sobre el lienzo para trazar el terreno donde quieras.</p>
+      <p class="text-[10px] text-gray-500 italic mb-3">
+        Cada trazo AGREGA un trozo de suelo nuevo (no borra los anteriores) —
+        así puedes dibujar, por ejemplo, una mesa y el piso a distinta altura
+        para un problema de polea.
+        <span v-if="groundCount" class="text-gray-400">Trozos actuales: {{ groundCount }}.</span>
+      </p>
+
+      <div class="grid grid-cols-2 gap-2 mb-3">
+        <button
+          type="button" @click="emit('update-ground-mode', 'free')"
+          class="text-[11px] font-semibold py-2 rounded-lg border transition-colors"
+          :class="groundMode === 'free'
+            ? 'bg-emerald-700 border-emerald-500 text-white'
+            : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'"
+        >
+          ✏️ Libre
+        </button>
+        <button
+          type="button" @click="emit('update-ground-mode', 'straight')"
+          class="text-[11px] font-semibold py-2 rounded-lg border transition-colors"
+          :class="groundMode === 'straight'
+            ? 'bg-emerald-700 border-emerald-500 text-white'
+            : 'bg-gray-800 border-gray-700 text-gray-300 hover:bg-gray-700'"
+        >
+          📐 Recto
+        </button>
+      </div>
+
+      <template v-if="groundMode === 'straight'">
+        <p class="text-[11px] text-gray-400 mb-2">
+          Clic en el punto de inicio y arrastra: el segmento queda fijo al ángulo
+          de abajo (la longitud sí sigue tu arrastre libremente).
+        </p>
+        <label class="text-[11px] text-gray-400 flex justify-between mb-1">
+          <span>Ángulo (°)</span>
+          <span class="font-mono text-emerald-300">{{ groundAngleDeg.toFixed(1) }}°</span>
+        </label>
+        <div class="flex gap-2 mb-2">
+          <input
+            :value="groundAngleDeg"
+            @input="emit('update-ground-angle', Number($event.target.value))"
+            type="number" step="1"
+            class="w-full bg-gray-950 border border-gray-700 rounded-md px-2 py-1.5 text-sm font-mono outline-none focus:border-emerald-500"
+          />
+          <button
+            type="button" title="Invertir signo"
+            @click="emit('update-ground-angle', -groundAngleDeg)"
+            class="px-3 rounded-md border border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700 text-xs font-mono"
+          >±</button>
+        </div>
+        <div class="grid grid-cols-4 gap-1.5 mb-3">
+          <button
+            v-for="a in anglePresets" :key="a"
+            @click="emit('update-ground-angle', a)"
+            class="text-[10px] font-mono py-1.5 rounded-md border transition-colors"
+            :class="Math.abs(groundAngleDeg - a) < 0.01
+              ? 'bg-emerald-700 border-emerald-500 text-white'
+              : 'border-gray-700 bg-gray-800 text-gray-300 hover:bg-gray-700'"
+          >{{ a }}°</button>
+        </div>
+        <p v-if="groundLiveInfo" class="text-[11px] text-gray-300 font-mono mb-3">
+          θ = {{ groundLiveInfo.angleDeg.toFixed(1) }}° · L = {{ groundLiveInfo.length.toFixed(2) }} m
+        </p>
+      </template>
+      <p v-else class="text-[11px] text-gray-400 mb-3">Arrastra sobre el lienzo para trazar el terreno donde quieras.</p>
+
       <label class="text-[11px] text-gray-400 flex justify-between mb-1">
         <span>Fricción (μ)</span>
         <span class="font-mono text-emerald-300">{{ groundFriction.toFixed(2) }}</span>
@@ -138,19 +250,61 @@ function applyForceNow(enabled) {
       </p>
     </template>
 
-    <!-- Herramienta: Cuerda / Polea -->
-    <template v-else-if="activeTool === 'rope' || activeTool === 'pulley'">
-      <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">
-        {{ activeTool === 'rope' ? 'Cuerda' : 'Polea' }}
-      </h3>
+    <!-- Herramienta: Cuerda -->
+    <template v-else-if="activeTool === 'rope'">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">Cuerda</h3>
       <p class="text-[11px] text-gray-400 mb-2">
         Arrastra desde una caja hasta otra caja, o suelta en el vacío para crear un
         <span class="text-yellow-300 font-semibold">punto fijo</span> ahí mismo (marcado como "Fijo").
       </p>
-      <p v-if="activeTool === 'pulley'" class="text-[11px] text-gray-500 italic border-t border-gray-800 pt-2">
-        Con 1 sola caja: arrastra desde la caja hasta donde quieras "colgarla"
-        (por ejemplo el techo). Ese punto se convierte en la rueda de la polea —
-        la altura de la rueda queda exactamente donde soltaste el clic.
+    </template>
+
+    <!-- Herramienta: Polea (flujo de 2 pasos: 1er cable define la rueda, 2º la cierra) -->
+    <template v-else-if="activeTool === 'pulley'">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-400 mb-2">Polea</h3>
+
+      <template v-if="!pendingPulley">
+        <p class="text-[11px] text-gray-400 mb-2">
+          <span class="text-emerald-300 font-semibold">Paso 1:</span>
+          arrastra desde la primera caja hasta el punto donde está la
+          <span class="text-yellow-300 font-semibold">rueda</span> de la polea
+          (por ejemplo la esquina de la mesa, o el techo). Ese punto queda
+          marcado como "Fijo".
+        </p>
+      </template>
+      <template v-else>
+        <p class="text-[11px] text-yellow-300 font-semibold mb-2">
+          ✓ Rueda definida. Paso 2: arrastra desde la segunda caja y suelta
+          justo sobre ese mismo punto amarillo para cerrar la polea.
+        </p>
+      </template>
+
+      <p class="text-[10px] text-gray-500 italic border-t border-gray-800 pt-2">
+        Las dos cajas comparten la MISMA rueda (un solo punto de giro), como
+        una polea real — así el peso de una cuerda tira de la otra, ideal para
+        el clásico "bloque en la mesa + bloque colgando".
+      </p>
+      <p class="text-[10px] text-gray-500 italic mt-1">
+        ¿La rueda quedó mal ubicada? Cambia a la herramienta ✋ Mover y
+        arrastra el punto amarillo — la polea se reajusta sola.
+      </p>
+    </template>
+
+    <!-- Herramienta: Riel circular (collar deslizando en un aro) -->
+    <template v-else-if="activeTool === 'circular'">
+      <h3 class="text-xs font-semibold uppercase tracking-wider text-cyan-400 mb-2">Riel circular (collar)</h3>
+      <p class="text-[11px] text-gray-400 mb-2">
+        Arrastra desde una caja hasta el punto que será el
+        <span class="text-yellow-300 font-semibold">centro</span> del aro (o suelta
+        sobre un anclaje ya existente para reusarlo como centro).
+      </p>
+      <p class="text-[11px] text-gray-500 italic border-t border-gray-800 pt-2">
+        El radio queda fijo en la distancia a la que soltaste el clic: la caja
+        queda restringida a girar sin fricción a esa distancia exacta del
+        centro, como un collar ensartado en un alambre circular. Puedes
+        además conectarle un resorte o una fuerza normalmente — así se arman
+        problemas como el del collar sujeto a un resorte sobre una barra
+        circular.
       </p>
     </template>
 
