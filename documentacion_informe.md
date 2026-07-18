@@ -104,3 +104,16 @@ Este entorno permite crear colisiones y experimentos de física libremente dibuj
 3. **Panel de Dinámica y Telemetría**
    - En la esquina inferior izquierda verás mediciones exactas del bloque seleccionado, como su centro de masa ($X, Y$) y sus velocidades.
    - Puedes usar la herramienta de **Fuerza (➤)** y apuntarla hacia un bloque para empujarlo activamente y romper su reposo, experimentando cómo la Fricción estática colapsa y entra en acción la cinética.
+
+---
+
+## 4. Trabajo Futuro: Compatibilidad Táctil (Mobile Touch)
+
+Actualmente, el Sandbox 2D está optimizado para eventos de puntero clásico (Ratón). Para extender su funcionalidad total a dispositivos móviles y tablets interactivas (iPad), se deja planteada la siguiente solución técnica arquitectónica:
+
+1. **Unificación de Eventos (Pointer Events API):**
+   Migrar los actuales *listeners* (`mousedown`, `mousemove`, `mouseup`) hacia la interfaz agnóstica de `PointerEvents` (`pointerdown`, `pointermove`). Esto permite que el navegador trate los toques capacitivos, los lápices ópticos (Stylus) y los clics de ratón bajo el mismo ecosistema vectorial.
+2. **Normalización del Lienzo (Canvas):**
+   Inyectar la regla CSS `touch-action: none;` exclusivamente sobre la capa del `<canvas>` para prevenir que el motor del navegador secuestre el gesto táctil intentando hacer *scroll* o *pull-to-refresh*.
+3. **Mapeo de Coordenadas Multipunto:**
+   Mediante la lectura de `event.touches[0].clientX` e interceptando el `getBoundingClientRect()` de Vue, trasladar milimétricamente las presiones de dedo a coordenadas cartesianas dentro del mundo de Planck.js, habilitando la creación "Drag & Drop" con el dedo pulgar o índice.

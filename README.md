@@ -84,5 +84,10 @@ pnpm run build
 
 ## Próximos Pasos (Deuda Técnica / Backlog)
 
-- **Optimización en móviles:** La interfaz del Sandbox 2D (drag & drop) no soporta de forma nativa pantallas táctiles de manera óptima; la UX está diseñada primordialmente para escritorio (teclado + mouse).
+- **Optimización Integral en Móviles (Eventos Touch):** 
+  - *Problema:* La interfaz del Sandbox 2D (drag & drop) procesa nativamente eventos de ratón (`mousedown`, `mousemove`). En móviles, el navegador intenta procesar estos eventos como gestos de scroll, limitando la interacción.
+  - *Solución Técnica Propuesta:* 
+    1. Aplicar CSS `touch-action: none;` al `<canvas>` para bloquear el scroll nativo.
+    2. Modificar `PhysicsCanvas.vue` para escuchar concurrentemente los eventos `touchstart`, `touchmove` y `touchend`.
+    3. Mapear las coordenadas extraídas de `event.touches[0].clientX` (normalizadas con `getBoundingClientRect()`) hacia las funciones lógicas actuales de Planck.js, unificando la lógica de puntero (Mouse + Touch) mediante la API genérica de `PointerEvents`.
 - **Soporte PWA (Progresive Web App):** Habilitar el guardado sin conexión instalable en dispositivo.
