@@ -36,11 +36,34 @@ El simulador fue concebido bajo el paradigma de "Single Page Application" (Aplic
 - **Math.js:** Motor algebraico utilizado en el apartado de cinemática. Su función es "entender" y analizar la ecuación escrita por el usuario, detectando inteligentemente constantes, funciones y los parámetros personalizables de la fórmula para luego calcular la derivada en tiempo real.
 - **Chart.js:** Herramienta utilizada para el dibujo y actualización reactiva de las tres curvas matemáticas principales de cinemática (Posición, Velocidad y Aceleración) a lo largo del tiempo de simulación.
 
-### 2.3 Resumen de Refactorización Arquitectónica
-Para garantizar la sostenibilidad a largo plazo y facilidad de lectura técnica del proyecto, el código principal ha sido limpiado y desacoplado:
-1. Las gráficas analíticas fueron agrupadas en un submódulo encapsulado.
-2. El dibujo visual de la pista 1D interactiva opera ahora de forma independiente.
-3. El analizador de ecuaciones de Math.js cuenta con un árbol de sintaxis abstracta (AST) de alta fiabilidad, capaz de distinguir a la perfección funciones trigonométricas/logarítmicas de las variables creadas arbitrariamente por el usuario.
+### 2.3 Resumen de Refactorización Arquitectónica y Sistema Visual
+Para garantizar la sostenibilidad a largo plazo y la facilidad de lectura técnica del proyecto, el código principal ha sido limpiado, modularizado y desacoplado en subdirectorios específicos:
+
+1. **Submódulo Cinemática 1D (`src/components/kinematics/`):**
+   - Las gráficas analíticas (Chart.js) fueron agrupadas en un componente encapsulado (`ChartsPanel.vue`).
+   - El renderizado visual de la pista interactiva opera de forma independiente (`Track1D.vue`).
+   - Los datos y cálculos en tiempo real se exponen en tarjetas modulares (`ResultsCards.vue`).
+   - El analizador de ecuaciones (Math.js) cuenta con un árbol de sintaxis abstracta (AST) robusto capaz de distinguir funciones trigonométricas/logarítmicas.
+2. **Submódulo Dinámica 2D (`src/components/physics/`):**
+   - El bucle de animación y orquestador vive en `PhysicsSandbox2D.vue`.
+   - La barra de herramientas, telemetría y el panel de configuración lateral están aislados en componentes limpios (`ToolRail.vue`, `PhysicsDataPanel.vue`, `ContextPanel.vue`).
+   - El HTML5 Canvas para el renderizado no contiene lógica física (`PhysicsCanvas.vue`).
+3. **Módulo de Documentación Interactiva (`WikiPage.vue`):**
+   
+   **Resumen Rápido:**
+   Se trata de una guía interactiva in-app, integrada directamente en el ecosistema. Proporciona instrucciones de uso, explicación de herramientas y atajos de teclado para ambos simuladores, sin necesidad de que el usuario abandone la aplicación o lea PDFs externos.
+
+   **Explicación Detallada de Implementación:**
+   - **Navegación Reactiva (Single Page Routing interno):** La Wiki no recarga la página. Utiliza un menú lateral (`Sidebar`) anclado a la variable de estado reactivo `activeSection`. Esto permite alternar de forma instantánea entre cuatro módulos de aprendizaje intensivo: Cinemática 1D, Sandbox 2D (Conceptos base), Herramientas de Construcción y Dinámica Aplicada.
+   - **Renderizado Matemático Exacto (KaTeX):** A diferencia de un texto estático común, la Wiki integra el motor tipográfico KaTeX. Mediante el método `m(expr)`, el código fuente de Vue inyecta secuencias puras de LaTeX (ej: `\omega`, `m/s^2`) directamente sobre el DOM HTML. El resultado visual son símbolos matemáticos, fracciones y variables procesadas al instante con la misma fidelidad que un artículo académico.
+   - **Inyección de UI/UX Moderna ("Glassmorphism"):** La maquetación de la Wiki utiliza fondos con `backdrop-blur`, gradientes direccionales transparentes (Tailwind) e íconos flotantes. Las tarjetas informativas cuentan con micro-animaciones (`hover:-translate-y-1`) que otorgan a la lectura una sensación de modernidad y dinamismo, muy alejada de las documentaciones estáticas clásicas. Además, responde automáticamente a las variables del `useTheme.js` para mantener una estética excelente sin importar si el usuario lee la wiki de día (Modo Claro) o de noche (Modo Oscuro).
+   - **Base Educativa:** Cada herramienta del simulador dinámico está documentada aquí, con explicaciones sobre cómo usar herramientas de dos pasos (como las Poleas) y tips avanzados para dominar el motor físico (como sugerir construir los puentes estando siempre en pausa).
+
+4. **Página de Bienvenida y Presentación:**
+   - El proyecto cuenta con una `HomePage.vue` que funge como carta de presentación (Hero section).
+5. **Sistema de Temas (Claro / Oscuro) y SEO:**
+   - Se implementó un composable dedicado (`useTheme.js`) que maneja el ciclo de vida del modo oscuro. Este cambia las clases de Tailwind CSS en la raíz del documento, garantizando una estética "Glassmorphism" coherente en paneles oscuros (dark:bg-gray-900) y claros (bg-white/80).
+   - A nivel estructural, se inyectaron etiquetas SEO esenciales y la declaración de canonicalidad hacia la página de la Universidad en el archivo base `index.html`.
 
 ---
 

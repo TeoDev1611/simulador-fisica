@@ -1,142 +1,86 @@
-# Estado del proyecto — Laboratorio de Simulación ESPE
+# Simulador Cinemático y Dinámico V1 — Laboratorio de Simulación ESPE
 
-## Qué es esto
+Este proyecto es una aplicación web interactiva desarrollada para la enseñanza y experimentación de conceptos de **Cinemática 1D** y **Dinámica 2D**. Está diseñado con un enfoque moderno, responsivo y orientado a la usabilidad.
 
-Una app Vue 3 (`<script setup>`) con dos simuladores en pestañas:
+## Características Principales
 
-1. **Cinemática 1D** — simulador original del usuario (ecuaciones con LaTeX/KaTeX,
-   gráficas con Chart.js, teclado virtual). No lo hemos tocado en lógica, solo se
-   le quitó su `<header>` propio para vivir dentro del shell compartido.
-2. **Sandbox Físico 2D** — motor de físicas 2D interactivo construido con
-   **Planck.js** (el sucesor mantenido de Box2D/planck-js) + `<canvas>`.
-   Es la parte donde ha pasado casi todo el trabajo reciente.
+1. **Simulador Cinemático 1D:** 
+   - Ingreso de ecuaciones matemáticas de posición en tiempo real (`x(t)`).
+   - Derivación analítica automática para obtener la velocidad (`v(t)`) y la aceleración (`a(t)`).
+   - Renderizado tipográfico preciso utilizando LaTeX (KaTeX).
+   - Gráficas sincronizadas e interactivas generadas con Chart.js.
+   - Pista de simulación interactiva.
+2. **Sandbox Físico 2D (Newton Lab):** 
+   - Motor de físicas 2D realista construido sobre **Planck.js** (basado en Box2D).
+   - Herramientas de construcción libres: cajas, terrenos poligonales, anclajes, cuerdas, poleas, resortes y fuerzas constantes.
+   - Modificación en caliente de propiedades físicas como masa, fricción, coeficientes elásticos (k) y amortiguamiento, calculando todo 60 veces por segundo.
+3. **Manual / Wiki Integrado:** Documentación interactiva in-app para que el usuario aprenda a utilizar cada módulo.
+4. **Modo Claro / Oscuro:** Soporte completo de temas visuales mediante `darkMode: 'class'` de Tailwind CSS, con un diseño "Glassmorphism" en todos los componentes.
 
-Stack: Vue 3 + Vite + Tailwind. Sin backend, todo corre en el navegador.
+## Estructura Actual del Proyecto
 
-## Estructura de archivos
+El proyecto ha sido refactorizado en componentes modulares altamente desacoplados:
 
-```
+```text
 src/
-├── App.vue                          # shell: header ESPE + nav de pestañas
-├── main.js / style.css              # boilerplate, sin lógica relevante
+├── App.vue                          # Shell principal: Navbar ESPE + control de temas
+├── main.js / style.css              # Entrypoint y estilos globales de Tailwind
+├── composables/
+│   ├── usePlanckWorld.js            # Motor lógico de físicas 2D (Planck.js). Sin UI.
+│   └── useTheme.js                  # Lógica de cambio entre Modo Claro y Oscuro
 ├── components/
-│   ├── EspeLogo.vue                 # logo propio (NO es el escudo oficial, ver abajo)
-│   ├── KinematicsSimulator.vue      # simulador 1D original, intacto
-│   └── physics/
-│       ├── PhysicsSandbox2D.vue     # ORQUESTADOR: dueño del bucle de animación
-│       ├── PhysicsCanvas.vue        # dibuja todo en <canvas>, sin lógica física
-│       ├── PhysicsControls.vue      # panel izquierdo: herramientas + ajustes
-│       └── PhysicsDataPanel.vue     # panel de solo-lectura con datos en vivo
-└── composables/
-    └── usePlanckWorld.js            # TODA la física vive aquí. Sin DOM, sin Vue-UI.
+│   ├── EspeLogo.vue                 # Logotipo institucional
+│   ├── HomePage.vue                 # Página de bienvenida (Hero section)
+│   ├── WikiPage.vue                 # Manual interactivo con soporte KaTeX
+│   ├── MathKeyboard.vue             # Teclado virtual matemático
+│   ├── KinematicsSimulator.vue      # Orquestador del simulador 1D
+│   ├── kinematics/                  # Submódulo: Cinemática 1D
+│   │   ├── ChartsPanel.vue          # Lógica visual de gráficos Chart.js
+│   │   ├── ResultsCards.vue         # Tarjetas de lectura de resultados instantáneos
+│   │   └── Track1D.vue              # Pista visual interactiva
+│   └── physics/                     # Submódulo: Sandbox Dinámico 2D
+│       ├── PhysicsSandbox2D.vue     # Orquestador: Maneja el bucle de animación y eventos
+│       ├── PhysicsCanvas.vue        # Renderizado visual en HTML5 <canvas>
+│       ├── ContextPanel.vue         # Panel lateral dinámico de propiedades (masa, resortes...)
+│       ├── ToolRail.vue             # Barra de herramientas de construcción interactiva
+│       └── PhysicsDataPanel.vue     # Panel de lectura de telemetría (fuerzas, velocidad angular)
 ```
 
-**Regla de oro de la arquitectura:** `usePlanckWorld.js` no sabe que existe un
-`<canvas>`. `PhysicsCanvas.vue` no sabe nada de física (solo recibe arrays de
-datos ya calculados y los pinta). `PhysicsSandbox2D.vue` es el único que
-conecta ambos mundos: llama `step()` cada frame y luego `canvas.draw(...)`.
+## Arquitectura y Flujos
 
-## Cómo funciona el motor físico (`usePlanckWorld.js`)
+### 1. Desacoplamiento (Regla de Oro)
+La física y la representación visual están separadas: `usePlanckWorld.js` procesa los vectores matemáticos de los cuerpos y articulaciones usando `markRaw()` para no romper la librería con la reactividad profunda de Vue. `PhysicsSandbox2D.vue` funciona como puente: llama al `step()` del motor 60 veces por segundo y le ordena a `PhysicsCanvas.vue` que dibuje los nuevos arrays de datos.
 
-Expone un composable con: `bodies` (reactive array: cajas, terreno, anclajes) y
-`ropes` (reactive array: cuerdas, resortes, poleas). Todo objeto pesado de
-Planck (`body`, `fixture`, `joint`) se guarda con `markRaw()` para que Vue no
-intente hacerlo reactivo profundo (rompería la librería).
+### 2. Atajos de Teclado Globales (UX)
+Se han implementado accesos directos para agilizar el uso en computadoras:
+- **`Enter` o `Espacio`:** Alterna de forma global entre Reproducir (▶) y Pausar (⏸) el tiempo en el Sandbox 2D. En Cinemática 1D, `Enter` fuerza el cálculo de la ecuación y reproduce la animación.
+- **Teclas `1-8`:** Cambian inmediatamente la herramienta en el Sandbox 2D (Mover, Caja, Terreno, Cuerda, Resorte, Polea, Riel, Fuerza).
+- **`Retroceso` / `Suprimir` (`9`):** Elimina el objeto o anclaje seleccionado.
 
-Funciones clave:
-- `addBox`, `updateBoxMass` — masa se controla vía `density = masa/área` +
-  `resetMassData()` para cambiarla **en caliente** sin recrear el cuerpo.
-- `setGroundPath(points, friction)` — el terreno **ya no es una línea recta con
-  ángulo**: es una `Chain` (polilínea) de Planck. Se dibuja a mano con la
-  herramienta ✏️ en el canvas.
-- `addAnchor(x, y)` — crea un punto fijo en el mundo (cuerpo estático invisible
-  salvo por un pin amarillo). Sirve para que cuerda/resorte/polea funcionen
-  colgando de **una sola caja**, no forzosamente dos.
-- `addRope` / `addSpring` / `addPulley` — los tres son básicamente
-  `DistanceJoint` (cuerda = rígida, resorte = con `frequencyHz`/`dampingRatio`)
-  o `PulleyJoint`. `setSpringStiffness(id, freq, damping)` cambia la constante
-  k **en caliente**.
-- `setAppliedForce(id, {enabled, magnitude, angleDeg})` — fuerza externa
-  continua aplicada cada frame vía `applyForceToCenter`.
-  `applyImpulse(id, magnitude, angleDeg)` — golpe instantáneo, una sola vez.
-- `queryPoint`, `startMouseDrag/updateMouseDrag/stopMouseDrag` — soportan
-  arrastrar cajas con el mouse usando un `MouseJoint` (patrón estándar de
-  Box2D con un "ground body" auxiliar).
-- `step(dt)` — orden importante: aplica fuerzas externas → `world.step()` →
-  sincroniza posiciones reactivas → calcula Fuerza Normal y Tensión.
+### 3. SEO Básico y Despliegue
+El proyecto cuenta con las etiquetas de optimización y meta descripciones en su archivo `index.html` (apuntando de forma canónica a la universidad). 
+No cuenta con backend ni base de datos, toda la simulación se ejecuta directamente en el navegador del cliente (Client-Side). 
 
-### Detalles físicos no obvios (ya verificados en ejecución real, no solo leídos en la doc)
+## Cómo Instalar y Ejecutar en Local
 
-- **Fuerza Normal** no es un dato nativo de Planck (es un solver de impulsos).
-  Se reconstruye como `Σ(normalImpulse de contactos activos) / dt`. Se validó
-  que para una caja en reposo da `N ≈ m·g`.
-- **Tensión** sí es nativa: `joint.getReactionForce(1/dt)`.
-- **Bug real que ya está resuelto:** Planck "duerme" los cuerpos en reposo por
-  optimización. Si inclinas/mueves el terreno o creas un joint nuevo mientras
-  el cuerpo está dormido, no reacciona o incluso puede tronar
-  `getReactionForce`. Por eso casi cada función de edición en caliente termina
-  con `body.setAwake(true)` sobre los cuerpos afectados. Si alguien agrega una
-  función nueva que modifica algo en caliente, **debe acordarse de este
-  patrón** o volverá el bug.
-
-## Cómo funciona la interacción (`PhysicsSandbox2D.vue`)
-
-Hay una única variable `activeTool` que decide qué hace el click/arrastre en
-el canvas: `drag | box | ground | rope | spring | pulley | force | delete`.
-El flujo pointer down/move/up vive todo en este archivo (`handleCanvasDown/
-Move/Up`), enruta según `activeTool`, y llama a las funciones del composable.
-
-Puntos importantes:
-- Herramienta **`ground`**: arrastrar acumula puntos en `groundDrawPoints`
-  (con un umbral de distancia para no saturar) y al soltar llama
-  `setGroundPath`.
-- Herramienta **`force`**: arrastrar desde una caja — la distancia arrastrada
-  define la magnitud (8 N por metro) y la dirección define el ángulo.
-- Herramientas **`rope/spring/pulley`**: si sueltas sobre una caja, conecta
-  ambas; si sueltas sobre lienzo vacío, crea un `addAnchor` ahí mismo.
-- El bucle `requestAnimationFrame` vive en `loop()`, con paso fijo `1/60` para
-  estabilidad numérica (no usa el `dt` variable del navegador).
-- Play/Pausa/Reiniciar están en una barra flotante **dentro** del contenedor
-  del canvas (no solo en el panel lateral), a pedido explícito del usuario.
-
-## Identidad visual
-
-- Paleta: verde institucional (`emerald-*`) para toda la UI de chrome
-  (títulos, botones, acentos). Los colores **funcionales** del canvas NO se
-  tocaron porque llevan significado físico: rojo = peso, amarillo = tensión,
-  morado = resorte, naranja = fuerza aplicada.
-- `EspeLogo.vue` es un escudo geométrico **propio**, no el escudo oficial de
-  la universidad (ese tiene derechos de autor y no se puede reproducir). El
-  archivo trae instrucciones comentadas para reemplazarlo por el PNG oficial
-  si el usuario lo consigue (`src/assets/logo-espe.png`).
-
-## Cómo instalar / correr
+El gestor de paquetes recomendado es `pnpm`, aunque `npm` también funciona.
 
 ```bash
-npm install        # o pnpm install — el usuario usa pnpm
-npm install planck # dependencia añadida para el sandbox físico
-npm run dev
+# 1. Instalar dependencias
+pnpm install
+
+# 2. Levantar servidor de desarrollo
+pnpm run dev
+
+# 3. Empaquetar para producción
+pnpm run build
 ```
 
-⚠️ Ojo con un error real que ya ocurrió: el usuario una vez instaló **`plank`**
-(sin la "c") en vez de **`planck`** — son paquetes distintos. Si Vite tira
-`Failed to resolve import "planck"`, lo primero es revisar el nombre exacto
-en `package.json`.
+*(Nota de dependencias clave: `vue`, `vue-router` [no usado, ruteo por estado], `planck`, `mathjs`, `chart.js`, `katex`, `tailwindcss`).*
 
-## Qué NO se ha hecho / posibles siguientes pasos
+## Próximos Pasos (Deuda Técnica / Backlog)
 
-- No hay guardado/carga de escenas (todo se pierde al recargar la página).
-- No hay deshacer/rehacer.
-- El terreno dibujado a mano (`Chain`) reemplaza el anterior por completo
-  cada vez que se dibuja uno nuevo (no se pueden tener dos terrenos separados
-  a la vez).
-- Los anclajes (`kind: 'anchor'`) no se pueden borrar individualmente desde la
-  UI todavía (sí se limpian con "Reiniciar" o si se borra la caja que los usa,
-  vía `removeBody` → limpia joints asociados, pero el anclaje en sí queda
-  huérfano en `bodies` — es una fuga menor pendiente de limpiar).
-- No hay colisión entre cajas y el "preview" de fuerza/junta antes de soltar
-  el mouse (solo se ve la línea guía, no un cálculo en vivo).
-- Todo el estado de validación de este proyecto se hizo corriendo Planck.js
-  real en Node (no solo leyendo su documentación/tipos), así que los datos
-  físicos (masa, tensión, fuerza normal) están confirmados correctos, no solo
-  "parecen correctos".
+- **Persistencia de Escenas:** Actualmente no es posible guardar o exportar los mapas del Sandbox para cargarlos después.
+- **Historial de Acciones (Ctrl+Z):** No se cuenta con sistema de deshacer/rehacer.
+- **Mejora del Terreno (Chain):** Actualmente dibujar un nuevo terreno borra y reemplaza por completo el anterior. Podría ampliarse para soportar múltiples barreras terrestres simultáneas.
+- **Colisión de previews:** Las herramientas de unión y creación se previsualizan mediante líneas, pero no detectan intersección en vivo antes de soltar el click.

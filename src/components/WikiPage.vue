@@ -249,97 +249,353 @@ const sections = [
             [Suprimir/Retroceso]: Borrar objeto.
           </p>
 
-          <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div class="space-y-8">
+            <!-- HERRAMIENTA 1: MOVER Y CAJAS -->
             <div
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1"
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <span>✋</span> Mover y Modificar
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                La herramienta principal. Arrastra objetos para moverlos. Haz clic en una caja para abrir su panel de
-                propiedades, donde puedes definir con precisión numérica:
-              </p>
-              <ul class="text-xs text-gray-600 dark:text-gray-500 list-disc list-inside space-y-1">
-                <li><strong>Masa:</strong> Afecta la inercia y gravedad.</li>
-                <li><strong>Fricción:</strong> Rugosidad del material.</li>
-                <li>
-                  <strong>Ángulo, Ancho, Alto:</strong> Modifican la geometría. La densidad se ajusta sola para mantener
-                  la masa.
-                </li>
-              </ul>
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>✋ / 📦</span> Mover, Propiedades y Cajas
+                </h3>
+                <div class="flex gap-2">
+                  <span
+                    class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                    >Atajos: 1 y 2</span
+                  >
+                </div>
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Usa la tecla <strong>2</strong> para soltar bloques de madera sobre el lienzo. Usa la tecla
+                  <strong>1</strong> para arrastrarlos con el ratón. Al dar clic en un bloque con la herramienta Mover,
+                  se abre el <strong>Panel Derecho</strong> de propiedades.
+                </p>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  En el panel lateral interactúas directamente con las <strong>Leyes de Newton</strong>:
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Masa (<span v-html="m('m')"></span>):</strong> Modificarla altera la inercia del cuerpo. El
+                    simulador recalcula internamente la densidad (<span v-html="m('\\rho')"></span>) para mantener el
+                    volumen físico intacto.
+                  </li>
+                  <li>
+                    <strong>Fricción (<span v-html="m('\\mu')"></span>):</strong> Controla el coeficiente de roce. Si lo
+                    subes al máximo, las cajas no resbalarán en planos inclinados.
+                  </li>
+                  <li><strong>Restitución:</strong> El "rebote" (elasticidad) de las colisiones.</li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Puedes cambiar la geometría (ancho y alto) en caliente; el motor físico empujará
+                  instantáneamente cualquier objeto que se superponga (resolución de interpenetración).
+                </p>
+              </div>
             </div>
 
+            <!-- HERRAMIENTA 3: TERRENO -->
             <div
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1"
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <span>✏️</span> Dibujar Terreno
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Crea suelos estáticos. Puedes trazar un piso <strong>Libre</strong> arrastrando por la pantalla, o
-                cambiar al modo <strong>Recto 📐</strong> para crear un plano inclinado exacto definiendo el ángulo
-                numéricamente.
-              </p>
-              <p class="text-xs text-gray-600 dark:text-gray-500">
-                Haz clic en un terreno ya dibujado (con la herramienta Mover) para cambiarle su fricción independiente.
-              </p>
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>✏️</span> Terrenos y Planos Inclinados
+                </h3>
+                <span
+                  class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                  >Atajo: 3</span
+                >
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Arrastra el ratón libremente por el fondo para esculpir montañas de colisión. Alterna al
+                  <strong>Modo Recto</strong> y escribe un ángulo numérico exacto para generar rampas perfectas.
+                </p>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  El terreno funciona como un <strong>Cuerpo Estático (Static Body)</strong> de masa infinita: nunca se
+                  moverá, sin importar la fuerza de los impactos.
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Plano Inclinado:</strong> Ideal para experimentar con la descomposición del peso: Fuerza
+                    Normal (<span v-html="m('N = m \\cdot g \\cdot \\cos(\\theta)')"></span>) y Fuerza Tangencial (<span
+                      v-html="m('P_t = m \\cdot g \\cdot \\sin(\\theta)')"
+                    ></span
+                    >).
+                  </li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Con la herramienta Mover (1), da clic sobre el terreno dibujado. Podrás editar su coeficiente
+                  de fricción específico en el panel derecho (hielo vs. asfalto).
+                </p>
+              </div>
             </div>
 
+            <!-- HERRAMIENTA 4: CUERDAS -->
             <div
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1"
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <span>〰️</span> Cuerdas y Resortes
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Arrastra desde una caja hasta otra para unirlas. Si sueltas el ratón en el aire vacío, se creará un
-                punto de anclaje <strong>Fijo (marcado en amarillo)</strong>.
-              </p>
-              <ul class="text-xs text-gray-600 dark:text-gray-500 list-disc list-inside space-y-1">
-                <li>
-                  <strong>Cuerdas:</strong> Mantienen una distancia máxima estricta. Verás la flecha roja de
-                  <em>Tensión</em> si la cuerda está tensa, y desaparecerá si la cuerda se afloja.
-                </li>
-                <li>
-                  <strong>Resortes:</strong> Permiten oscilación libre (Ley de Hooke). Desde el panel de propiedades
-                  puedes afinar su Frecuencia elástica (<span v-html="m('k')"></span>) y su Amortiguamiento para simular
-                  resortes de coche, gomas elásticas, etc.
-                </li>
-              </ul>
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>⛓️</span> Cuerdas Rígidas
+                </h3>
+                <span
+                  class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                  >Atajo: 4</span
+                >
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Arrastra desde el centro de una caja hasta otra para unirlas permanentemente con una cadena
+                  inextensible. Si sueltas en el vacío, se anclará al cielo/fondo creando un péndulo.
+                </p>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  En física algorítmica, esto se denomina un <strong>Distance Joint</strong> (Restricción de Distancia).
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Tensión Dinámica:</strong> Mientras la distancia entre cuerpos intente ser mayor a la
+                    longitud de la cuerda, el motor ejercerá una fuerza de reacción instantánea. Visualmente, verás una
+                    <strong>flecha roja (Vector de Tensión)</strong> a lo largo de la cuerda.
+                  </li>
+                  <li>
+                    Si los objetos se acercan, la cuerda se "afloja" y no ejerce fuerza, desapareciendo la flecha roja.
+                  </li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Usa Pausa (Espacio) antes de colocar cuerdas. Así evitarás que las cajas colapsen mientras las
+                  conectas.
+                </p>
+              </div>
             </div>
 
+            <!-- HERRAMIENTA 5: RESORTES -->
             <div
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1"
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <span>🎡</span> Poleas (Flujo de 2 pasos)
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400 mb-3">
-                Para crear una polea real (donde el cable de un lado tira del otro sobre una misma rueda):
-              </p>
-              <ol class="text-xs text-gray-600 dark:text-gray-500 list-decimal list-inside space-y-1">
-                <li>
-                  Arrastra desde la Caja A hasta la esquina (por ejemplo, de un acantilado). Esto crea la
-                  <strong>rueda</strong> (punto amarillo).
-                </li>
-                <li>
-                  Arrastra desde la Caja B y suelta <strong>exactamente sobre la rueda amarilla</strong> para cerrar el
-                  sistema.
-                </li>
-              </ol>
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>〰️</span> Resortes Elásticos
+                </h3>
+                <span
+                  class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                  >Atajo: 5</span
+                >
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Arrastra de caja a caja, o de caja a vacío. Aparecerá una banda morada ondulada. Selecciona el resorte
+                  con la herramienta Mover (1) para abrir sus ajustes avanzados.
+                </p>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  Regido enteramente por la <strong>Ley de Hooke Generalizada</strong>
+                  <span v-html="m('F = -k \\cdot x - c \\cdot v')"></span>. En el panel puedes modificar:
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Frecuencia (Hz) - Constante k:</strong> Rigidez. Un valor alto (ej: 10 Hz) crea un muelle
+                    tenso y rápido; un valor bajo (1 Hz) simula una liga elástica suave.
+                  </li>
+                  <li>
+                    <strong>Amortiguamiento (<span v-html="m('c')"></span>):</strong> Disipa la energía estiramiento
+                    tras estiramiento, forzando al sistema a estabilizarse.
+                  </li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Arma un bloque colgado de un resorte. Abre el Panel de Telemetría (inferior izquierdo) y mira
+                  cómo las gráficas de Velocidad Lineal Y trazan senoides perfectas perdiendo amplitud.
+                </p>
+              </div>
             </div>
 
+            <!-- HERRAMIENTA 6: POLEAS -->
             <div
-              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group md:col-span-2 hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300 hover:-translate-y-1"
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
             >
-              <h3 class="text-lg font-bold text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <span>⭕</span> Riel Circular (Collar)
-              </h3>
-              <p class="text-sm text-gray-600 dark:text-gray-400">
-                Restringe el movimiento de una caja a una trayectoria circular perfecta. Arrastra desde la caja hasta el
-                centro deseado. Útil para simular un péndulo estricto o una cuenta deslizando por un alambre curvo.
-              </p>
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>🎡</span> Poleas Ideales
+                </h3>
+                <span
+                  class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                  >Atajo: 6</span
+                >
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express (Dos Pasos)
+                </h4>
+                <ol class="text-sm text-gray-600 dark:text-gray-400 list-decimal list-inside space-y-1">
+                  <li>
+                    Arrastra desde la <strong>Caja A</strong> hasta la pared/techo. Esto anclará la rueda (pin
+                    amarillo).
+                  </li>
+                  <li>
+                    Arrastra desde la <strong>Caja B</strong> y
+                    <strong>suelta exactamente sobre el pin amarillo</strong>. ¡El sistema de polea se cerrará!
+                  </li>
+                </ol>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  La polea ideal asume una cuerda de longitud constante <span v-html="m('L = l_1 + l_2')"></span> sin
+                  fricción interna en la rueda.
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Tensión Uniforme:</strong> La magnitud de la tensión (que verás dibujada como flechas rojas)
+                    es matemáticamente idéntica en ambos segmentos del cable.
+                  </li>
+                  <li>
+                    <strong>Máquina de Atwood:</strong> Si conectas dos masas diferentes y dejas caer el sistema, la
+                    telemetría registrará una aceleración neta proporcional a
+                    <span v-html="m('\\frac{m_1 - m_2}{m_1 + m_2} \\cdot g')"></span>.
+                  </li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Para borrar una polea o una cuerda mal hecha, simplemente presiona el atajo
+                  <strong>Suprimir/Retroceso</strong> mientras arrastras, o usa la herramienta Mover y luego bórrala.
+                </p>
+              </div>
+            </div>
+
+            <!-- HERRAMIENTA 7: RIEL -->
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
+            >
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <span>⭕</span> Riel de Movimiento Circular
+                </h3>
+                <span
+                  class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
+                  >Atajo: 7</span
+                >
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-500">⚡</span> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Arrastra desde una caja hasta un punto vacío. Se dibujará una órbita circular transparente. La caja
+                  quedará confinada a deslizarse permanentemente por el perímetro de dicho círculo.
+                </p>
+              </div>
+
+              <div
+                class="bg-emerald-50 dark:bg-emerald-900/10 p-4 rounded-xl border border-emerald-100 dark:border-emerald-900/30"
+              >
+                <h4
+                  class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                </h4>
+                <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
+                  Es una variante extrema de restricción geométrica donde el radio de curvatura
+                  <span v-html="m('R')"></span> es absolutamente inmutable.
+                </p>
+                <ul class="text-xs text-gray-600 dark:text-gray-400 list-disc list-inside space-y-1 ml-2">
+                  <li>
+                    <strong>Aceleración Centrípeta:</strong> El riel absorbe toda la inercia radial de la caja,
+                    garantizando que el bloque tenga componentes angulares (<span v-html="m('\\omega')"></span>)
+                    perfectas.
+                  </li>
+                </ul>
+                <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
+                  💡 Tip: Excelente para demostrar que, incluso en el punto más bajo de un péndulo, la aceleración no es
+                  cero debido al empuje centrípeto.
+                </p>
+              </div>
             </div>
           </div>
         </section>
