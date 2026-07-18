@@ -1,0 +1,25 @@
+{
+    "name": "espe-simulador-cinematico",
+    "version": "1.0.0",
+    "private": true,
+    "type": "module",
+    "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+    },
+    "dependencies": {
+        "chart.js": "^4.4.2",
+        "katex": "^0.17.0",
+        "mathjs": "^12.4.1",
+        "planck": "^1.5.0",
+        "vue": "^3.4.21"
+    },
+    "devDependencies": {
+        "@vitejs/plugin-vue": "^5.0.4",
+        "autoprefixer": "^10.4.19",
+        "postcss": "^8.4.38",
+        "tailwindcss": "^3.4.3",
+        "vite": "^5.2.8"
+    }
+}
