@@ -9,11 +9,32 @@ import PhysicsDataPanel from './PhysicsDataPanel.vue'
 
 const GRAVITY = 9.81
 const {
-  bodies, ropes, addBox, updateBoxMass, updateBoxFriction, setAppliedForce, applyImpulse,
-  addGround, setGroundFriction, getGroundIds, addAnchor, moveAnchor,
-  addRope, addSpring, setSpringStiffness, addPulley, addCircularTrack,
-  removeBody, reset, step,
-  queryPoint, startMouseDrag, updateMouseDrag, stopMouseDrag
+  bodies,
+  ropes,
+  addBox,
+  updateBoxMass,
+  updateBoxFriction,
+  updateBoxAngle,
+  updateBoxDimensions,
+  setAppliedForce,
+  applyImpulse,
+  addGround,
+  setGroundFriction,
+  getGroundIds,
+  addAnchor,
+  moveAnchor,
+  addRope,
+  addSpring,
+  setSpringStiffness,
+  addPulley,
+  addCircularTrack,
+  removeBody,
+  reset,
+  step,
+  queryPoint,
+  startMouseDrag,
+  updateMouseDrag,
+  stopMouseDrag
 } = usePlanckWorld(GRAVITY)
 
 const canvasRef = ref(null)
@@ -29,21 +50,25 @@ const boxEntries = computed(() => bodies.filter((b) => b.kind === 'box'))
 
 const BOX_COLORS = ['#34d399', '#60a5fa', '#f472b6', '#fb923c', '#a78bfa', '#2dd4bf']
 let colorIdx = 0
-function nextColor() { return BOX_COLORS[colorIdx++ % BOX_COLORS.length] }
+function nextColor() {
+  return BOX_COLORS[colorIdx++ % BOX_COLORS.length]
+}
 
 const groundFriction = ref(0.5)
 const groundMode = ref('free') // 'free' | 'straight'
-const groundAngleDeg = ref(0)  // solo se usa en modo 'straight'
+const groundAngleDeg = ref(0) // solo se usa en modo 'straight'
 const springFreq = ref(2.0)
 const springDamping = ref(0.1)
 
 const selectedBoxId = ref(null)
-const selectedBox = computed(() => boxEntries.value.find(b => b.id === selectedBoxId.value) || null)
+const selectedBox = computed(() => boxEntries.value.find((b) => b.id === selectedBoxId.value) || null)
 
 // Suelo seleccionado con la herramienta "Mover/Seleccionar" (para editar su
 // fricción individual, ahora que puede haber varios trozos de suelo).
 const selectedGroundId = ref(null)
-const selectedGround = computed(() => bodies.find(b => b.id === selectedGroundId.value && b.kind === 'ground') || null)
+const selectedGround = computed(
+  () => bodies.find((b) => b.id === selectedGroundId.value && b.kind === 'ground') || null
+)
 
 // Estado de "polea en 2 pasos": el primer cable define dónde queda la rueda
 // (un anclaje); el segundo cable debe soltarse sobre esa misma rueda para
@@ -61,7 +86,13 @@ const groundLiveInfo = computed(() => {
 })
 
 function buildInitialScene() {
-  addGround([{ x: -14, y: -2 }, { x: 14, y: -2 }], groundFriction.value)
+  addGround(
+    [
+      { x: -14, y: -2 },
+      { x: 14, y: -2 }
+    ],
+    groundFriction.value
+  )
   addBox({ x: -3, y: 2, width: 1, height: 1, mass: 2, friction: 0.3, color: nextColor(), label: 'Caja 1' })
   addBox({ x: 0, y: 4, width: 1, height: 1, mass: 1.5, friction: 0.3, color: nextColor(), label: 'Caja 2' })
 }
@@ -72,21 +103,38 @@ function buildInitialScene() {
 watch(activeTool, (tool) => {
   if (tool !== 'pulley') pendingPulley.value = null
   if (tool !== 'drag') {
-    if (isDragging) { stopMouseDrag(); isDragging = false }
+    if (isDragging) {
+      stopMouseDrag()
+      isDragging = false
+    }
     isDraggingAnchor = false
     draggedAnchorId = null
   }
 })
 
+watch(
+  () => bodies.map((b) => b.id),
+  (newIds) => {
+    if (selectedBoxId.value && !newIds.includes(selectedBoxId.value)) {
+      selectedBoxId.value = null
+    }
+    if (selectedGroundId.value && !newIds.includes(selectedGroundId.value)) {
+      selectedGroundId.value = null
+    }
+  }
+)
+
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    containerRef.value?.requestFullscreen().catch(err => console.error(err))
+    containerRef.value?.requestFullscreen().catch((err) => console.error(err))
   } else {
     document.exitFullscreen()
   }
 }
 
-function handleToggleRun() { isRunning.value = !isRunning.value }
+function handleToggleRun() {
+  isRunning.value = !isRunning.value
+}
 function handleReset() {
   reset()
   colorIdx = 0
@@ -106,8 +154,12 @@ function handleUpdateSelectedGroundFriction(v) {
   if (!selectedGroundId.value) return
   setGroundFriction(selectedGroundId.value, v)
 }
-function handleUpdateGroundMode(mode) { groundMode.value = mode }
-function handleUpdateGroundAngle(deg) { groundAngleDeg.value = deg }
+function handleUpdateGroundMode(mode) {
+  groundMode.value = mode
+}
+function handleUpdateGroundAngle(deg) {
+  groundAngleDeg.value = deg
+}
 
 function handleSpringPreset(freq) {
   springFreq.value = freq
@@ -134,11 +186,15 @@ let jointStartBodyId = null
 const previewLine = ref(null)
 
 let forceDragBodyId = null
-let forceDragOrigin = null 
+let forceDragOrigin = null
 
-const groundDrawPoints = ref(null) 
+const groundDrawPoints = ref(null)
 
-function distSq(a, b) { const dx = a.x - b.x, dy = a.y - b.y; return dx * dx + dy * dy }
+function distSq(a, b) {
+  const dx = a.x - b.x,
+    dy = a.y - b.y
+  return dx * dx + dy * dy
+}
 
 function handleCanvasDown({ x, y }) {
   const bodyId = queryPoint(x, y)
@@ -147,13 +203,14 @@ function handleCanvasDown({ x, y }) {
     if (bodyId) {
       selectedBoxId.value = bodyId
       selectedGroundId.value = null
-      startMouseDrag(bodyId, x, y); isDragging = true
+      startMouseDrag(bodyId, x, y, !isRunning.value)
+      isDragging = true
     } else {
       // No hay caja bajo el cursor: revisa si hay un anclaje (ej. la rueda
       // de una polea) para poder arrastrarlo con precisión, o un suelo para
       // editar su fricción.
       const staticId = queryPoint(x, y, { includeStatic: true })
-      const entry = staticId ? bodies.find(b => b.id === staticId) : null
+      const entry = staticId ? bodies.find((b) => b.id === staticId) : null
       if (entry && entry.kind === 'anchor') {
         draggedAnchorId = staticId
         isDraggingAnchor = true
@@ -165,7 +222,16 @@ function handleCanvasDown({ x, y }) {
       }
     }
   } else if (activeTool.value === 'box') {
-    const id = addBox({ x, y, width: 1, height: 1, mass: 2, friction: 0.3, color: nextColor(), label: `Caja ${boxEntries.value.length + 1}` })
+    const id = addBox({
+      x,
+      y,
+      width: 1,
+      height: 1,
+      mass: 2,
+      friction: 0.3,
+      color: nextColor(),
+      label: `Caja ${boxEntries.value.length + 1}`
+    })
     selectedBoxId.value = id
   } else if (activeTool.value === 'delete') {
     // includeStatic: ahora "Borrar" también funciona sobre suelos y anclajes,
@@ -182,7 +248,7 @@ function handleCanvasDown({ x, y }) {
   } else if (activeTool.value === 'force') {
     if (bodyId) {
       selectedBoxId.value = bodyId
-      const b = bodies.find(bx => bx.id === bodyId)
+      const b = bodies.find((bx) => bx.id === bodyId)
       if (b) {
         forceDragBodyId = bodyId
         forceDragOrigin = { x: b.position.x, y: b.position.y }
@@ -192,13 +258,13 @@ function handleCanvasDown({ x, y }) {
   } else if (['rope', 'spring', 'pulley'].includes(activeTool.value)) {
     if (bodyId) {
       jointStartBodyId = bodyId
-      const b = bodies.find(bx => bx.id === bodyId)
+      const b = bodies.find((bx) => bx.id === bodyId)
       previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
     }
   } else if (activeTool.value === 'circular') {
     // El riel circular solo puede arrancar desde una caja (es la que quedará
     // ensartada en el aro); el otro extremo del arrastre será su centro.
-    const b = bodies.find(bx => bx.id === bodyId && bx.kind === 'box')
+    const b = bodies.find((bx) => bx.id === bodyId && bx.kind === 'box')
     if (b) {
       jointStartBodyId = bodyId
       previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
@@ -208,7 +274,7 @@ function handleCanvasDown({ x, y }) {
 
 function handleCanvasMove({ x, y }) {
   if (activeTool.value === 'drag' && isDragging) {
-    updateMouseDrag(x, y)
+    updateMouseDrag(x, y, !isRunning.value)
   } else if (activeTool.value === 'drag' && isDraggingAnchor && draggedAnchorId) {
     moveAnchor(draggedAnchorId, x, y)
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
@@ -249,7 +315,7 @@ function handleCanvasUp({ x, y }) {
   } else if (activeTool.value === 'force' && forceDragBodyId) {
     const dx = x - forceDragOrigin.x
     const dy = y - forceDragOrigin.y
-    const magnitude = Math.hypot(dx, dy) * 8 
+    const magnitude = Math.hypot(dx, dy) * 8
     const angleDeg = (Math.atan2(dy, dx) * 180) / Math.PI
     if (magnitude > 0.3) {
       setAppliedForce(forceDragBodyId, { enabled: true, magnitude, angleDeg })
@@ -262,13 +328,13 @@ function handleCanvasUp({ x, y }) {
     // separados: el primer cable define/reutiliza la rueda (un anclaje); el
     // segundo cable debe soltarse sobre ESA MISMA rueda para cerrar la polea.
     const endId = queryPoint(x, y, { includeStatic: true })
-    const endEntry = endId ? bodies.find(b => b.id === endId) : null
+    const endEntry = endId ? bodies.find((b) => b.id === endId) : null
 
     if (pendingPulley.value && endId === pendingPulley.value.wheelId) {
       addPulley(pendingPulley.value.idA, jointStartBodyId, pendingPulley.value.wheelId)
       pendingPulley.value = null
     } else {
-      const wheelId = (endEntry && endEntry.kind === 'anchor') ? endId : addAnchor(x, y)
+      const wheelId = endEntry && endEntry.kind === 'anchor' ? endId : addAnchor(x, y)
       pendingPulley.value = { idA: jointStartBodyId, wheelId }
     }
     jointStartBodyId = null
@@ -281,7 +347,8 @@ function handleCanvasUp({ x, y }) {
     if (endBodyId && endBodyId !== jointStartBodyId) {
       if (activeTool.value === 'rope') addRope(jointStartBodyId, endBodyId)
       else if (activeTool.value === 'circular') addCircularTrack(jointStartBodyId, endBodyId)
-      else if (activeTool.value === 'spring') addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
+      else if (activeTool.value === 'spring')
+        addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
     }
     jointStartBodyId = null
     previewLine.value = null
@@ -296,25 +363,55 @@ function loop() {
     if (isRunning.value) step(FIXED_DT)
     canvasRef.value?.draw(bodies, ropes, previewLine.value, groundDrawPoints.value, groundLiveInfo.value)
   } catch (err) {
-    console.error("[Sandbox] Error crítico recuperado en el bucle principal", err)
+    console.error('[Sandbox] Error crítico recuperado en el bucle principal', err)
   }
   rafId = requestAnimationFrame(loop)
+}
+
+function handleGlobalKeyDown(e) {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA' || e.target.isContentEditable) return
+
+  if (e.code === 'Space' || e.code === 'Enter') {
+    e.preventDefault()
+    handleToggleRun()
+  } else if (e.key === '1' || e.key.toLowerCase() === 'v') {
+    activeTool.value = 'drag'
+  } else if (e.key === '2' || e.key.toLowerCase() === 'b') {
+    activeTool.value = 'box'
+  } else if (e.key === '3' || e.key.toLowerCase() === 'g') {
+    activeTool.value = 'ground'
+  } else if (e.key === '4' || e.key.toLowerCase() === 'c') {
+    activeTool.value = 'rope'
+  } else if (e.key === '5' || e.key.toLowerCase() === 'r') {
+    activeTool.value = 'spring'
+  } else if (e.key === '6' || e.key.toLowerCase() === 'p') {
+    activeTool.value = 'pulley'
+  } else if (e.key === '7' || e.key.toLowerCase() === 't') {
+    activeTool.value = 'track'
+  } else if (e.key === '8' || e.key.toLowerCase() === 'f') {
+    activeTool.value = 'force'
+  } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '9') {
+    activeTool.value = 'delete'
+  }
 }
 
 onMounted(() => {
   buildInitialScene()
   rafId = requestAnimationFrame(loop)
+  window.addEventListener('keydown', handleGlobalKeyDown)
 })
-onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
+onBeforeUnmount(() => {
+  if (rafId) cancelAnimationFrame(rafId)
+  window.removeEventListener('keydown', handleGlobalKeyDown)
+})
 </script>
 
 <template>
   <div class="flex flex-col flex-1">
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-4 flex flex-col">
-
       <div
         ref="containerRef"
-        class="relative select-none flex-1 min-h-[560px] bg-gray-950 border border-gray-800 rounded-xl shadow-md overflow-hidden"
+        class="relative select-none flex-1 min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       >
         <PhysicsCanvas
           ref="canvasRef"
@@ -328,42 +425,60 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
           @canvas-up="handleCanvasUp"
         />
 
-        <div class="pointer-events-none absolute top-0 left-0 right-0 flex items-start justify-between p-3 gap-2 flex-wrap z-20">
-          <span class="pointer-events-auto text-[10px] font-mono bg-gray-950/90 backdrop-blur px-2 py-1.5 rounded-lg border border-gray-800 text-gray-400">
-            Herramienta: <span class="text-emerald-300 font-bold">{{ activeTool.toUpperCase() }}</span>
+        <div
+          class="pointer-events-none absolute top-0 left-0 right-0 flex items-start justify-between p-3 gap-2 flex-wrap z-20"
+        >
+          <span
+            class="pointer-events-auto text-[10px] font-mono bg-white/90 dark:bg-gray-950/90 backdrop-blur px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400"
+          >
+            Herramienta:
+            <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ activeTool.toUpperCase() }}</span>
             <template v-if="activeTool === 'ground' && groundLiveInfo">
-              &nbsp;·&nbsp;θ = <span class="text-emerald-300 font-bold">{{ groundLiveInfo.angleDeg.toFixed(1) }}°</span>
-              &nbsp;L = <span class="text-emerald-300 font-bold">{{ groundLiveInfo.length.toFixed(2) }} m</span>
+              &nbsp;·&nbsp;θ =
+              <span class="text-emerald-700 dark:text-emerald-300 font-bold"
+                >{{ groundLiveInfo.angleDeg.toFixed(1) }}°</span
+              >
+              &nbsp;L =
+              <span class="text-emerald-700 dark:text-emerald-300 font-bold"
+                >{{ groundLiveInfo.length.toFixed(2) }} m</span
+              >
             </template>
             <template v-if="activeTool === 'pulley' && pendingPulley">
-              &nbsp;·&nbsp;<span class="text-yellow-300 font-bold">Rueda lista — arrastra la 2ª caja hasta el punto amarillo</span>
+              &nbsp;·&nbsp;<span class="text-yellow-700 dark:text-yellow-300 font-bold"
+                >Rueda lista — arrastra la 2ª caja hasta el punto amarillo</span
+              >
             </template>
           </span>
           <div class="pointer-events-auto flex items-center gap-2">
             <button
-              type="button" @click="showWelcomeModal = true"
-              class="text-[11px] font-semibold tracking-wide px-3 py-1.5 rounded-lg border border-blue-800 bg-blue-950/80 text-blue-300 hover:bg-blue-900/80 shadow-lg transition-colors duration-150"
+              type="button"
+              @click="showWelcomeModal = true"
+              class="text-[11px] font-semibold tracking-wide px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-350/80 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-300/80 dark:bg-blue-900/80 shadow-lg transition-colors duration-150"
             >
               ℹ️ Ayuda
             </button>
             <button
-              type="button" @click="handleToggleRun"
+              type="button"
+              @click="handleToggleRun"
               class="text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg border shadow-lg transition-colors duration-150"
-              :class="isRunning
-                ? 'bg-yellow-700/90 border-yellow-600 text-yellow-100 hover:bg-yellow-700'
-                : 'bg-emerald-700/90 border-emerald-500 text-white hover:bg-emerald-600'"
+              :class="
+                isRunning
+                  ? 'bg-yellow-300/90 dark:bg-yellow-700/90 border-yellow-200 dark:border-yellow-600 text-yellow-100 hover:bg-yellow-300 dark:bg-yellow-700'
+                  : 'bg-emerald-300/90 dark:bg-emerald-700/90 border-emerald-800 dark:border-emerald-500 text-gray-900 dark:text-white hover:bg-emerald-200 dark:bg-emerald-600'
+              "
             >
               {{ isRunning ? '⏸ Pausar' : '▶ Reproducir' }}
             </button>
             <button
-              type="button" @click="handleReset"
-              class="text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg border border-red-800 bg-red-950/80 text-red-300 hover:bg-red-900/80 shadow-lg transition-colors duration-150"
+              type="button"
+              @click="handleReset"
+              class="text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 bg-red-350/80 dark:bg-red-950/80 text-red-700 dark:text-red-300 hover:bg-red-300/80 dark:bg-red-900/80 shadow-lg transition-colors duration-150"
             >
               ⟲ Reiniciar
             </button>
             <button
               @click="toggleFullscreen"
-              class="text-[10px] bg-gray-800/90 hover:bg-gray-700 text-gray-200 px-2 py-1.5 rounded-lg border border-gray-700 shadow-lg flex items-center gap-1 transition-colors"
+              class="text-[10px] bg-gray-200/90 dark:bg-gray-800/90 hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 shadow-lg flex items-center gap-1 transition-colors"
               title="Alternar Pantalla Completa"
             >
               ⛶
@@ -372,7 +487,7 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
         </div>
 
         <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-20">
-          <ToolRail :active-tool="activeTool" @select-tool="tool => activeTool = tool" />
+          <ToolRail :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" />
         </div>
 
         <div class="pointer-events-none absolute right-3 top-16 z-20">
@@ -391,6 +506,8 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
             :ropes-count="ropes.length"
             @update-box-mass="updateBoxMass"
             @update-box-friction="updateBoxFriction"
+            @update-box-angle="updateBoxAngle"
+            @update-box-dimensions="updateBoxDimensions"
             @update-ground-friction="handleUpdateGroundFriction"
             @update-selected-ground-friction="handleUpdateSelectedGroundFriction"
             @update-ground-mode="handleUpdateGroundMode"
@@ -402,7 +519,7 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
           />
         </div>
 
-        <div class="pointer-events-none absolute bottom-3 left-3 right-3 flex justify-center z-20">
+        <div class="pointer-events-none absolute bottom-3 left-3 z-20">
           <PhysicsDataPanel :boxes="boxEntries" :ropes="ropes" />
         </div>
 
@@ -414,58 +531,80 @@ onBeforeUnmount(() => { if (rafId) cancelAnimationFrame(rafId) })
           leave-from-class="opacity-100"
           leave-to-class="opacity-0"
         >
-          <div v-if="showWelcomeModal" class="absolute inset-0 z-50 flex items-center justify-center bg-gray-950/80 backdrop-blur-sm p-4">
-            <div class="bg-gray-900 border border-blue-800/60 rounded-2xl shadow-2xl max-w-xl w-full p-6 lg:p-7 max-h-[90vh] overflow-y-auto">
+          <div
+            v-if="showWelcomeModal"
+            class="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-md p-4"
+          >
+            <div
+              class="bg-gray-100/70 dark:bg-gray-900/70 backdrop-blur-2xl border border-blue-200/60 dark:border-blue-800/60 rounded-[2rem] shadow-lg dark:shadow-2xl max-w-xl w-full p-8 relative overflow-hidden"
+            >
+              <div
+                class="absolute inset-0 bg-gradient-to-br from-blue-300/20 dark:from-blue-900/20 to-transparent pointer-events-none"
+              ></div>
+              <div class="relative z-10">
+                <div class="flex items-center gap-3 mb-5 border-b border-gray-300 dark:border-gray-800 pb-4">
+                  <span class="text-3xl">🧲</span>
+                  <div>
+                    <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400">Newton Lab</h2>
+                    <p class="text-xs text-gray-600 dark:text-gray-400">Referencia rápida de herramientas</p>
+                  </div>
+                </div>
 
-              <div class="flex items-center gap-3 mb-5 border-b border-gray-800 pb-4">
-                <span class="text-3xl">🧲</span>
-                <div>
-                  <h2 class="text-xl font-bold text-blue-400">Newton Lab</h2>
-                  <p class="text-xs text-gray-400">Referencia rápida de herramientas</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700 dark:text-gray-300">
+                  <div class="flex gap-3">
+                    <span class="text-lg">✋</span>
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Mover / Seleccionar:</strong> Arrastra cajas
+                      libremente, o haz clic en una para ver/editar su masa en el panel derecho.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span class="text-lg">✏️</span>
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Dibujar Suelo:</strong> Modo Libre (a mano) o
+                      Recto (ángulo exacto, ideal para planos inclinados de un problema).
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span class="text-lg">〰️</span>
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Cuerdas y Resortes:</strong> Arrastra desde una
+                      caja hasta otra (o hacia el vacío para crear un anclaje fijo).
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span class="text-lg">⭕</span>
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Riel circular:</strong> Arrastra desde una caja
+                      hasta el centro deseado — queda ensartada girando a radio fijo, como un collar en un aro.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <span class="text-lg">➤</span>
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Fuerzas:</strong> Selecciona una caja y aplica
+                      fuerzas continuas o impulsos únicos configurando el vector resultante.
+                    </p>
+                  </div>
+                </div>
+
+                <p class="mt-5 text-[11px] text-gray-600 dark:text-gray-500 leading-relaxed">
+                  ¿Buscas el objetivo del laboratorio o sus ventajas? Puedes verlos en la pestaña
+                  <span class="text-gray-600 dark:text-gray-400 font-semibold">Inicio</span> del menú superior.
+                </p>
+
+                <div class="mt-6 flex justify-end">
+                  <button
+                    @click="showWelcomeModal = false"
+                    class="px-6 py-3 bg-gradient-to-r from-blue-300 dark:from-blue-700 to-blue-200 dark:to-blue-600 hover:from-blue-200 dark:from-blue-600 hover:to-blue-800 dark:to-blue-500 text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider rounded-xl shadow-[0_5px_15px_rgba(29,78,216,0.4)] transition-all duration-300 hover:scale-105"
+                  >
+                    Entendido
+                  </button>
                 </div>
               </div>
-
-              <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-300">
-                <div class="flex gap-3">
-                  <span class="text-lg">✋</span>
-                  <p><strong class="text-gray-100">Mover / Seleccionar:</strong> Arrastra cajas libremente, o haz clic en una para ver/editar su masa en el panel derecho.</p>
-                </div>
-                <div class="flex gap-3">
-                  <span class="text-lg">✏️</span>
-                  <p><strong class="text-gray-100">Dibujar Suelo:</strong> Modo Libre (a mano) o Recto (ángulo exacto, ideal para planos inclinados de un problema).</p>
-                </div>
-                <div class="flex gap-3">
-                  <span class="text-lg">〰️</span>
-                  <p><strong class="text-gray-100">Cuerdas y Resortes:</strong> Arrastra desde una caja hasta otra (o hacia el vacío para crear un anclaje fijo).</p>
-                </div>
-                <div class="flex gap-3">
-                  <span class="text-lg">⭕</span>
-                  <p><strong class="text-gray-100">Riel circular:</strong> Arrastra desde una caja hasta el centro deseado — queda ensartada girando a radio fijo, como un collar en un aro.</p>
-                </div>
-                <div class="flex gap-3">
-                  <span class="text-lg">➤</span>
-                  <p><strong class="text-gray-100">Fuerzas:</strong> Selecciona una caja y aplica fuerzas continuas o impulsos únicos configurando el vector resultante.</p>
-                </div>
-              </div>
-
-              <p class="mt-5 text-[11px] text-gray-500 leading-relaxed">
-                ¿Buscas el objetivo del laboratorio o sus ventajas? Puedes verlos en la pestaña
-                <span class="text-gray-400 font-semibold">Inicio</span> del menú superior.
-              </p>
-
-              <div class="mt-6 flex justify-end">
-                <button
-                  @click="showWelcomeModal = false"
-                  class="px-6 py-2.5 bg-blue-700 hover:bg-blue-600 text-white text-sm font-bold uppercase tracking-wider rounded-lg shadow-lg transition-colors"
-                >
-                  Entendido
-                </button>
-              </div>
-
             </div>
           </div>
         </Transition>
-
       </div>
     </main>
   </div>

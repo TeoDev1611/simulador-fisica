@@ -39,28 +39,33 @@ const iconPaths = {
 
 <template>
   <div
-    class="pointer-events-auto flex flex-col gap-1 bg-gray-950/90 backdrop-blur border border-gray-800 rounded-xl p-1.5 shadow-xl"
+    class="pointer-events-auto flex flex-col gap-1 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-xl p-1.5 shadow-md dark:shadow-xl"
   >
     <div class="group relative" v-for="t in tools" :key="t.id">
       <button
         type="button"
         @click="emit('select-tool', t.id)"
         class="w-10 h-10 flex items-center justify-center rounded-lg border transition-colors duration-150"
-        :class="activeTool === t.id
-          ? 'bg-emerald-700 border-emerald-500 text-white'
-          : 'bg-gray-900 border-gray-800 text-gray-300 hover:bg-gray-800 hover:border-gray-700'"
+        :class="
+          activeTool === t.id
+            ? 'bg-emerald-300 dark:bg-emerald-700 border-emerald-800 dark:border-emerald-500 text-gray-900 dark:text-white'
+            : 'bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:bg-gray-800 hover:border-gray-300 dark:border-gray-700'
+        "
       >
         <svg
-          viewBox="0 0 24 24" fill="none" stroke="currentColor"
-          stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"
-          class="w-5 h-5" v-html="iconPaths[t.id]"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          class="w-5 h-5"
+          v-html="iconPaths[t.id]"
         ></svg>
       </button>
       <!-- Tooltip: aparece a la derecha del rail, no empuja el layout -->
       <span
-        class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap
-               text-[11px] font-semibold bg-gray-900 border border-gray-700 text-gray-100 px-2 py-1 rounded-md
-               opacity-0 group-hover:opacity-100 transition-opacity duration-100 z-30 shadow-lg"
+        class="pointer-events-none absolute left-full top-1/2 -translate-y-1/2 ml-2 whitespace-nowrap text-[11px] font-semibold bg-gray-100 dark:bg-gray-900 border border-gray-300 dark:border-gray-700 text-gray-900 dark:text-gray-100 px-2 py-1 rounded-md opacity-0 group-hover:opacity-100 transition-opacity duration-100 z-30 shadow-lg"
       >
         {{ t.label }}
       </span>
