@@ -29,7 +29,10 @@ import {
   Disc,
   CircleDashed,
   ArrowUpToLine,
-  Trash2
+  Trash2,
+  Maximize,
+  EyeOff,
+  Play
 } from 'lucide-vue-next'
 
 function m(expr) {
@@ -263,8 +266,7 @@ const sections = [
                 <Radio class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Telemetría (Panel de Datos)
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                En la esquina inferior izquierda verás un pequeño panel translúcido: el
-                <strong>Centro de Telemetría</strong>.
+                En la esquina inferior izquierda puedes visualizar el <strong>Centro de Telemetría</strong>. Por defecto se encuentra oculto para darte un espacio de trabajo limpio, pero puedes activarlo en cualquier momento usando el botón de <strong>Estadísticas (<BarChart2 class="w-4 h-4 inline" />)</strong> en la barra superior.
               </p>
               <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <li>
@@ -298,6 +300,28 @@ const sections = [
                   análisis matemáticos del experimento.
                 </p>
               </div>
+            </div>
+
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
+            >
+              <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <Maximize class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Interfaz y Responsividad
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                El simulador está diseñado para darte el máximo espacio posible, especialmente en dispositivos móviles.
+              </p>
+              <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li>
+                  <strong>Forzado a Horizontal (Landscape):</strong> Si usas un celular, al darle al botón de Pantalla Completa (<Maximize class="w-4 h-4 inline" />) tu dispositivo rotará automáticamente a horizontal, dándote todo el ancho necesario para operar las herramientas cómodamente.
+                </li>
+                <li>
+                  <strong>Barra de Herramientas Deslizable:</strong> En pantallas pequeñas, la barra de herramientas inferior se vuelve deslizable de forma horizontal (scroll) para asegurar que todos los íconos quepan perfectamente sin dañar la vista del experimento.
+                </li>
+                <li>
+                  <strong>Ocultar Propiedades (<EyeOff class="w-4 h-4 inline" />):</strong> El panel de propiedades (donde cambias masas y ángulos) tiene un botón de "Ojo" en la esquina superior derecha. Tócalo para colapsar todo el panel en un diminuto círculo y liberar aún más pantalla.
+                </li>
+              </ul>
             </div>
 
             <div

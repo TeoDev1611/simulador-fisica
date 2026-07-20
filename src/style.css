@@ -21,6 +21,10 @@ body {
   background: #030712;
 }
 
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 ::-webkit-scrollbar-thumb {
   background: #064e3b;
   border-radius: 9999px;

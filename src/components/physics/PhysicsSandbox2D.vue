@@ -66,7 +66,7 @@ const {
 const canvasRef = ref(null)
 const containerRef = ref(null)
 const isRunning = ref(true)
-const showMobileDataPanel = ref(false)
+const showDataPanel = ref(false)
 const activeTool = ref('drag')
 const toolLabels = {
   drag: 'MOVER / SELECCIONAR',
@@ -747,13 +747,13 @@ onBeforeUnmount(() => {
               <Square class="w-4 h-4" />
             </button>
 
-            <!-- BOTÓN DATOS EN VIVO MÓVIL -->
+            <!-- BOTÓN DATOS EN VIVO -->
             <button
               type="button"
-              @click="showMobileDataPanel = !showMobileDataPanel"
-              class="lg:hidden w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center"
+              @click="showDataPanel = !showDataPanel"
+              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center"
               :class="
-                showMobileDataPanel
+                showDataPanel
                   ? 'bg-purple-200 dark:bg-purple-900/80 border-purple-400 dark:border-purple-600 text-purple-800 dark:text-purple-300'
                   : 'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'
               "
@@ -839,10 +839,10 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <!-- DataPanel: Oculto en móviles y tablets pequeñas por defecto, pero mostrable con botón -->
+        <!-- DataPanel: Oculto por defecto, mostrable con el botón de estadísticas -->
         <div 
           class="pointer-events-none absolute bottom-3 left-[4.5rem] lg:left-20 z-20"
-          :class="showMobileDataPanel ? 'block' : 'hidden lg:block'"
+          :class="showDataPanel ? 'block' : 'hidden'"
         >
           <PhysicsDataPanel :boxes="boxEntries" :ropes="ropes" />
         </div>
