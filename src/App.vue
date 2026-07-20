@@ -55,13 +55,13 @@ const activeTab = computed(() => tabs.find((t) => t.id === activeTabId.value))
 
       <!-- Barra de navegación integrada -->
       <nav class="border-t border-gray-200 dark:border-gray-800/40 bg-gray-100/50 dark:bg-gray-900/40 backdrop-blur-md">
-        <div class="max-w-7xl mx-auto px-4 flex flex-wrap gap-2 py-2">
+        <div class="max-w-7xl mx-auto px-4 flex overflow-x-auto gap-2 py-2 custom-scrollbar">
           <button
             v-for="tab in tabs"
             :key="tab.id"
             type="button"
             @click="activeTabId = tab.id"
-            class="flex items-center gap-2 text-xs sm:text-sm font-bold px-5 py-2 rounded-xl transition-all duration-300 relative overflow-hidden group"
+            class="flex items-center gap-2 text-xs sm:text-sm font-bold px-5 py-2 rounded-xl transition-all duration-300 relative overflow-hidden group whitespace-nowrap flex-shrink-0"
             :class="
               activeTabId === tab.id
                 ? 'text-white shadow-[0_0_15px_-3px_rgba(16,185,129,0.4)]'

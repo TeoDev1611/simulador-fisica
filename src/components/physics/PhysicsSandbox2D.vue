@@ -208,8 +208,17 @@ watch(
 
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    containerRef.value?.requestFullscreen().catch((err) => console.error(err))
+    containerRef.value?.requestFullscreen().then(() => {
+      if (screen.orientation && screen.orientation.lock) {
+        screen.orientation.lock('landscape').catch(() => {
+          // Ignorar error si el dispositivo no soporta bloqueo de orientación
+        })
+      }
+    }).catch((err) => console.error(err))
   } else {
+    if (screen.orientation && screen.orientation.unlock) {
+      screen.orientation.unlock()
+    }
     document.exitFullscreen()
   }
 }
@@ -639,7 +648,7 @@ onBeforeUnmount(() => {
               >
             </template>
           </span>
-          <div class="pointer-events-auto flex items-center gap-2">
+          <div class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
             <!-- BOTONES DE DESHACER / REHACER -->
             <button
               type="button"
@@ -747,7 +756,7 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
-        <div class="pointer-events-none absolute right-3 top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end">
+        <div class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end">
           <ContextPanel
             :active-tool="activeTool"
             :ground-friction="groundFriction"
