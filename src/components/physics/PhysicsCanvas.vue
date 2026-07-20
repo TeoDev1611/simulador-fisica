@@ -19,7 +19,7 @@ let currentWidth = 800
 let currentHeight = 480
 
 const originX = () => currentWidth / 2
-const originY = () => currentHeight * 0.82
+const originY = () => currentHeight - (props.scale * 2.5)
 
 function worldToScreen(x, y) {
   return { sx: originX() + x * props.scale, sy: originY() - y * props.scale }
