@@ -30,9 +30,10 @@ const apps = [
       'Un entorno de físicas 2D libre, construido sobre un motor real de cuerpos rígidos: dibuja terrenos, suelta cajas, conéctalas con cuerdas, resortes o poleas, y mide fuerza normal y tensión en tiempo real.',
     features: [
       'Motor de físicas continuo (Planck.js) — sin atravesar el suelo ni perder precisión',
-      'Terrenos dibujados a mano libre, con fricción ajustable en caliente',
+      'Terrenos dibujados a mano libre, fricción y masa ajustables en caliente',
       'Cuerdas, resortes (k y amortiguamiento configurables) y poleas',
-      'Fuerza Normal y Tensión calculadas y visualizadas en vivo, no solo estimadas'
+      'Fuerza Normal y Tensión calculadas y visualizadas en vivo, no solo estimadas',
+      'Exportación/Importación de escenas y grabación de telemetría a Excel (CSV)'
     ],
     cta: 'Abrir Newton Lab'
   }

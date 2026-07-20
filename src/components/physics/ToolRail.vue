@@ -22,7 +22,7 @@ const tools = [
   { id: 'pulley', label: 'Polea', icon: Disc },
   { id: 'circular', label: 'Riel circular', icon: CircleDashed },
   { id: 'force', label: 'Fuerza / Impulso', icon: ArrowUpToLine },
-  { id: 'delete', label: 'Borrar', icon: Trash2 }
+  { id: 'delete', label: 'Borrar', icon: Trash2 } 
 ]
 </script>
 

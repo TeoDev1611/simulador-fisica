@@ -547,6 +547,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   }
 
   function syncTransforms() {
+    const outOfBoundsIds = []
     for (const entry of bodies) {
       if (entry.kind !== 'box') continue
       try {
@@ -554,8 +555,20 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         entry.position.x = p.x || 0
         entry.position.y = p.y || 0
         entry.angleRad = entry.body.getAngle() || 0
+
+        // Si la caja explota (NaN) o se cae infinitamente al vacío, la marcamos para borrar
+        if (
+          Number.isNaN(p.x) ||
+          Number.isNaN(p.y) ||
+          Math.abs(p.x) > 2000 ||
+          p.y < -300 ||
+          p.y > 2000
+        ) {
+          outOfBoundsIds.push(entry.id)
+        }
       } catch (err) {}
     }
+    outOfBoundsIds.forEach(id => removeBody(id))
   }
 
   function applyExternalForces() {
