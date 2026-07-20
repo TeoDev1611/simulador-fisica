@@ -28,7 +28,7 @@ const tools = [
 
 <template>
   <div
-    class="pointer-events-auto flex flex-row md:flex-col gap-2 md:gap-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 md:p-3 shadow-md dark:shadow-xl"
+    class="pointer-events-auto flex flex-row md:flex-col gap-2 md:gap-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 md:p-3 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-visible md:overflow-y-auto max-w-[calc(100vw-32px)] md:max-w-none md:max-h-[calc(100vh-120px)] custom-scrollbar"
   >
     <div class="group relative" v-for="t in tools" :key="t.id">
       <button

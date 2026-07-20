@@ -5,6 +5,9 @@
 // Ahora solo se muestra UN panel: el que corresponde a la herramienta activa.
 // Menos ruido, y coherente con "estoy usando la herramienta X ahora mismo".
 import { ref, watch } from 'vue'
+import { Eye, EyeOff } from 'lucide-vue-next'
+
+const isCollapsed = ref(false)
 
 const props = defineProps({
   activeTool: { type: String, required: true },
@@ -78,12 +81,24 @@ function applyForceNow(enabled) {
 
 <template>
   <div
-    class="pointer-events-auto w-64 bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-5 shadow-lg dark:shadow-2xl relative overflow-hidden transition-all duration-300 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)]"
+    class="pointer-events-auto bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border border-gray-300/60 dark:border-gray-800/60 shadow-lg relative transition-all duration-300"
+    :class="[
+      isCollapsed ? 'w-10 h-10 rounded-full flex items-center justify-center p-0' : 'w-64 rounded-[2rem] p-5 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] overflow-hidden dark:shadow-2xl'
+    ]"
   >
-    <div
-      class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"
-    ></div>
-    <div class="relative z-10">
+    <!-- Botón de toggle -->
+    <button
+      @click="isCollapsed = !isCollapsed"
+      class="absolute z-50 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
+      :class="isCollapsed ? 'inset-0 w-full h-full flex items-center justify-center bg-transparent' : 'p-1.5 top-3 right-3 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700'"
+      :title="isCollapsed ? 'Mostrar propiedades' : 'Ocultar propiedades'"
+    >
+      <Eye v-if="isCollapsed" class="w-5 h-5" />
+      <EyeOff v-else class="w-4 h-4" />
+    </button>
+
+    <div v-show="!isCollapsed" class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"></div>
+    <div v-show="!isCollapsed" class="relative z-10 mt-1">
       <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa;
          si hay un trozo de SUELO seleccionado, ajustar su fricción individual -->
       <template v-if="activeTool === 'drag'">

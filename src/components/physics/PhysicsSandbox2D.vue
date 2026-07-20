@@ -593,15 +593,22 @@ function handleGlobalKeyDown(e) {
   }
 }
 
+const isFullscreen = ref(false)
+function onFullscreenChange() {
+  isFullscreen.value = !!document.fullscreenElement
+}
+
 onMounted(() => {
   buildInitialScene()
   saveHistoryState()
   rafId = requestAnimationFrame(loop)
   window.addEventListener('keydown', handleGlobalKeyDown)
+  document.addEventListener('fullscreenchange', onFullscreenChange)
 })
 onBeforeUnmount(() => {
   if (rafId) cancelAnimationFrame(rafId)
   window.removeEventListener('keydown', handleGlobalKeyDown)
+  document.removeEventListener('fullscreenchange', onFullscreenChange)
 })
 </script>
 
@@ -610,8 +617,26 @@ onBeforeUnmount(() => {
     <main class="flex-1 max-w-7xl w-full mx-auto px-4 py-4 flex flex-col">
       <div
         ref="containerRef"
-        class="relative select-none flex-1 min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
+        class="relative select-none flex-1 min-h-[320px] md:min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       >
+        <!-- Overlay para forzar fullscreen en móviles -->
+        <div v-if="!isFullscreen" class="absolute inset-0 z-50 flex md:hidden items-center justify-center bg-gray-900/90 backdrop-blur-md p-6 text-center">
+          <div class="bg-white/10 dark:bg-gray-800/40 p-8 rounded-[2rem] border border-white/20 shadow-2xl max-w-xs backdrop-blur-xl">
+            <Maximize class="w-16 h-16 text-emerald-400 mx-auto mb-4 drop-shadow-md" />
+            <h3 class="text-xl font-bold text-white mb-2 tracking-wide">Mejor en horizontal</h3>
+            <p class="text-sm text-gray-200 mb-8 leading-relaxed">
+              Newton Lab requiere espacio. Maximiza la pantalla para rotar tu dispositivo y usar el simulador cómodamente.
+            </p>
+            <button
+              @click="toggleFullscreen"
+              class="w-full bg-emerald-500 hover:bg-emerald-400 text-gray-900 font-bold py-4 rounded-xl shadow-[0_5px_15px_rgba(16,185,129,0.4)] transition-transform active:scale-95 flex justify-center items-center gap-2"
+            >
+              <Maximize class="w-5 h-5" />
+              Maximizar Ahora
+            </button>
+          </div>
+        </div>
+
         <PhysicsCanvas
           ref="canvasRef"
           class="absolute inset-0 w-full h-full"
@@ -786,8 +811,8 @@ onBeforeUnmount(() => {
           />
         </div>
 
-        <!-- DataPanel: Oculto en móviles para ahorrar espacio de pantalla y evitar saturación visual -->
-        <div class="pointer-events-none absolute bottom-3 left-[4.5rem] md:left-20 z-20 hidden md:block">
+        <!-- DataPanel: Oculto en móviles y tablets pequeñas para ahorrar espacio de pantalla y evitar saturación visual -->
+        <div class="pointer-events-none absolute bottom-3 left-[4.5rem] lg:left-20 z-20 hidden lg:block">
           <PhysicsDataPanel :boxes="boxEntries" :ropes="ropes" />
         </div>
 
