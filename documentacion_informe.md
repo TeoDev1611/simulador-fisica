@@ -80,12 +80,12 @@ Este manual está dirigido a los evaluadores de la Versión 1. El objetivo es pr
 1. **Ingreso de la Ecuación Base:** Todo comienza escribiendo una ecuación para la posición respecto al tiempo (ej: `x(t) = A * sin(omega * t)`).
 2. **Detección Automática de Parámetros:** Si escribes constantes no nativas (como `A` o `omega`), el panel de "Parámetros" las detectará instantáneamente y te ofrecerá barras deslizables para ajustar sus valores en tiempo real.
 3. **Derivación Analítica Continua:** Al ingresar la ecuación, el sistema genera de forma automática y en notación matemática exacta (LaTeX) las ecuaciones de la Velocidad ($v(t)$) y la Aceleración ($a(t)$).
-4. **Pista de Simulación:** A la derecha, verás un bloque amarillo representando la partícula. Utiliza la barra deslizante de "Tiempo de Simulación" o el botón **Play (▶)** para animar su movimiento. Usa el botón de **Bucle (🔁)** si deseas que la animación se repita indefinidamente. Adicionalmente, cuentas con el botón **🔴 Grabar 1D**, el cual captura mediante un lienzo invisible en memoria RAM toda tu simulación y la expulsa como un video fluido (`.webm`).
+4. **Pista de Simulación:** A la derecha, verás un bloque amarillo representando la partícula. Utiliza la barra deslizante de "Tiempo de Simulación" o el botón **Play (▶)** para animar su movimiento. Usa el botón de **Bucle (🔁)** si deseas que la animación se repita indefinidamente.
 5. **Paneles de Gráficas Sincronizadas:** En la parte inferior, tienes las gráficas exactas que reflejan el comportamiento cinemático. Al hacer clic sobre cualquier gráfica, esta se expandirá a pantalla completa, permitiéndote rastrear con tu mouse los valores exactos para cada segundo. Tienes botones dedicados 💾 para extraer cualquier gráfica inmediatamente como imagen PNG.
 6. **Exportación Estricta:** Dentro del modal de Desarrollo Analítico, cuentas con botones de extracción a texto plano (`📝 TXT`) y a imagen renderizada (`🖼️ PNG`) de las ecuaciones que acabas de formular.
 7. **Atajos de Teclado:** Presiona la tecla **Enter** mientras escribes tu ecuación matemática para recalcular automáticamente los valores y reanudar la simulación al instante.
 
-### 3.3 Sandbox Físico 2D (Newton Lab)
+### 3.3  Newton Lab
 Este entorno permite crear colisiones y experimentos de física libremente dibujando sobre el lienzo.
 
 1. **La Importancia del Botón "Pausa (⏸)"**
@@ -97,23 +97,11 @@ Este entorno permite crear colisiones y experimentos de física libremente dibuj
    - **Mover (✋) [Tecla 1]:** Arrastra objetos libremente. Al dar clic en un objeto, se despliega el panel de propiedades (derecha) donde puedes editar con precisión la masa, la fricción y sus dimensiones.
    - **Herramientas de Construcción [Teclas 2-7]:** Tienes acceso inmediato a Cajas [2], Terrenos fijos [3], Cuerdas [4], Resortes [5], Poleas [6] y Rieles circulares [7]. Por ejemplo, las poleas funcionan en dos pasos: ancla primero la rueda y luego traza desde el otro objeto exactamente hacia el anclaje.
    - **Historial (Deshacer y Rehacer):** Puedes presionar `Ctrl + Z` para retroceder ante una equivocación o choque accidental. El Sandbox puede guardar hasta tus últimos 50 movimientos. Usa `Ctrl + Y` para rehacer. También hay botones (↩️ ↪️) en el menú superior.
-   - **Persistencia y Grabación:** Arriba tienes las opciones `💾 Exportar` y `📂 Importar` Escena en formato JSON ligero, así como un botón dedicado de video **🔴 Grabar** para registrar clips directos de tus choques de colisión.
+   - **Persistencia:** Arriba tienes las opciones `💾 Exportar` y `📂 Importar` Escena en formato JSON ligero.
    - **Fuerza Constante (➤) [Tecla 8]:** Puedes aplicar propulsores continuos o un impacto instantáneo a los bloques arrastrando un vector.
    - **Eliminar Objeto [Tecla 9 o Suprimir/Retroceso]:** Borra rápidamente cualquier objeto o restricción.
 
 3. **Panel de Dinámica y Telemetría**
-   - En la esquina inferior izquierda verás mediciones exactas del bloque seleccionado, como su centro de masa ($X, Y$) y sus velocidades.
-   - Puedes usar la herramienta de **Fuerza (➤)** y apuntarla hacia un bloque para empujarlo activamente y romper su reposo, experimentando cómo la Fricción estática colapsa y entra en acción la cinética.
-
----
-
-## 4. Trabajo Futuro: Compatibilidad Táctil (Mobile Touch)
-
-Actualmente, el Sandbox 2D está optimizado para eventos de puntero clásico (Ratón). Para extender su funcionalidad total a dispositivos móviles y tablets interactivas (iPad), se deja planteada la siguiente solución técnica arquitectónica:
-
-1. **Unificación de Eventos (Pointer Events API):**
-   Migrar los actuales *listeners* (`mousedown`, `mousemove`, `mouseup`) hacia la interfaz agnóstica de `PointerEvents` (`pointerdown`, `pointermove`). Esto permite que el navegador trate los toques capacitivos, los lápices ópticos (Stylus) y los clics de ratón bajo el mismo ecosistema vectorial.
-2. **Normalización del Lienzo (Canvas):**
-   Inyectar la regla CSS `touch-action: none;` exclusivamente sobre la capa del `<canvas>` para prevenir que el motor del navegador secuestre el gesto táctil intentando hacer *scroll* o *pull-to-refresh*.
-3. **Mapeo de Coordenadas Multipunto:**
-   Mediante la lectura de `event.touches[0].clientX` e interceptando el `getBoundingClientRect()` de Vue, trasladar milimétricamente las presiones de dedo a coordenadas cartesianas dentro del mundo de Planck.js, habilitando la creación "Drag & Drop" con el dedo pulgar o índice.
+   - En la esquina inferior izquierda (en pantallas de escritorio y tablets) verás mediciones exactas en vivo de las cajas, como su centro de masa ($X, Y$) y sus velocidades.
+   - **Grabador de Telemetría (Excel):** En la barra superior, junto a "Importar", se encuentra el botón **🔴 Grabar Datos**. Al pulsarlo, el simulador registrará toda la información física (posición, velocidad lineal/angular, ángulos) a 30 muestras por segundo. Al detener la grabación (**⏹️ Exportar CSV**), se generará automáticamente un archivo compatible con Microsoft Excel o Google Sheets, ideal para análisis de datos posteriores.
+   - Puedes usar la herramienta de **Fuerza (➤)** para empujar cajas activamente y luego comprobar empíricamente en el Excel cómo la Fricción estática colapsa y entra en acción la cinética.

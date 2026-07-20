@@ -2,6 +2,35 @@
 // src/components/WikiPage.vue
 import { ref } from 'vue'
 import katex from 'katex'
+import {
+  TrendingUp,
+  Magnet,
+  Wrench,
+  Zap,
+  BookOpen,
+  Keyboard,
+  Settings,
+  BarChart2,
+  DownloadCloud,
+  Pause,
+  Radio,
+  History,
+  CircleDot,
+  Square,
+  Undo2,
+  Redo2,
+  Download,
+  FolderOpen,
+  MousePointer2,
+  Box,
+  Ruler,
+  Link,
+  Spline,
+  Disc,
+  CircleDashed,
+  ArrowUpToLine,
+  Trash2
+} from 'lucide-vue-next'
 
 function m(expr) {
   return katex.renderToString(expr, { throwOnError: false })
@@ -10,10 +39,10 @@ function m(expr) {
 const activeSection = ref('cinematica')
 
 const sections = [
-  { id: 'cinematica', label: 'Cinemática 1D', icon: '📈' },
-  { id: 'sandbox-basico', label: 'Sandbox 2D: Conceptos', icon: '🧲' },
-  { id: 'sandbox-herramientas', label: 'Sandbox 2D: Herramientas', icon: '🛠️' },
-  { id: 'sandbox-dinamica', label: 'Sandbox 2D: Dinámica', icon: '⚡' }
+  { id: 'cinematica', label: 'Galileo Lab', icon: TrendingUp },
+  { id: 'sandbox-basico', label: 'Sandbox 2D: Conceptos', icon: Magnet },
+  { id: 'sandbox-herramientas', label: 'Sandbox 2D: Herramientas', icon: Wrench },
+  { id: 'sandbox-dinamica', label: 'Sandbox 2D: Dinámica', icon: Zap }
 ]
 </script>
 
@@ -32,7 +61,7 @@ const sections = [
         <h2
           class="text-xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-700 dark:from-emerald-400 to-teal-200 flex items-center gap-3 relative z-10 drop-shadow-md"
         >
-          <span class="text-2xl drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]">📖</span> Manual
+          <BookOpen class="w-7 h-7 drop-shadow-[0_0_8px_rgba(52,211,153,0.5)]" /> Manual
         </h2>
         <p class="text-xs text-gray-600 dark:text-gray-400 mt-2 relative z-10 font-medium tracking-wide">
           Guía interactiva de herramientas
@@ -59,7 +88,7 @@ const sections = [
             class="absolute inset-0 bg-gray-200/0 dark:bg-gray-800/0 group-hover:bg-gray-200/40 dark:bg-gray-800/40 transition-colors duration-300 pointer-events-none rounded-xl"
           ></div>
 
-          <span class="relative z-10 text-lg drop-shadow-md">{{ sec.icon }}</span>
+          <component :is="sec.icon" class="w-5 h-5 relative z-10 drop-shadow-md" />
           <span class="relative z-10 tracking-wide">{{ sec.label }}</span>
         </button>
       </nav>
@@ -68,12 +97,12 @@ const sections = [
     <!-- Área de Contenido Principal -->
     <main class="flex-1 overflow-y-auto p-6 md:p-10 relative">
       <div class="max-w-4xl mx-auto space-y-12 pb-20">
-        <!-- SECCIÓN: Cinemática 1D -->
+        <!-- SECCIÓN: Galileo Lab -->
         <section v-if="activeSection === 'cinematica'" class="animate-fade-in">
           <h1
             class="text-3xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-300 dark:border-gray-800 pb-4"
           >
-            📈 Simulador de Cinemática 1D
+            <TrendingUp class="w-8 h-8 inline-block mr-2" /> Galileo Lab (Cinemática 1D)
           </h1>
 
           <div class="space-y-8">
@@ -81,7 +110,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>⌨️</span> Ingreso de Ecuaciones
+                <Keyboard class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Ingreso de Ecuaciones
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 El corazón del simulador de cinemática es la barra de funciones donde escribes la ecuación de
@@ -116,7 +145,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>⚙️</span> Parámetros y Tiempo
+                <Settings class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Parámetros y Tiempo
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 Una vez que ingresas variables personalizadas (por ejemplo, `A*sin(omega*t)`), aparecerán en el
@@ -143,7 +172,8 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>📊</span> Gráficos y Resultados en Tiempo Real
+                <BarChart2 class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Gráficos y Resultados en Tiempo
+                Real
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                 El análisis cuantitativo es fundamental para entender el movimiento de la partícula.
@@ -170,7 +200,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>📥</span> Exportación y Grabación
+                <DownloadCloud class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Exportación y Grabación
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 leading-relaxed mb-4">
                 El simulador incluye herramientas nativas para documentar tu experimento:
@@ -182,14 +212,9 @@ const sections = [
                   una imagen renderizada matemáticamente perfecta (<strong>PNG</strong>).
                 </li>
                 <li>
-                  <strong>Guardado de Gráficas:</strong> Cada gráfica (pequeña o ampliada) tiene un botón de disquete
-                  (💾). Púlsalo para extraer un archivo PNG limpio de las curvas y sus ejes.
-                </li>
-                <li>
-                  <strong>Grabación de la Pista en Video:</strong> Haz clic en el botón
-                  <strong>🔴 Grabar 1D</strong> ubicado arriba de la pista para iniciar una captura en segundo plano. Al
-                  presionar "Detener", se descargará de inmediato un video fluido en formato <strong>WebM</strong> con
-                  el movimiento real de la caja.
+                  <strong>Guardado de Gráficas:</strong> Cada gráfica (pequeña o ampliada) tiene un botón de descarga
+                  (<Download class="w-4 h-4 inline" />). Púlsalo para extraer un archivo PNG limpio de las curvas y sus
+                  ejes.
                 </li>
               </ul>
             </div>
@@ -201,7 +226,7 @@ const sections = [
           <h1
             class="text-3xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-300 dark:border-gray-800 pb-4"
           >
-            🧲 Sandbox Físico 2D: Conceptos
+            <Magnet class="w-8 h-8 inline-block mr-2" /> Newton Lab: Conceptos
           </h1>
 
           <div class="space-y-8">
@@ -209,7 +234,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>⏸️</span> Modo Construcción vs Reproducción
+                <Pause class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Modo Construcción vs Reproducción
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 A diferencia de la cinemática que es predictiva, el Sandbox 2D resuelve dinámicas complejas (colisiones,
@@ -220,11 +245,13 @@ const sections = [
               >
                 <h4 class="text-blue-700 dark:text-blue-300 font-bold mb-2">💡 Tip pro: Construye en Pausa</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
-                  Presiona el botón de Pausa ⏸ en el panel superior derecho (o presiona la tecla
-                  <strong>Espacio</strong> o <strong>Enter</strong>). Mientras está en pausa, la gravedad no afecta a
-                  los objetos. Usa la herramienta <strong>Mover (✋)</strong> para arrastrar las cajas, apilarlas,
-                  cambiar su ángulo y tamaño libremente en el aire. Cuando tengas el escenario listo, dale al Play ▶ (o
-                  vuelve a presionar <strong>Espacio</strong>) para que actúe la gravedad.
+                  Presiona el botón de Pausa (<Pause class="w-4 h-4 inline" />) en el panel superior derecho (o presiona
+                  la tecla <strong>Espacio</strong> o <strong>Enter</strong>). Mientras está en pausa, la gravedad no
+                  afecta a los objetos. Usa la herramienta
+                  <strong>Mover (<MousePointer2 class="w-4 h-4 inline" />)</strong> para arrastrar las cajas, apilarlas,
+                  cambiar su ángulo y tamaño libremente en el aire. Cuando tengas el escenario listo, dale al Play
+                  (<Play class="w-4 h-4 inline" />) (o vuelve a presionar <strong>Espacio</strong>) para que actúe la
+                  gravedad.
                 </p>
               </div>
             </div>
@@ -233,7 +260,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>📡</span> Telemetría (Panel de Datos)
+                <Radio class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Telemetría (Panel de Datos)
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 En la esquina inferior izquierda verás un pequeño panel translúcido: el
@@ -245,8 +272,9 @@ const sections = [
                   <span v-html="m('9.81 \\, m/s^2')"></span> hacia el sur del lienzo).
                 </li>
                 <li>
-                  Al dar clic en una caja con la herramienta ✋, observarás su Masa actual, Coeficiente de Fricción, y
-                  las coordenadas cartesianas de su Centro de Masa (X, Y).
+                  Al dar clic en una caja con la herramienta Mover (<MousePointer2 class="w-4 h-4 inline" />),
+                  observarás su Masa actual, Coeficiente de Fricción, y las coordenadas cartesianas de su Centro de Masa
+                  (X, Y).
                 </li>
                 <li>
                   Además, verás vectores interactivos de <strong>Velocidad Lineal</strong> (<span
@@ -257,13 +285,27 @@ const sections = [
                   energía residual invisible a simple vista.
                 </li>
               </ul>
+              <div
+                class="mt-4 bg-emerald-300/20 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 p-4 rounded-lg"
+              >
+                <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mb-2">📊 Grabador de Telemetría (NUEVO)</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  En la barra superior, junto a "Importar", dispones del botón
+                  <strong><CircleDot class="w-4 h-4 inline" /> (Grabar)</strong>. Al pulsarlo, el simulador empezará a
+                  grabar internamente todas las posiciones, velocidades y ángulos de todas las cajas a 30 muestras por
+                  segundo. Pulsa luego en <strong><Square class="w-4 h-4 inline" /> (Exportar CSV)</strong> para
+                  descargar un archivo que podrás abrir nativamente en <strong>Microsoft Excel</strong> para realizar
+                  análisis matemáticos del experimento.
+                </p>
+              </div>
             </div>
 
             <div
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
-                <span>🕰️</span> Historial y Persistencia (Deshacer y Exportar)
+                <History class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Historial y Persistencia (Deshacer y
+                Exportar)
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 El entorno tiene un manejo de estado seguro. Nunca perderás tus experimentos.
@@ -273,16 +315,14 @@ const sections = [
                   <strong>Deshacer y Rehacer:</strong> Presiona <strong>Ctrl + Z</strong> para deshacer el último
                   objeto, choque, o eliminación que hayas realizado. El motor memoriza hasta 50 estados completos
                   anteriores. También puedes usar <strong>Ctrl + Y</strong> para rehacer. <em>Nota:</em> También existen
-                  botones gráficos (↩️ / ↪️) en el panel superior.
+                  botones gráficos (<Undo2 class="w-4 h-4 inline" /> / <Redo2 class="w-4 h-4 inline" />) en el panel
+                  superior.
                 </li>
                 <li>
-                  <strong>Guardar y Cargar:</strong> Usa los botones 💾 <strong>Exportar Escena</strong> y 📂
-                  <strong>Importar Escena</strong> para extraer y cargar archivos <code>.json</code>. Esto te permite
-                  compartir tus laboratorios con terceros.
-                </li>
-                <li>
-                  <strong>Grabar Video WebM:</strong> Usa el botón parpadeante 🔴 <strong>Grabar</strong> de la cabecera
-                  para hacer una captura fluida (60FPS) en formato de video de todo lo que sucede en el lienzo.
+                  <strong>Guardar y Cargar:</strong> Usa los botones de <strong>Exportar Escena</strong> (<Download
+                    class="w-4 h-4 inline"
+                  />) e <strong>Importar Escena</strong> (<FolderOpen class="w-4 h-4 inline" />) para extraer y cargar
+                  archivos <code>.json</code>. Esto te permite compartir tus laboratorios con terceros.
                 </li>
               </ul>
             </div>
@@ -294,7 +334,7 @@ const sections = [
           <h1
             class="text-3xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-300 dark:border-gray-800 pb-4"
           >
-            🛠️ Herramientas de Construcción (Sandbox)
+            <Wrench class="w-8 h-8 inline-block mr-2" /> Herramientas de Construcción (Sandbox)
           </h1>
           <p
             class="text-sm text-gray-700 dark:text-gray-300 mb-6 bg-white/50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-300 dark:border-gray-700"
@@ -314,7 +354,11 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>✋ / 📦</span> Mover, Propiedades y Cajas
+                  <span class="flex items-center gap-1"
+                    ><MousePointer2 class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> /
+                    <Box class="w-6 h-6 text-emerald-600 dark:text-emerald-400"
+                  /></span>
+                  Mover, Propiedades y Cajas
                 </h3>
                 <div class="flex gap-2">
                   <span
@@ -328,7 +372,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Usa la tecla <strong>2</strong> para soltar bloques de madera sobre el lienzo. Usa la tecla
@@ -343,7 +387,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                  <BookOpen class="w-4 h-4 text-emerald-600" /> Fundamento Físico y Datos
                 </h4>
                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   En el panel lateral interactúas directamente con las <strong>Leyes de Newton</strong>:
@@ -375,7 +419,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>✏️</span> Terrenos y Planos Inclinados
+                  <Ruler class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Terrenos y Planos Inclinados
                 </h3>
                 <span
                   class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
@@ -387,7 +431,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra el ratón libremente por el fondo para esculpir montañas de colisión. Alterna al
@@ -403,7 +447,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                  <BookOpen class="w-4 h-4 text-emerald-600" /> Fundamento Físico y Datos
                 </h4>
                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   El terreno funciona como un <strong>Cuerpo Estático (Static Body)</strong> de masa infinita: nunca se
@@ -433,7 +477,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>⛓️</span> Cuerdas Rígidas
+                  <Link class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Cuerdas Rígidas
                 </h3>
                 <span
                   class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
@@ -445,7 +489,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra desde el centro de una caja hasta otra para unirlas permanentemente con una cadena
@@ -461,7 +505,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                  <BookOpen class="w-4 h-4 text-emerald-600" /> Fundamento Físico y Datos
                 </h4>
                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   En física algorítmica, esto se denomina un <strong>Distance Joint</strong> (Restricción de Distancia).
@@ -491,7 +535,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>〰️</span> Resortes Elásticos
+                  <Spline class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Resortes Elásticos
                 </h3>
                 <span
                   class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
@@ -503,7 +547,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra de caja a caja, o de caja a vacío. Aparecerá una banda morada ondulada. Selecciona el resorte
@@ -548,7 +592,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>🎡</span> Poleas Ideales
+                  <Disc class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Poleas Ideales
                 </h3>
                 <span
                   class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
@@ -560,7 +604,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express (Dos Pasos)
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express (Dos Pasos)
                 </h4>
                 <ol class="text-sm text-gray-600 dark:text-gray-400 list-decimal list-inside space-y-1">
                   <li>
@@ -580,7 +624,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                  <BookOpen class="w-4 h-4 text-emerald-600" /> Fundamento Físico y Datos
                 </h4>
                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   La polea ideal asume una cuerda de longitud constante <span v-html="m('L = l_1 + l_2')"></span> sin
@@ -612,7 +656,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <span>⭕</span> Riel de Movimiento Circular
+                  <CircleDashed class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Riel de Movimiento Circular
                 </h3>
                 <span
                   class="bg-gray-200 dark:bg-gray-800 px-3 py-1 rounded-lg text-sm font-mono text-gray-700 dark:text-gray-300 font-bold border border-gray-300 dark:border-gray-700"
@@ -624,7 +668,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-500">⚡</span> Uso Express
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
                   Arrastra desde una caja hasta un punto vacío. Se dibujará una órbita circular transparente. La caja
@@ -638,7 +682,7 @@ const sections = [
                 <h4
                   class="text-sm font-bold text-emerald-800 dark:text-emerald-300 mb-2 uppercase tracking-wider flex items-center gap-2"
                 >
-                  <span class="text-emerald-600">📚</span> Fundamento Físico y Datos
+                  <BookOpen class="w-4 h-4 text-emerald-600" /> Fundamento Físico y Datos
                 </h4>
                 <p class="text-sm text-gray-700 dark:text-gray-300 mb-2">
                   Es una variante extrema de restricción geométrica donde el radio de curvatura
@@ -665,7 +709,7 @@ const sections = [
           <h1
             class="text-3xl font-bold text-gray-900 dark:text-white mb-6 border-b border-gray-300 dark:border-gray-800 pb-4"
           >
-            ⚡ Sandbox 2D: Dinámica y Fuerzas
+            <Zap class="w-8 h-8 inline-block mr-2" /> Sandbox 2D: Dinámica y Fuerzas
           </h1>
 
           <div class="space-y-8">
@@ -673,7 +717,7 @@ const sections = [
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
               <h3 class="text-xl font-bold text-orange-400 mb-3 flex items-center gap-2">
-                <span>➤</span> Aplicar Fuerza Continua o Impulsos
+                <ArrowUpToLine class="w-6 h-6 text-orange-400" /> Aplicar Fuerza Continua o Impulsos
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
                 Selecciona la herramienta de Fuerza (➤) y luego haz clic sobre una caja para convertirla en tu objetivo.
@@ -683,7 +727,8 @@ const sections = [
                 <div>
                   <h4 class="text-orange-300 font-bold mb-2">Fuerza Continua (Motor)</h4>
                   <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                    Ingresa una Magnitud (N) y un Ángulo (°). Presiona <strong>▶ Activar continua</strong>.
+                    Ingresa una Magnitud (N) y un Ángulo (°). Presiona
+                    <strong><Play class="w-4 h-4 inline" /> Activar continua</strong>.
                   </p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">
                     El motor físico le inyectará esa fuerza en cada fotograma, simulando un cohete propulsor o alguien
@@ -693,7 +738,8 @@ const sections = [
                 <div>
                   <h4 class="text-amber-300 font-bold mb-2">Impulso Único (Golpe)</h4>
                   <p class="text-xs text-gray-600 dark:text-gray-400 mb-2">
-                    Usando los mismos parámetros numéricos, presiona <strong>⚡ Aplicar impulso único</strong>.
+                    Usando los mismos parámetros numéricos, presiona
+                    <strong><Zap class="w-4 h-4 inline" /> Aplicar impulso único</strong>.
                   </p>
                   <p class="text-xs text-gray-600 dark:text-gray-400">
                     Le aplicará toda esa energía en un solo instante, simulando un bate de béisbol golpeando la caja o

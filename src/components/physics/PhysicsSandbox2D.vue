@@ -6,6 +6,29 @@ import PhysicsCanvas from './PhysicsCanvas.vue'
 import ToolRail from './ToolRail.vue'
 import ContextPanel from './ContextPanel.vue'
 import PhysicsDataPanel from './PhysicsDataPanel.vue'
+import {
+  Undo2,
+  Redo2,
+  Download,
+  FolderOpen,
+  CircleDot,
+  Square,
+  Info,
+  Play,
+  Pause,
+  RotateCcw,
+  Maximize,
+  MousePointer2,
+  Box,
+  Ruler,
+  Link,
+  Spline,
+  Disc,
+  CircleDashed,
+  ArrowUpToLine,
+  Trash2,
+  Magnet
+} from 'lucide-vue-next'
 
 const GRAVITY = 9.81
 const {
@@ -99,36 +122,6 @@ function importSceneFile() {
     reader.readAsText(file)
   }
   input.click()
-}
-
-const isRecording = ref(false)
-let mediaRecorder = null
-let recordedChunks = []
-
-function toggleRecording() {
-  if (isRecording.value) {
-    mediaRecorder?.stop()
-    isRecording.value = false
-  } else {
-    const stream = canvasRef.value?.$el?.captureStream(60)
-    if (!stream) return
-    recordedChunks = []
-    mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm' })
-    mediaRecorder.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks.push(e.data)
-    }
-    mediaRecorder.onstop = () => {
-      const blob = new Blob(recordedChunks, { type: 'video/webm' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'newton_lab_recording.webm'
-      a.click()
-      URL.revokeObjectURL(url)
-    }
-    mediaRecorder.start()
-    isRecording.value = true
-  }
 }
 // La explicación detallada (objetivo, ventajas) ahora vive en la página de
 // bienvenida (HomePage.vue), así que aquí ya no se abre sola al entrar.
@@ -350,18 +343,21 @@ function handleCanvasDown({ x, y }) {
       }
     }
   } else if (['rope', 'spring', 'pulley'].includes(activeTool.value)) {
-    if (bodyId) {
-      jointStartBodyId = bodyId
-      const b = bodies.find((bx) => bx.id === bodyId)
+    const targetId = queryPoint(x, y, { includeStatic: true })
+    if (targetId) {
+      jointStartBodyId = targetId
+      const b = bodies.find((bx) => bx.id === targetId)
       previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
     }
   } else if (activeTool.value === 'circular') {
     // El riel circular solo puede arrancar desde una caja (es la que quedará
     // ensartada en el aro); el otro extremo del arrastre será su centro.
-    const b = bodies.find((bx) => bx.id === bodyId && bx.kind === 'box')
-    if (b) {
-      jointStartBodyId = bodyId
-      previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
+    if (bodyId) {
+      const b = bodies.find((bx) => bx.id === bodyId && bx.kind === 'box')
+      if (b) {
+        jointStartBodyId = bodyId
+        previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
+      }
     }
   }
 }
@@ -477,9 +473,76 @@ function handleCanvasUp({ x, y }) {
 let rafId = null
 const FIXED_DT = 1 / 60
 
+// Telemetría 2D
+const isRecordingTelemetry = ref(false)
+let telemetryData = []
+let telemetryTime = 0
+let frameCounter = 0
+
+function startTelemetry() {
+  isRecordingTelemetry.value = true
+  telemetryData = []
+  telemetryTime = 0
+  frameCounter = 0
+  if (!isRunning.value) togglePlay()
+}
+
+function stopAndExportTelemetry() {
+  isRecordingTelemetry.value = false
+  if (telemetryData.length === 0) return
+
+  let csv =
+    'Tiempo (s),Caja,Posicion X (m),Posicion Y (m),Velocidad X (m/s),Velocidad Y (m/s),Angulo (deg),Velocidad Ang (deg/s)\n'
+  for (const row of telemetryData) {
+    csv += `${row.t.toFixed(4)},${row.id},${row.px.toFixed(4)},${row.py.toFixed(4)},${row.vx.toFixed(4)},${row.vy.toFixed(4)},${row.aDeg.toFixed(4)},${row.vaDeg.toFixed(4)}\n`
+  }
+
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = 'telemetria_2d.csv'
+  a.click()
+  URL.revokeObjectURL(url)
+}
+
+function recordTelemetrySample() {
+  for (const entry of bodies) {
+    if (entry.kind === 'box' && entry.body) {
+      try {
+        const p = entry.body.getPosition()
+        const v = entry.body.getLinearVelocity()
+        const aRad = entry.body.getAngle()
+        const vaRad = entry.body.getAngularVelocity()
+
+        telemetryData.push({
+          t: telemetryTime,
+          id: entry.label || entry.id,
+          px: p.x || 0,
+          py: p.y || 0,
+          vx: v.x || 0,
+          vy: v.y || 0,
+          aDeg: ((aRad || 0) * 180) / Math.PI,
+          vaDeg: ((vaRad || 0) * 180) / Math.PI
+        })
+      } catch (e) {}
+    }
+  }
+}
+
 function loop() {
   try {
-    if (isRunning.value) step(FIXED_DT)
+    if (isRunning.value) {
+      step(FIXED_DT)
+      if (isRecordingTelemetry.value) {
+        telemetryTime += FIXED_DT
+        frameCounter++
+        // Guardar 1 de cada 2 frames (~30 fps) para no hacer el CSV inmanejable
+        if (frameCounter % 2 === 0) {
+          recordTelemetrySample()
+        }
+      }
+    }
     canvasRef.value?.draw(bodies, ropes, previewLine.value, groundDrawPoints.value, groundLiveInfo.value)
   } catch (err) {
     console.error('[Sandbox] Error crítico recuperado en el bucle principal', err)
@@ -540,14 +603,6 @@ onBeforeUnmount(() => {
         ref="containerRef"
         class="relative select-none flex-1 min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       >
-        <!-- Aviso Móvil -->
-        <div class="absolute top-16 left-4 right-4 md:hidden pointer-events-none z-30 opacity-90">
-          <div class="bg-amber-100/95 dark:bg-amber-900/95 border border-amber-300 dark:border-amber-700 text-amber-800 dark:text-amber-200 p-3 rounded-xl text-[11px] shadow-lg backdrop-blur text-center flex flex-col gap-1 leading-tight">
-            <span class="font-bold uppercase tracking-wider">⚠️ Uso en móviles limitado</span>
-            <span>El motor físico de colisiones y creación de objetos fue diseñado nativamente para funcionar con eventos de ratón.</span>
-          </div>
-        </div>
-
         <PhysicsCanvas
           ref="canvasRef"
           class="absolute inset-0 w-full h-full"
@@ -590,96 +645,109 @@ onBeforeUnmount(() => {
               type="button"
               @click="undo"
               :disabled="historyIndex <= 0"
-              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors duration-150 flex items-center gap-1 disabled:opacity-50"
+              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-50"
               :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
               title="Deshacer (Ctrl+Z)"
             >
-              ↩️
+              <Undo2 class="w-4 h-4" />
             </button>
             <button
               type="button"
               @click="redo"
               :disabled="historyIndex >= history.length - 1"
-              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors duration-150 flex items-center gap-1 disabled:opacity-50"
+              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-50"
               :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
               title="Rehacer (Ctrl+Y)"
             >
-              ↪️
+              <Redo2 class="w-4 h-4" />
             </button>
 
             <!-- BOTONES DE ARCHIVO -->
             <button
               type="button"
               @click="exportSceneFile"
-              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center gap-1"
+              class="w-8 h-8 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center justify-center"
               title="Exportar Escena"
             >
-              💾 <span class="hidden md:inline">Exportar</span>
+              <Download class="w-4 h-4" />
             </button>
             <button
               type="button"
               @click="importSceneFile"
-              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center gap-1"
+              class="w-8 h-8 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center justify-center"
               title="Cargar Escena"
             >
-              📂 <span class="hidden md:inline">Importar</span>
+              <FolderOpen class="w-4 h-4" />
             </button>
 
+            <!-- BOTONES DE GRABACIÓN DE DATOS -->
             <button
+              v-if="!isRecordingTelemetry"
               type="button"
-              @click="toggleRecording"
-              class="text-[11px] font-semibold px-2 py-1.5 rounded-lg border shadow-lg transition-colors flex items-center gap-1"
-              :class="
-                isRecording
-                  ? 'bg-red-500/90 border-red-700 text-white animate-pulse'
-                  : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'
-              "
-              title="Grabar Video WebM"
+              @click="startTelemetry"
+              class="w-8 h-8 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 shadow-lg transition-colors flex items-center justify-center"
+              title="Grabar telemetría a Excel (CSV)"
             >
-              {{ isRecording ? '⏹ Detener' : '🔴 Grabar' }}
+              <CircleDot class="w-4 h-4" />
+            </button>
+            <button
+              v-else
+              type="button"
+              @click="stopAndExportTelemetry"
+              class="w-8 h-8 rounded-lg border bg-red-100 dark:bg-red-900/50 border-red-400 dark:border-red-600 text-red-700 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800/50 shadow-lg transition-colors flex items-center justify-center animate-pulse"
+              title="Detener y Exportar CSV"
+            >
+              <Square class="w-4 h-4" />
             </button>
 
             <button
               type="button"
               @click="showWelcomeModal = true"
-              class="text-[11px] font-semibold tracking-wide px-3 py-1.5 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-350/80 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-300/80 dark:bg-blue-900/80 shadow-lg transition-colors duration-150"
+              class="w-8 h-8 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-350/80 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-300/80 dark:bg-blue-900/80 shadow-lg transition-colors duration-150 flex items-center justify-center"
+              title="Ayuda"
             >
-              ℹ️ Ayuda
+              <Info class="w-4 h-4" />
             </button>
             <button
               type="button"
               @click="handleToggleRun"
-              class="text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg border shadow-lg transition-colors duration-150"
+              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center"
               :class="
                 isRunning
                   ? 'bg-yellow-300/90 dark:bg-yellow-700/90 border-yellow-200 dark:border-yellow-600 text-yellow-100 hover:bg-yellow-300 dark:bg-yellow-700'
                   : 'bg-emerald-300/90 dark:bg-emerald-700/90 border-emerald-800 dark:border-emerald-500 text-gray-900 dark:text-white hover:bg-emerald-200 dark:bg-emerald-600'
               "
+              :title="isRunning ? 'Pausar' : 'Reproducir'"
             >
-              {{ isRunning ? '⏸ Pausar' : '▶ Reproducir' }}
+              <Pause v-if="isRunning" class="w-4 h-4" />
+              <Play v-else class="w-4 h-4" />
             </button>
             <button
               type="button"
               @click="handleReset"
-              class="text-[11px] font-semibold uppercase tracking-wide px-3 py-1.5 rounded-lg border border-red-200 dark:border-red-800 bg-red-350/80 dark:bg-red-950/80 text-red-700 dark:text-red-300 hover:bg-red-300/80 dark:bg-red-900/80 shadow-lg transition-colors duration-150"
+              class="w-8 h-8 rounded-lg border border-red-200 dark:border-red-800 bg-red-350/80 dark:bg-red-950/80 text-red-700 dark:text-red-300 hover:bg-red-300/80 dark:bg-red-900/80 shadow-lg transition-colors duration-150 flex items-center justify-center"
+              title="Reiniciar Escena"
             >
-              ⟲ Reiniciar
+              <RotateCcw class="w-4 h-4" />
             </button>
             <button
               @click="toggleFullscreen"
-              class="text-[10px] bg-gray-200/90 dark:bg-gray-800/90 hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 shadow-lg flex items-center gap-1 transition-colors"
+              class="w-8 h-8 bg-gray-200/90 dark:bg-gray-800/90 hover:bg-gray-700 text-gray-800 dark:text-gray-200 rounded-lg border border-gray-300 dark:border-gray-700 shadow-lg flex items-center justify-center transition-colors"
               title="Alternar Pantalla Completa"
             >
-              ⛶
+              <Maximize class="w-4 h-4" />
             </button>
           </div>
         </div>
-
-        <div class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 z-20">
+        <!-- ToolRail: Abajo al centro en móviles, izquierda centrada en escritorio -->
+        <div
+          class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 md:bottom-auto md:left-3 md:translate-x-0 md:top-1/2 md:-translate-y-1/2 z-30"
+        >
           <ToolRail :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" />
         </div>
 
-        <div class="pointer-events-none absolute right-3 top-16 z-20">
+        <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
+        <div class="pointer-events-none absolute right-3 top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end">
           <ContextPanel
             :active-tool="activeTool"
             :ground-friction="groundFriction"
@@ -705,10 +773,12 @@ onBeforeUnmount(() => {
             @update-spring-stiffness="handleSpringDamping"
             @update-force="handleUpdateForce"
             @apply-impulse="handleApplyImpulse"
+            class="max-h-[calc(100vh-140px)] md:max-h-none overflow-y-auto custom-scrollbar"
           />
         </div>
 
-        <div class="pointer-events-none absolute bottom-3 left-3 z-20">
+        <!-- DataPanel: Oculto en móviles para ahorrar espacio de pantalla y evitar saturación visual -->
+        <div class="pointer-events-none absolute bottom-3 left-[4.5rem] md:left-20 z-20 hidden md:block">
           <PhysicsDataPanel :boxes="boxEntries" :ropes="ropes" />
         </div>
 
@@ -732,7 +802,7 @@ onBeforeUnmount(() => {
               ></div>
               <div class="relative z-10">
                 <div class="flex items-center gap-3 mb-5 border-b border-gray-300 dark:border-gray-800 pb-4">
-                  <span class="text-3xl">🧲</span>
+                  <Magnet class="w-8 h-8 text-blue-600 dark:text-blue-400 drop-shadow-md" />
                   <div>
                     <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400">Newton Lab</h2>
                     <p class="text-xs text-gray-600 dark:text-gray-400">Referencia rápida de herramientas</p>
@@ -741,38 +811,68 @@ onBeforeUnmount(() => {
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700 dark:text-gray-300">
                   <div class="flex gap-3">
-                    <span class="text-lg">✋</span>
+                    <MousePointer2
+                      class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm"
+                    />
                     <p>
                       <strong class="text-gray-900 dark:text-gray-100">Mover / Seleccionar:</strong> Arrastra cajas
-                      libremente, o haz clic en una para ver/editar su masa en el panel derecho.
+                      libremente o selecciona una para ver su telemetría y ajustar sus propiedades en el panel derecho.
                     </p>
                   </div>
                   <div class="flex gap-3">
-                    <span class="text-lg">✏️</span>
+                    <Box class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
                     <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Dibujar Suelo:</strong> Modo Libre (a mano) o
-                      Recto (ángulo exacto, ideal para planos inclinados de un problema).
+                      <strong class="text-gray-900 dark:text-gray-100">Crear Caja:</strong> Haz clic o arrastra para
+                      instanciar bloques afectados por gravedad. Su tamaño y geometría son dinámicos.
                     </p>
                   </div>
                   <div class="flex gap-3">
-                    <span class="text-lg">〰️</span>
+                    <Ruler class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
                     <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Cuerdas y Resortes:</strong> Arrastra desde una
-                      caja hasta otra (o hacia el vacío para crear un anclaje fijo).
+                      <strong class="text-gray-900 dark:text-gray-100">Dibujar Suelo:</strong> Traza barreras de
+                      colisión estáticas. Permite el modo libre o angular para planos inclinados.
                     </p>
                   </div>
                   <div class="flex gap-3">
-                    <span class="text-lg">⭕</span>
+                    <Link class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
                     <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Riel circular:</strong> Arrastra desde una caja
-                      hasta el centro deseado — queda ensartada girando a radio fijo, como un collar en un aro.
+                      <strong class="text-gray-900 dark:text-gray-100">Cuerda Inelástica:</strong> Arrastra de caja a
+                      caja o hacia el fondo. Mantendrá una distancia constante aplicando tensión reactiva.
                     </p>
                   </div>
                   <div class="flex gap-3">
-                    <span class="text-lg">➤</span>
+                    <Spline class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
                     <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Fuerzas:</strong> Selecciona una caja y aplica
-                      fuerzas continuas o impulsos únicos configurando el vector resultante.
+                      <strong class="text-gray-900 dark:text-gray-100">Resorte Elástico:</strong> Evalúa la Ley de Hooke
+                      con frecuencia (Hz) y amortiguamiento variables. Arrastra entre dos puntos.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <Disc class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Polea Ideal:</strong> 1º Arrastra de Caja A a un
+                      punto en el aire (ancla la rueda). 2º Lleva Caja B al pin para cerrar la cuerda.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <CircleDashed class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Riel Circular:</strong> Restricción radial pura.
+                      La caja seleccionada orbitará permanentemente en el círculo dibujado.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <ArrowUpToLine class="w-5 h-5 flex-shrink-0 text-orange-500 dark:text-orange-400 drop-shadow-sm" />
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Fuerzas:</strong> Selecciona un cuerpo objetivo
+                      para inyectarle fuerza motriz continua o aplicar un impulso violento inmediato.
+                    </p>
+                  </div>
+                  <div class="flex gap-3">
+                    <Trash2 class="w-5 h-5 flex-shrink-0 text-red-500 dark:text-red-400 drop-shadow-sm" />
+                    <p>
+                      <strong class="text-gray-900 dark:text-gray-100">Borrador:</strong> Haz clic o arrastra cruzando
+                      elementos (cajas, uniones) para sacarlos de la simulación.
                     </p>
                   </div>
                 </div>

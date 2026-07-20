@@ -6,16 +6,17 @@ import KinematicsSimulator from './components/KinematicsSimulator.vue'
 import PhysicsSandbox2D from './components/physics/PhysicsSandbox2D.vue'
 import WikiPage from './components/WikiPage.vue'
 import EspeLogo from './components/EspeLogo.vue'
+import { Sun, Moon, Home, TrendingUp, Magnet, BookOpen } from 'lucide-vue-next'
 import { useTheme } from './composables/useTheme'
 
 const { isDark, toggleTheme, initTheme } = useTheme()
 initTheme()
 
 const tabs = [
-  { id: 'home', label: 'Inicio', icon: '🏠' },
-  { id: 'kinematics', label: 'Cinemática 1D', icon: '📈', component: shallowRef(KinematicsSimulator) },
-  { id: 'sandbox2d', label: 'Sandbox Físico 2D', icon: '🧲', component: shallowRef(PhysicsSandbox2D) },
-  { id: 'wiki', label: 'Wiki / Ayuda', icon: '📖', component: shallowRef(WikiPage) }
+  { id: 'home', label: 'Inicio', icon: Home },
+  { id: 'kinematics', label: 'Galileo Lab', icon: TrendingUp, component: shallowRef(KinematicsSimulator) },
+  { id: 'sandbox2d', label: 'Newton Lab', icon: Magnet, component: shallowRef(PhysicsSandbox2D) },
+  { id: 'wiki', label: 'Wiki / Ayuda', icon: BookOpen, component: shallowRef(WikiPage) }
 ]
 
 const activeTabId = ref('home')
@@ -43,11 +44,11 @@ const activeTab = computed(() => tabs.find((t) => t.id === activeTabId.value))
           </p>
           <button
             @click="toggleTheme"
-            class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
+            class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-800 text-gray-700 dark:text-gray-300 transition-colors flex items-center justify-center"
             :title="isDark ? 'Cambiar a modo claro' : 'Cambiar a modo oscuro'"
           >
-            <span v-if="isDark" class="text-xl">☀️</span>
-            <span v-else class="text-xl">🌙</span>
+            <Sun v-if="isDark" class="w-5 h-5" />
+            <Moon v-else class="w-5 h-5" />
           </button>
         </div>
       </div>
@@ -78,7 +79,7 @@ const activeTab = computed(() => tabs.find((t) => t.id === activeTabId.value))
               class="absolute inset-0 bg-gradient-to-r from-gray-700/0 via-gray-700/10 to-gray-700/0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
             ></div>
 
-            <span class="relative z-10 drop-shadow-md text-base">{{ tab.icon }}</span>
+            <component :is="tab.icon" class="relative z-10 w-4 h-4 sm:w-5 sm:h-5 drop-shadow-md" />
             <span class="relative z-10 tracking-wide">{{ tab.label }}</span>
           </button>
         </div>

@@ -1,13 +1,14 @@
 <script setup>
 // src/components/HomePage.vue
+import { TrendingUp, Magnet, Target, Ruler, Zap, BarChart2 } from 'lucide-vue-next'
 defineEmits(['navigate'])
 
 const apps = [
   {
     id: 'kinematics',
-    icon: '📈',
+    icon: TrendingUp,
     name: 'Trayectoria',
-    kicker: 'Cinemática 1D',
+    kicker: 'Galileo Lab',
     accent: 'emerald',
     summary:
       'Escribe cualquier ecuación de posición x(t) y observa al instante su velocidad y aceleración: derivadas simbólicas, gráficas sincronizadas y una animación del móvil sobre su propio eje.',
@@ -17,13 +18,13 @@ const apps = [
       'Editor con teclado matemático y validación mientras escribes',
       'Ecuaciones de ejemplo: MRU, parabólica, senoidal, exponencial…'
     ],
-    cta: 'Abrir Trayectoria'
+    cta: 'Abrir Galileo Lab'
   },
   {
     id: 'sandbox2d',
-    icon: '🧲',
-    name: 'Newton Lab',
-    kicker: 'Sandbox Físico 2D',
+    icon: Magnet,
+    name: 'Sandbox 2D',
+    kicker: ' Newton Lab',
     accent: 'blue',
     summary:
       'Un entorno de físicas 2D libre, construido sobre un motor real de cuerpos rígidos: dibuja terrenos, suelta cajas, conéctalas con cuerdas, resortes o poleas, y mide fuerza normal y tensión en tiempo real.',
@@ -135,7 +136,7 @@ const apps = [
                   : 'bg-blue-50 dark:bg-gradient-to-br dark:from-blue-900/50 dark:to-blue-950/50 border-blue-200 dark:border-blue-800/50 shadow-blue-900/20'
               "
             >
-              {{ app.icon }}
+              <component :is="app.icon" class="w-8 h-8" />
             </span>
             <div class="leading-tight">
               <h2 class="text-2xl font-black text-gray-900 dark:text-white tracking-tight">{{ app.name }}</h2>
@@ -187,31 +188,27 @@ const apps = [
           class="absolute inset-0 bg-gradient-to-br from-emerald-900/5 dark:from-emerald-900/10 to-blue-900/5 dark:to-blue-900/10 pointer-events-none"
         ></div>
         <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3 mb-6 relative z-10">
-          <span class="text-3xl">🎯</span> Objetivos educativos
+          <Target class="w-8 h-8 text-indigo-500 drop-shadow-[0_0_10px_rgba(99,102,241,0.4)]" /> Objetivos educativos
         </h2>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-8 text-sm text-gray-700 dark:text-gray-300 relative z-10">
           <div class="flex flex-col items-start gap-3">
-            <span class="text-emerald-500 dark:text-emerald-400 text-3xl drop-shadow-[0_0_10px_rgba(52,211,153,0.4)]"
-              >📐</span
-            >
+            <Ruler class="w-8 h-8 text-emerald-500 dark:text-emerald-400 drop-shadow-[0_0_10px_rgba(52,211,153,0.4)]" />
             <h3 class="font-bold text-gray-900 dark:text-gray-200 text-base">Modelado matemático</h3>
             <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               Relaciona ecuaciones con movimiento real, visualiza derivadas e integrales de manera súper intuitiva.
             </p>
           </div>
           <div class="flex flex-col items-start gap-3">
-            <span class="text-blue-500 dark:text-blue-400 text-3xl drop-shadow-[0_0_10px_rgba(96,165,250,0.4)]"
-              >⚡</span
-            >
+            <Zap class="w-8 h-8 text-blue-500 dark:text-blue-400 drop-shadow-[0_0_10px_rgba(96,165,250,0.4)]" />
             <h3 class="font-bold text-gray-900 dark:text-gray-200 text-base">Física interactiva</h3>
             <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               Experimenta con fuerzas, resortes, poleas y fricción en un entorno 2D realista de grado profesional.
             </p>
           </div>
           <div class="flex flex-col items-start gap-3">
-            <span class="text-purple-500 dark:text-purple-400 text-3xl drop-shadow-[0_0_10px_rgba(192,132,252,0.4)]"
-              >📊</span
-            >
+            <BarChart2
+              class="w-8 h-8 text-purple-500 dark:text-purple-400 drop-shadow-[0_0_10px_rgba(192,132,252,0.4)]"
+            />
             <h3 class="font-bold text-gray-900 dark:text-gray-200 text-base">Análisis en tiempo real</h3>
             <p class="text-gray-600 dark:text-gray-400 text-sm leading-relaxed">
               Observa gráficas sincronizadas y vectores numéricos mientras manipulas los parámetros al instante.

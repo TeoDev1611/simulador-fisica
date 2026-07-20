@@ -8,6 +8,7 @@ import ResultsCards from './kinematics/ResultsCards.vue'
 import Track1D from './kinematics/Track1D.vue'
 import ChartsPanel from './kinematics/ChartsPanel.vue'
 import html2canvas from 'html2canvas'
+import { Play, Pause, Repeat, FileText, Image as ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-vue-next'
 
 // ----------------------------
 // Estado reactivo principal
@@ -22,79 +23,7 @@ const isPlaying = ref(false)
 const isLooping = ref(false) // Nuevo estado para el bucle
 let animationFrame = null
 
-// Grabación
-const isRecording1D = ref(false)
-let mediaRecorder1D = null
-let recordedChunks1D = []
-const recordingCanvasRef = ref(null)
-
-function toggleRecording1D() {
-  if (isRecording1D.value) {
-    mediaRecorder1D?.stop()
-    isRecording1D.value = false
-  } else {
-    const canvas = recordingCanvasRef.value
-    if (!canvas) return
-    const stream = canvas.captureStream(60)
-    recordedChunks1D = []
-    mediaRecorder1D = new MediaRecorder(stream, { mimeType: 'video/webm' })
-    mediaRecorder1D.ondataavailable = (e) => {
-      if (e.data.size > 0) recordedChunks1D.push(e.data)
-    }
-    mediaRecorder1D.onstop = () => {
-      const blob = new Blob(recordedChunks1D, { type: 'video/webm' })
-      const url = URL.createObjectURL(blob)
-      const a = document.createElement('a')
-      a.href = url
-      a.download = 'simulacion_1d.webm'
-      a.click()
-      URL.revokeObjectURL(url)
-    }
-    mediaRecorder1D.start()
-    isRecording1D.value = true
-    renderRecordingFrame()
-  }
-}
-
-function renderRecordingFrame() {
-  if (!isRecording1D.value) return
-  const canvas = recordingCanvasRef.value
-  if (canvas) {
-    const ctx = canvas.getContext('2d')
-    const isDark = document.documentElement.classList.contains('dark')
-    ctx.fillStyle = isDark ? '#030712' : '#f9fafb'
-    ctx.fillRect(0, 0, canvas.width, canvas.height)
-
-    // Draw track
-    ctx.strokeStyle = isDark ? '#374151' : '#d1d5db'
-    ctx.lineWidth = 4
-    ctx.beginPath()
-    ctx.moveTo(50, canvas.height / 2)
-    ctx.lineTo(canvas.width - 50, canvas.height / 2)
-    ctx.stroke()
-
-    // Draw block
-    const span = trackMaxX.value - trackMinX.value
-    let relPos = 0.5
-    if (span > 0) relPos = (positionValue.value - trackMinX.value) / span
-
-    const x = 50 + relPos * (canvas.width - 100)
-
-    ctx.fillStyle = '#10b981'
-    ctx.shadowColor = '#34d399'
-    ctx.shadowBlur = 10
-    ctx.fillRect(x - 20, canvas.height / 2 - 20, 40, 40)
-    ctx.shadowBlur = 0
-    ctx.strokeStyle = '#047857'
-    ctx.strokeRect(x - 20, canvas.height / 2 - 20, 40, 40)
-
-    ctx.fillStyle = isDark ? '#9ca3af' : '#4b5563'
-    ctx.font = '16px monospace'
-    ctx.fillText(`t = ${time.value.toFixed(2)} s`, 10, 20)
-    ctx.fillText(`x = ${positionValue.value.toFixed(2)} m`, 10, 40)
-  }
-  requestAnimationFrame(renderRecordingFrame)
-}
+// Grabación eliminada por requerimiento
 
 // Modales
 const showEquationsModal = ref(false)
@@ -119,7 +48,7 @@ async function exportEquationsPng() {
 
 function exportEquationsTxt() {
   const content =
-    `Ecuaciones de Cinemática 1D\n\n` +
+    `Ecuaciones de Galileo Lab\n\n` +
     `Posición:\n x(t) = ${debouncedEquation.value}\n\n` +
     `Velocidad:\n v(t) = ${velocityExprStr.value}\n\n` +
     `Aceleración:\n a(t) = ${accelerationExprStr.value}\n`
@@ -611,7 +540,7 @@ onBeforeUnmount(() => {
             <span class="flex items-center gap-1 text-[10px] font-medium">
               <template v-if="isValidating"
                 ><span class="w-2 h-2 rounded-full bg-yellow-700 dark:bg-yellow-400 animate-pulse"></span
-                ><span class="text-yellow-700 dark:text-yellow-400">Escribiendo…</span></template
+                ><span class="text-yellow-700 dark:bg-yellow-400">Escribiendo…</span></template
               >
               <template v-else-if="errorMessage"
                 ><span class="w-2 h-2 rounded-full bg-red-800 dark:bg-red-500"></span
@@ -761,10 +690,12 @@ onBeforeUnmount(() => {
             @click="showParametersPanel = !showParametersPanel"
             class="w-full flex items-center justify-between text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400"
           >
-            <span>⚙️ Parámetros</span>
-            <span class="text-gray-600 dark:text-gray-500 text-[10px] normal-case tracking-normal">{{
-              showParametersPanel ? 'Ocultar ▾' : 'Mostrar ▴'
-            }}</span>
+            <span class="flex items-center gap-1.5"><Settings class="w-3.5 h-3.5" /> Parámetros</span>
+            <span class="text-gray-600 dark:text-gray-500 text-[10px] normal-case tracking-normal">
+              {{ showParametersPanel ? 'Ocultar' : 'Mostrar' }}
+              <ChevronDown v-if="showParametersPanel" class="w-3 h-3 inline" />
+              <ChevronUp v-else class="w-3 h-3 inline" />
+            </span>
           </button>
           <div v-show="showParametersPanel" class="mt-3 space-y-3">
             <div
@@ -861,7 +792,8 @@ onBeforeUnmount(() => {
               "
               title="Reproducir/Pausar"
             >
-              {{ isPlaying ? '⏸' : '▶' }}
+              <Pause v-if="isPlaying" class="w-4 h-4" />
+              <Play v-else class="w-4 h-4 ml-0.5" />
             </button>
 
             <!-- NUEVO: Botón de Bucle -->
@@ -875,7 +807,7 @@ onBeforeUnmount(() => {
               "
               title="Activar/Desactivar Bucle"
             >
-              🔁
+              <Repeat class="w-4 h-4" />
             </button>
           </div>
           <div class="flex justify-between text-[10px] text-gray-600 dark:text-gray-500 mt-1">
@@ -894,21 +826,6 @@ onBeforeUnmount(() => {
       <!-- COLUMNA DERECHA -->
       <section class="lg:col-span-8 flex flex-col gap-6">
         <!-- Pista 1D -->
-        <div class="relative w-full flex justify-end mb-[-1rem] z-10 pr-2 pt-2">
-          <button
-            @click="toggleRecording1D"
-            class="text-[10px] font-semibold px-2 py-1.5 rounded-lg border shadow-sm transition-colors flex items-center gap-1"
-            :class="
-              isRecording1D
-                ? 'bg-red-500/90 border-red-700 text-white animate-pulse'
-                : 'bg-red-100/90 dark:bg-red-900/50 border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-200/90 dark:hover:bg-red-800/50'
-            "
-            title="Grabar Animación 1D (WebM)"
-          >
-            {{ isRecording1D ? '⏹ Detener' : '🔴 Grabar 1D' }}
-          </button>
-        </div>
-        <canvas ref="recordingCanvasRef" width="800" height="200" class="hidden"></canvas>
         <Track1D :positionValue="positionValue" :trackMinX="trackMinX" :trackMaxX="trackMaxX" />
 
         <!-- Gráficos -->
@@ -936,14 +853,14 @@ onBeforeUnmount(() => {
                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-sm transition-colors flex items-center gap-1"
                 title="Descargar como Texto"
               >
-                📝 <span class="hidden sm:inline">TXT</span>
+                <FileText class="w-4 h-4" /> TXT
               </button>
               <button
                 @click="exportEquationsPng"
                 class="text-xs font-semibold px-3 py-1.5 rounded-lg border border-emerald-300 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 shadow-sm transition-colors flex items-center gap-1"
-                title="Descargar como Imagen"
+                title="Exportar como Imagen"
               >
-                🖼️ <span class="hidden sm:inline">PNG</span>
+                <ImageIcon class="w-4 h-4" /> PNG
               </button>
               <button
                 @click="showEquationsModal = false"

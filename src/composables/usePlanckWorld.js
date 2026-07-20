@@ -79,6 +79,11 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     const body = entry.body
     body.setAwake(true)
+
+    // Seguridad multitáctil: si ya había un arrastre activo (ej. dos dedos rápidos),
+    // limpiar el joint anterior para que la caja previa no quede "pegada" al vacío.
+    stopMouseDrag()
+
     m_draggedBody = body
 
     if (!isPaused) {

@@ -16,7 +16,7 @@ defineProps({
           :class="darkMode ? 'text-emerald-700 dark:text-emerald-300' : 'text-emerald-200 dark:text-emerald-800'"
           style="font-size: 1.35rem"
         >
-          ESPE
+          E S P E
         </span>
       </div>
       <div

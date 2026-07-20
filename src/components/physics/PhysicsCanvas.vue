@@ -42,6 +42,10 @@ function handlePointerUp(e) {
   emit('canvas-up', screenToWorld(e.clientX, e.clientY))
 }
 
+function preventDefaultTouch(e) {
+  e.preventDefault()
+}
+
 onMounted(() => {
   ctx = canvasRef.value.getContext('2d')
 
@@ -569,6 +573,10 @@ defineExpose({ draw })
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
-    @pointerleave="handlePointerUp"
+    @pointercancel="handlePointerUp"
+    @touchstart="preventDefaultTouch"
+    @touchmove="preventDefaultTouch"
+    @touchend="preventDefaultTouch"
+    @touchcancel="preventDefaultTouch"
   ></canvas>
 </template>

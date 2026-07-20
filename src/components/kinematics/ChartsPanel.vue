@@ -1,6 +1,7 @@
 <script setup>
 import { ref, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import Chart from 'chart.js/auto'
+import { Download, Maximize2, Table } from 'lucide-vue-next'
 
 const props = defineProps({
   chartDataset: { type: Object, required: true },
@@ -75,6 +76,28 @@ function exportChart(type) {
   a.href = url
   a.download = `${name}.png`
   a.click()
+}
+
+function exportToCsv() {
+  const { labels, sData, vData, aData } = props.chartDataset
+  if (!labels || labels.length === 0) return
+
+  let csvContent = 'Tiempo (s),Posicion x(t) [m],Velocidad v(t) [m/s],Aceleracion a(t) [m/s^2]\n'
+  for (let i = 0; i < labels.length; i++) {
+    const t = labels[i]
+    const x = sData[i] !== undefined && sData[i] !== null ? sData[i].toFixed(4) : ''
+    const v = vData[i] !== undefined && vData[i] !== null ? vData[i].toFixed(4) : ''
+    const a = aData[i] !== undefined && aData[i] !== null ? aData[i].toFixed(4) : ''
+    csvContent += `${t},${x},${v},${a}\n`
+  }
+
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = 'datos_cinematicos.csv'
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function buildExpandedChart() {
@@ -355,7 +378,16 @@ onBeforeUnmount(() => {
       <h2 class="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400">
         Gráficos cinemáticos
       </h2>
-      <span class="text-[10px] text-gray-600 dark:text-gray-500 font-mono">cursor en t = {{ fmt(time) }} s</span>
+      <div class="flex items-center gap-3">
+        <button
+          @click="exportToCsv"
+          class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-300/30 dark:bg-emerald-900/30 px-3 py-1 rounded hover:bg-emerald-200 dark:bg-emerald-800 hover:text-gray-900 dark:text-white transition-colors flex items-center gap-1"
+          title="Exportar datos a Excel (CSV)"
+        >
+          <Table class="w-3.5 h-3.5" /> Exportar CSV
+        </button>
+        <span class="text-[10px] text-gray-600 dark:text-gray-500 font-mono">cursor en t = {{ fmt(time) }} s</span>
+      </div>
     </div>
 
     <div class="grid grid-cols-1 gap-5">
@@ -366,16 +398,16 @@ onBeforeUnmount(() => {
           <div class="flex gap-2">
             <button
               @click="exportChart('position')"
-              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
               title="Descargar Gráfica (PNG)"
             >
-              💾
+              <Download class="w-3.5 h-3.5" />
             </button>
             <button
               @click="openExpandedChart('position')"
-              class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-300/30 dark:bg-emerald-900/30 px-3 py-1 rounded hover:bg-emerald-200 dark:bg-emerald-800 hover:text-gray-900 dark:text-white transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800 bg-emerald-300/30 dark:bg-emerald-900/30 px-3 py-1 rounded hover:bg-emerald-200 dark:bg-emerald-800 hover:text-gray-900 dark:text-white transition-colors flex items-center gap-1"
             >
-              🔍 Ampliar Gráfica
+              <Maximize2 class="w-3.5 h-3.5" /> Ampliar Gráfica
             </button>
           </div>
         </div>
@@ -388,16 +420,16 @@ onBeforeUnmount(() => {
           <div class="flex gap-2">
             <button
               @click="exportChart('velocity')"
-              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
               title="Descargar Gráfica (PNG)"
             >
-              💾
+              <Download class="w-3.5 h-3.5" />
             </button>
             <button
               @click="openExpandedChart('velocity')"
-              class="text-[10px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 bg-yellow-300/30 dark:bg-yellow-900/30 px-3 py-1 rounded hover:bg-yellow-200 dark:bg-yellow-800 hover:text-gray-900 dark:text-white transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-yellow-700 dark:text-yellow-400 border border-yellow-200 dark:border-yellow-800 bg-yellow-300/30 dark:bg-yellow-900/30 px-3 py-1 rounded hover:bg-yellow-200 dark:bg-yellow-800 hover:text-gray-900 dark:text-white transition-colors flex items-center gap-1"
             >
-              🔍 Ampliar Gráfica
+              <Maximize2 class="w-3.5 h-3.5" /> Ampliar Gráfica
             </button>
           </div>
         </div>
@@ -410,16 +442,16 @@ onBeforeUnmount(() => {
           <div class="flex gap-2">
             <button
               @click="exportChart('acceleration')"
-              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors flex items-center justify-center"
               title="Descargar Gráfica (PNG)"
             >
-              💾
+              <Download class="w-3.5 h-3.5" />
             </button>
             <button
               @click="openExpandedChart('acceleration')"
-              class="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 bg-blue-300/30 dark:bg-blue-900/30 px-3 py-1 rounded hover:bg-blue-200 dark:bg-blue-800 hover:text-gray-900 dark:text-white transition-colors"
+              class="text-[10px] font-bold uppercase tracking-wide text-blue-700 dark:text-blue-400 border border-blue-200 dark:border-blue-800 bg-blue-300/30 dark:bg-blue-900/30 px-3 py-1 rounded hover:bg-blue-200 dark:bg-blue-800 hover:text-gray-900 dark:text-white transition-colors flex items-center gap-1"
             >
-              🔍 Ampliar Gráfica
+              <Maximize2 class="w-3.5 h-3.5" /> Ampliar Gráfica
             </button>
           </div>
         </div>
@@ -448,12 +480,12 @@ onBeforeUnmount(() => {
                   : 'Aceleración a(t)'
             }}
           </h3>
-          <div class="flex gap-2">
+          <div class="flex gap-3">
             <button
               @click="exportChart('expanded')"
-              class="text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm flex items-center gap-1"
+              class="flex items-center gap-2 text-xs font-bold uppercase tracking-wide text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 px-4 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors shadow-sm"
             >
-              💾 Descargar PNG
+              <Download class="w-4 h-4" /> Descargar PNG
             </button>
             <button
               @click="closeExpandedChart"

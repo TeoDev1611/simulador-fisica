@@ -6,6 +6,7 @@
 // obligando a salir de la escena para ver los datos).
 // Colapsado por defecto para no tapar la simulación; una pestaña lo abre.
 import { ref } from 'vue'
+import { BarChart2, Link, Spline, CircleDashed } from 'lucide-vue-next'
 
 const props = defineProps({
   boxes: { type: Array, required: true }, // entradas reactivas kind === 'box'
@@ -14,7 +15,7 @@ const props = defineProps({
 
 const isOpen = ref(false)
 
-const JOINT_ICON = { rope: '🪢', spring: '🌀', pulley: '🎡' }
+const JOINT_ICON = { rope: Link, spring: Spline, pulley: CircleDashed }
 const JOINT_LABEL = { rope: 'Cuerda', spring: 'Resorte', pulley: 'Polea' }
 
 function labelFor(id, boxes) {
@@ -40,7 +41,7 @@ function fmt(n, decimals = 2) {
         @click="isOpen = !isOpen"
         class="w-full flex items-center justify-between px-5 py-3 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 hover:bg-gray-200/50 dark:bg-gray-800/50 transition-colors"
       >
-        <span class="drop-shadow-md">📊 Datos en vivo</span>
+        <span class="drop-shadow-md flex items-center gap-2"><BarChart2 class="w-4 h-4" /> DATOS EN VIVO</span>
         <span class="text-gray-600 dark:text-gray-400 text-[10px] normal-case tracking-normal">{{
           isOpen ? 'Ocultar ▾' : 'Mostrar ▴'
         }}</span>
@@ -94,8 +95,9 @@ function fmt(n, decimals = 2) {
               Uniones (cuerdas, resortes, poleas)
             </p>
             <div v-for="j in ropes" :key="j.id" class="flex items-center justify-between text-[11px] font-mono py-0.5">
-              <span class="text-gray-600 dark:text-gray-500">
-                {{ JOINT_ICON[j.kind] }} {{ labelFor(j.bodyAId, boxes) }} ↔ {{ labelFor(j.bodyBId, boxes) }}
+              <span class="text-gray-600 dark:text-gray-500 flex items-center gap-1.5">
+                <component :is="JOINT_ICON[j.kind]" class="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                {{ labelFor(j.bodyAId, boxes) }} ↔ {{ labelFor(j.bodyBId, boxes) }}
                 <span class="text-gray-600"
                   >({{ JOINT_LABEL[j.kind]
                   }}<template v-if="j.kind === 'spring'"> · k~{{ fmt(j.frequencyHz, 1) }}Hz</template>)</span

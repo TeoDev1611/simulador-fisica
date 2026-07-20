@@ -8,17 +8,19 @@ Este proyecto es una aplicación web interactiva desarrollada para la enseñanza
    - Ingreso de ecuaciones matemáticas de posición en tiempo real (`x(t)`).
    - Derivación analítica automática para obtener la velocidad (`v(t)`) y la aceleración (`a(t)`).
    - Exportación de ecuaciones analíticas generadas a texto (TXT) e imagen (PNG).
+   - Exportación de tablas de datos cinemáticos hacia **Excel (CSV)**.
    - Gráficas sincronizadas e interactivas generadas con Chart.js con soporte nativo de exportación a PNG.
-   - Pista de simulación interactiva con capacidad de grabación de video (WebM).
-2. **Sandbox Físico 2D (Newton Lab):** 
+   - Pista de simulación interactiva.
+2. ** Newton Lab:** 
    - Motor de físicas 2D realista construido sobre **Planck.js** (basado en Box2D).
    - Sistema de **Deshacer y Rehacer (Undo/Redo)** con atajos de teclado (`Ctrl+Z`, `Ctrl+Y`) capaz de memorizar hasta 50 estados.
    - Herramientas de construcción libres: cajas, terrenos poligonales (múltiples simultáneos), anclajes, cuerdas, poleas, resortes y fuerzas constantes. Snap en vivo para facilitar conexiones.
+   - **Grabador de Telemetría:** Exportación a **Excel (CSV)** de 30 muestras por segundo con posiciones, velocidades, ángulos y telemetría de cada cuerpo.
    - **Persistencia:** Capacidad para Importar y Exportar el estado completo de la escena en archivos `.json`.
-   - Soporte para grabar el lienzo dinámico directamente a un archivo de video `.webm`.
    - Modificación en caliente de propiedades físicas como masa, fricción, coeficientes elásticos (k) y amortiguamiento, calculando todo 60 veces por segundo.
-3. **Manual / Wiki Integrado:** Documentación interactiva in-app para que el usuario aprenda a utilizar cada módulo.
-4. **Modo Claro / Oscuro:** Soporte completo de temas visuales mediante `darkMode: 'class'` de Tailwind CSS, con un diseño "Glassmorphism" en todos los componentes.
+3. **Optimización Móvil y Tablet (UX):** Interfaz fluida adaptable (docks inferiores) con manejo estricto de eventos de toque (`pointerevents` y bloqueo de scroll) previniendo bugs de multitouch.
+4. **Manual / Wiki Integrado:** Documentación interactiva in-app para que el usuario aprenda a utilizar cada módulo.
+5. **Modo Claro / Oscuro:** Soporte completo de temas visuales mediante `darkMode: 'class'` de Tailwind CSS, con un diseño "Glassmorphism" en todos los componentes.
 
 ## Estructura Actual del Proyecto
 
@@ -84,10 +86,4 @@ pnpm run build
 
 ## Próximos Pasos (Deuda Técnica / Backlog)
 
-- **Optimización Integral en Móviles (Eventos Touch):** 
-  - *Problema:* La interfaz del Sandbox 2D (drag & drop) procesa nativamente eventos de ratón (`mousedown`, `mousemove`). En móviles, el navegador intenta procesar estos eventos como gestos de scroll, limitando la interacción.
-  - *Solución Técnica Propuesta:* 
-    1. Aplicar CSS `touch-action: none;` al `<canvas>` para bloquear el scroll nativo.
-    2. Modificar `PhysicsCanvas.vue` para escuchar concurrentemente los eventos `touchstart`, `touchmove` y `touchend`.
-    3. Mapear las coordenadas extraídas de `event.touches[0].clientX` (normalizadas con `getBoundingClientRect()`) hacia las funciones lógicas actuales de Planck.js, unificando la lógica de puntero (Mouse + Touch) mediante la API genérica de `PointerEvents`.
 - **Soporte PWA (Progresive Web App):** Habilitar el guardado sin conexión instalable en dispositivo.
