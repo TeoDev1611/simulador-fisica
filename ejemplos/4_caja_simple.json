@@ -1,0 +1,28 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Suelo Base",
+      "friction": 0.5,
+      "points": [{"x": -8, "y": -2}, {"x": 8, "y": -2}]
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Caja Básica",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0.5,
+      "restitution": 0.2,
+      "color": "#3b82f6",
+      "position": {"x": 0, "y": 3},
+      "angleRad": 0.5,
+      "shape": "box"
+    }
+  ],
+  "ropes": []
+}

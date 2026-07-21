@@ -15,7 +15,7 @@ Este proyecto es una aplicación web interactiva desarrollada para la enseñanza
    - Motor de físicas 2D realista construido sobre **Planck.js** (basado en Box2D).
    - Sistema de **Deshacer y Rehacer (Undo/Redo)** con atajos de teclado (`Ctrl+Z`, `Ctrl+Y`) capaz de memorizar hasta 50 estados.
    - Herramientas de construcción libres: cajas, terrenos poligonales (múltiples simultáneos), anclajes, cuerdas, poleas, resortes y fuerzas constantes. Snap en vivo para facilitar conexiones.
-   - **Grabador de Telemetría:** Exportación a **Excel (CSV)** de 30 muestras por segundo con posiciones, velocidades, ángulos y telemetría de cada cuerpo.
+   - **Grabador de Telemetría:** Exportación a **Excel (CSV)** de 30 muestras por segundo con posiciones, velocidades, **aceleraciones lineales**, ángulos y telemetría de cada cuerpo.
    - **Persistencia:** Capacidad para Importar y Exportar el estado completo de la escena en archivos `.json`.
    - Modificación en caliente de propiedades físicas como masa, fricción, coeficientes elásticos (k) y amortiguamiento, calculando todo 60 veces por segundo.
 3. **Optimización Móvil y Tablet (UX):** Interfaz fluida adaptable (docks inferiores) con manejo estricto de eventos de toque (`pointerevents` y bloqueo de scroll) previniendo bugs de multitouch.
@@ -61,7 +61,10 @@ Se han implementado accesos directos para agilizar el uso en computadoras:
 - **`Enter` o `Espacio`:** Alterna de forma global entre Reproducir (▶) y Pausar (⏸) el tiempo en el Sandbox 2D. En Cinemática 1D, `Enter` fuerza el cálculo de la ecuación y reproduce la animación.
 - **`Ctrl+Z` / `Ctrl+Y`:** Funciones de Deshacer (Undo) y Rehacer (Redo) el último cambio físico o de dibujo en el Sandbox 2D.
 - **Teclas `1-8`:** Cambian inmediatamente la herramienta en el Sandbox 2D (Mover, Caja, Terreno, Cuerda, Resorte, Polea, Riel, Fuerza).
+- **`H`:** Activa la herramienta Mano para mover la cámara (Pan).
+- **`+` / `-`:** Acercar o alejar la cámara (Zoom In/Out). También utilizable con la rueda del ratón.
 - **`Retroceso` / `Suprimir` (`9`):** Elimina el objeto o anclaje seleccionado.
+- **`Ctrl+R`:** Iniciar/Detener rápidamente la grabación de Telemetría a CSV.
 
 ### 3. SEO Básico y Despliegue
 El proyecto cuenta con las etiquetas de optimización y meta descripciones en su archivo `index.html` (apuntando de forma canónica a la universidad). 

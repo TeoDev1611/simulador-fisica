@@ -84,6 +84,37 @@ function fmt(n, decimals = 2) {
                   >{{ fmt(b.appliedForce.magnitude) }} N · {{ fmt(b.appliedForce.angleDeg, 0) }}°</span
                 >
               </template>
+
+              <!-- CINEMÁTICA -->
+              <span class="text-purple-600 dark:text-purple-400 mt-1">Velocidad |v|</span>
+              <span class="text-purple-600 dark:text-purple-300 text-right mt-1" title="v_x, v_y"
+                >{{ fmt(b.velocity?.magnitude) }} m/s</span
+              >
+
+              <span class="text-fuchsia-600 dark:text-fuchsia-400">Aceleración |a|</span>
+              <span class="text-fuchsia-600 dark:text-fuchsia-300 text-right" title="a_x, a_y"
+                >{{ fmt(b.acceleration?.magnitude) }} m/s²</span
+              >
+
+              <template v-if="b.acceleration?.radial !== 0 || b.acceleration?.transverse !== 0">
+                <span
+                  class="text-yellow-600 dark:text-yellow-400 font-bold bg-yellow-100/50 dark:bg-yellow-900/30 px-1 rounded"
+                  >Acel. Radial (a_r)</span
+                >
+                <span
+                  class="text-yellow-700 dark:text-yellow-300 text-right font-bold bg-yellow-100/50 dark:bg-yellow-900/30 px-1 rounded"
+                  >{{ fmt(b.acceleration?.radial) }} m/s²</span
+                >
+
+                <span
+                  class="text-yellow-600 dark:text-yellow-400 font-bold bg-yellow-100/50 dark:bg-yellow-900/30 px-1 rounded"
+                  >Acel. Transversal (a_θ)</span
+                >
+                <span
+                  class="text-yellow-700 dark:text-yellow-300 text-right font-bold bg-yellow-100/50 dark:bg-yellow-900/30 px-1 rounded"
+                  >{{ fmt(b.acceleration?.transverse) }} m/s²</span
+                >
+              </template>
             </div>
           </div>
 

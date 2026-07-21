@@ -99,9 +99,11 @@ Este entorno permite crear colisiones y experimentos de física libremente dibuj
    - **Historial (Deshacer y Rehacer):** Puedes presionar `Ctrl + Z` para retroceder ante una equivocación o choque accidental. El Sandbox puede guardar hasta tus últimos 50 movimientos. Usa `Ctrl + Y` para rehacer. También hay botones (↩️ ↪️) en el menú superior.
    - **Persistencia:** Arriba tienes las opciones `💾 Exportar` y `📂 Importar` Escena en formato JSON ligero.
    - **Fuerza Constante (➤) [Tecla 8]:** Puedes aplicar propulsores continuos o un impacto instantáneo a los bloques arrastrando un vector.
+   - **Mover Cámara (Mano) [Tecla H]:** Te permite arrastrar el lienzo y desplazarte libremente.
+   - **Zoom [Rueda del Ratón o Teclas +/-]:** Te permite acercar y alejar la cámara.
    - **Eliminar Objeto [Tecla 9 o Suprimir/Retroceso]:** Borra rápidamente cualquier objeto o restricción.
 
 3. **Panel de Dinámica y Telemetría**
    - En la esquina inferior izquierda (en pantallas de escritorio y tablets) verás mediciones exactas en vivo de las cajas, como su centro de masa ($X, Y$) y sus velocidades.
-   - **Grabador de Telemetría (Excel):** En la barra superior, junto a "Importar", se encuentra el botón **🔴 Grabar Datos**. Al pulsarlo, el simulador registrará toda la información física (posición, velocidad lineal/angular, ángulos) a 30 muestras por segundo. Al detener la grabación (**⏹️ Exportar CSV**), se generará automáticamente un archivo compatible con Microsoft Excel o Google Sheets, ideal para análisis de datos posteriores.
+   - **Grabador de Telemetría (Excel):** En la barra superior, junto a "Importar", se encuentra el botón **🔴 Grabar Datos** (o usa el atajo **Ctrl + R**). Al pulsarlo, el simulador registrará toda la información física (posición, velocidad lineal, **aceleración lineal**, ángulos y velocidad angular) a 30 muestras por segundo. Al detener la grabación (**⏹️ Exportar CSV**), se generará automáticamente un archivo compatible con Microsoft Excel o Google Sheets, ideal para análisis de datos posteriores.
    - Puedes usar la herramienta de **Fuerza (➤)** para empujar cajas activamente y luego comprobar empíricamente en el Excel cómo la Fricción estática colapsa y entra en acción la cinética.

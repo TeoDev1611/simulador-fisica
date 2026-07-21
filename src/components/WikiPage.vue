@@ -32,7 +32,11 @@ import {
   Trash2,
   Maximize,
   EyeOff,
-  Play
+  Play,
+  ChevronRight,
+  ChevronDown,
+  Info,
+  Library
 } from 'lucide-vue-next'
 
 function m(expr) {
@@ -257,6 +261,40 @@ const sections = [
                   gravedad.
                 </p>
               </div>
+
+              <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mt-6 mb-2">Atajos de Teclado Extendidos</h4>
+              <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-1 mb-2">
+                <li><strong>1 a 8:</strong> Cambiar de herramienta rápidamente.</li>
+                <li><strong>H:</strong> Seleccionar la herramienta Mano (Mover Cámara).</li>
+                <li><strong>Rueda del ratón</strong> o <strong>Teclas + / -:</strong> Hacer Zoom In o Zoom Out.</li>
+                <li><strong>Retroceso / Suprimir (o 9):</strong> Herramienta borrar.</li>
+                <li><strong>Ctrl + Z / Ctrl + Y:</strong> Deshacer / Rehacer historial.</li>
+                <li><strong>Ctrl + R:</strong> Iniciar / Detener grabación de telemetría.</li>
+              </ul>
+            </div>
+
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
+            >
+              <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <FolderOpen class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Plantillas y Ejemplos
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                El simulador incluye 13 archivos JSON de ejemplos integrados que abarcan desde conceptos básicos hasta
+                montajes complejos (poleas, vehículos, péndulos dobles, rieles y catapultas).
+              </p>
+              <div
+                class="bg-emerald-300/20 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 p-4 rounded-lg"
+              >
+                <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mb-2">💡 ¿Cómo usarlos?</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
+                  En el simulador 2D, haz clic en el botón de
+                  <strong>Biblioteca (<Library class="w-4 h-4 inline" />)</strong> de la barra superior. Esto te llevará
+                  directamente al repositorio en GitHub. Descarga cualquiera de los archivos JSON de la carpeta
+                  <code>ejemplos/</code> y luego usa el botón
+                  <strong>Cargar Escena (<FolderOpen class="w-4 h-4 inline" />)</strong> para abrirlos en tu lienzo.
+                </p>
+              </div>
             </div>
 
             <div
@@ -266,7 +304,10 @@ const sections = [
                 <Radio class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Telemetría (Panel de Datos)
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                En la esquina inferior izquierda puedes visualizar el <strong>Centro de Telemetría</strong>. Por defecto se encuentra oculto para darte un espacio de trabajo limpio, pero puedes activarlo en cualquier momento usando el botón de <strong>Estadísticas (<BarChart2 class="w-4 h-4 inline" />)</strong> en la barra superior.
+                En la esquina inferior izquierda puedes visualizar el <strong>Centro de Telemetría</strong>. Por defecto
+                se encuentra oculto para darte un espacio de trabajo limpio, pero puedes activarlo en cualquier momento
+                usando el botón de <strong>Estadísticas (<BarChart2 class="w-4 h-4 inline" />)</strong> en la barra
+                superior.
               </p>
               <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <li>
@@ -291,13 +332,17 @@ const sections = [
                 class="mt-4 bg-emerald-300/20 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 p-4 rounded-lg"
               >
                 <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mb-2">📊 Grabador de Telemetría (NUEVO)</h4>
-                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
                   En la barra superior, junto a "Importar", dispones del botón
                   <strong><CircleDot class="w-4 h-4 inline" /> (Grabar)</strong>. Al pulsarlo, el simulador empezará a
-                  grabar internamente todas las posiciones, velocidades y ángulos de todas las cajas a 30 muestras por
-                  segundo. Pulsa luego en <strong><Square class="w-4 h-4 inline" /> (Exportar CSV)</strong> para
-                  descargar un archivo que podrás abrir nativamente en <strong>Microsoft Excel</strong> para realizar
-                  análisis matemáticos del experimento.
+                  grabar internamente todas las posiciones, velocidades, <strong>aceleraciones (X, Y)</strong> y ángulos
+                  de todas las cajas y anillas a 30 muestras por segundo.
+                </p>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed">
+                  Pulsa luego en <strong><Square class="w-4 h-4 inline" /> (Exportar CSV)</strong> para descargar un
+                  archivo que podrás abrir nativamente en <strong>Microsoft Excel</strong> para realizar análisis
+                  matemáticos del experimento.
+                  <em>Atajo: Usa <strong>Ctrl + R</strong> para iniciar/detener la grabación rápidamente.</em>
                 </p>
               </div>
             </div>
@@ -313,13 +358,19 @@ const sections = [
               </p>
               <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <li>
-                  <strong>Forzado a Horizontal (Landscape):</strong> Si usas un celular, al darle al botón de Pantalla Completa (<Maximize class="w-4 h-4 inline" />) tu dispositivo rotará automáticamente a horizontal, dándote todo el ancho necesario para operar las herramientas cómodamente.
+                  <strong>Forzado a Horizontal (Landscape):</strong> Si usas un celular, al darle al botón de Pantalla
+                  Completa (<Maximize class="w-4 h-4 inline" />) tu dispositivo rotará automáticamente a horizontal,
+                  dándote todo el ancho necesario para operar las herramientas cómodamente.
                 </li>
                 <li>
-                  <strong>Barra de Herramientas Deslizable:</strong> En pantallas pequeñas, la barra de herramientas inferior se vuelve deslizable de forma horizontal (scroll) para asegurar que todos los íconos quepan perfectamente sin dañar la vista del experimento.
+                  <strong>Barra de Herramientas Deslizable:</strong> En pantallas pequeñas, la barra de herramientas
+                  inferior se vuelve deslizable de forma horizontal (scroll) para asegurar que todos los íconos quepan
+                  perfectamente sin dañar la vista del experimento.
                 </li>
                 <li>
-                  <strong>Ocultar Propiedades (<EyeOff class="w-4 h-4 inline" />):</strong> El panel de propiedades (donde cambias masas y ángulos) tiene un botón de "Ojo" en la esquina superior derecha. Tócalo para colapsar todo el panel en un diminuto círculo y liberar aún más pantalla.
+                  <strong>Ocultar Propiedades (<EyeOff class="w-4 h-4 inline" />):</strong> El panel de propiedades
+                  (donde cambias masas y ángulos) tiene un botón de "Ojo" en la esquina superior derecha. Tócalo para
+                  colapsar todo el panel en un diminuto círculo y liberar aún más pantalla.
                 </li>
               </ul>
             </div>

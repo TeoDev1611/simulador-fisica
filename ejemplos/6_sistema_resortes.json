@@ -1,0 +1,51 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Pista de Hielo",
+      "friction": 0.0,
+      "points": [{"x": -10, "y": 0}, {"x": 10, "y": 0}]
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Masa Izquierda",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0.0,
+      "restitution": 0.5,
+      "color": "#10b981",
+      "position": {"x": -4, "y": 0.5},
+      "angleRad": 0,
+      "shape": "box"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa Derecha",
+      "width": 1,
+      "height": 1,
+      "mass": 2,
+      "friction": 0.0,
+      "restitution": 0.5,
+      "color": "#3b82f6",
+      "position": {"x": 0, "y": 0.5},
+      "angleRad": 0,
+      "shape": "box"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "spring_1",
+      "kind": "spring",
+      "bodyAId": "box_2",
+      "bodyBId": "box_3",
+      "frequencyHz": 1.5,
+      "dampingRatio": 0.05
+    }
+  ]
+}

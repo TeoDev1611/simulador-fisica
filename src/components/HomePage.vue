@@ -1,6 +1,6 @@
 <script setup>
 // src/components/HomePage.vue
-import { TrendingUp, Magnet, Target, Ruler, Zap, BarChart2 } from 'lucide-vue-next'
+import { TrendingUp, Magnet, Target, Ruler, Zap, BarChart2, Library } from 'lucide-vue-next'
 defineEmits(['navigate'])
 
 const apps = [
@@ -216,6 +216,32 @@ const apps = [
             </p>
           </div>
         </div>
+      </section>
+
+      <!-- Banner de Ejemplos -->
+      <section
+        class="bg-gradient-to-r from-emerald-500 to-teal-600 rounded-[2rem] p-8 shadow-xl mb-8 relative overflow-hidden z-10 flex flex-col md:flex-row items-center justify-between gap-6"
+      >
+        <div
+          class="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAiIGhlaWdodD0iMjAiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMiIgY3k9IjIiIHI9IjIiIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIi8+PC9zdmc+')] opacity-50"
+        ></div>
+        <div class="relative z-10 text-white md:w-2/3">
+          <h2 class="text-2xl font-black mb-2 flex items-center gap-2">
+            <Library class="w-7 h-7" /> Explora las Plantillas y Ejemplos
+          </h2>
+          <p class="text-emerald-50 text-sm leading-relaxed">
+            Hemos preparado 13 escenarios (básicos, intermedios y avanzados) como péndulos dobles, catapultas, pistas de
+            hielo y suspensiones vehiculares. Descárgalos gratis e impórtalos en el Newton Lab 2D.
+          </p>
+        </div>
+        <a
+          href="https://github.com/TeoDev1611/simulador-fisica/tree/main/ejemplos"
+          target="_blank"
+          class="relative z-10 bg-white text-emerald-700 hover:bg-emerald-50 font-bold py-3 px-6 rounded-xl shadow-lg transition-transform active:scale-95 whitespace-nowrap flex items-center gap-2"
+        >
+          Ver Ejemplos
+          <span class="text-lg">→</span>
+        </a>
       </section>
 
       <!-- Llamada a la acción extra -->

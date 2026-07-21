@@ -1,0 +1,96 @@
+{
+  "gravity": 9.81,
+  "counter": 10,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Columna Izquierda",
+      "position": {"x": -6, "y": 0}
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Columna Derecha",
+      "position": {"x": 6, "y": 0}
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Tramo 1",
+      "width": 2.5,
+      "height": 0.4,
+      "mass": 1,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#9ca3af",
+      "position": {"x": -4, "y": 0},
+      "shape": "box"
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Tramo 2",
+      "width": 2.5,
+      "height": 0.4,
+      "mass": 1,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#9ca3af",
+      "position": {"x": 0, "y": 0},
+      "shape": "box"
+    },
+    {
+      "id": "box_5",
+      "kind": "box",
+      "label": "Tramo 3",
+      "width": 2.5,
+      "height": 0.4,
+      "mass": 1,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#9ca3af",
+      "position": {"x": 4, "y": 0},
+      "shape": "box"
+    },
+    {
+      "id": "box_6",
+      "kind": "box",
+      "label": "Carga Pesada",
+      "width": 1.5,
+      "height": 1.5,
+      "mass": 5,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#ef4444",
+      "position": {"x": 0, "y": 3},
+      "shape": "box"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "anchor_1",
+      "bodyBId": "box_3"
+    },
+    {
+      "id": "rope_2",
+      "kind": "rope",
+      "bodyAId": "box_3",
+      "bodyBId": "box_4"
+    },
+    {
+      "id": "rope_3",
+      "kind": "rope",
+      "bodyAId": "box_4",
+      "bodyBId": "box_5"
+    },
+    {
+      "id": "rope_4",
+      "kind": "rope",
+      "bodyAId": "box_5",
+      "bodyBId": "anchor_2"
+    }
+  ]
+}

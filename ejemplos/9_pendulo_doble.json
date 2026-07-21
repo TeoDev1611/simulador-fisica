@@ -1,0 +1,54 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Pivote Doble",
+      "position": {"x": 0, "y": 6}
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Masa 1",
+      "width": 1.5,
+      "height": 1.5,
+      "mass": 3,
+      "friction": 0.2,
+      "restitution": 0.5,
+      "color": "#eab308",
+      "position": {"x": 3, "y": 6},
+      "angleRad": 0,
+      "shape": "circle"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa 2",
+      "width": 1,
+      "height": 1,
+      "mass": 1.5,
+      "friction": 0.2,
+      "restitution": 0.5,
+      "color": "#ec4899",
+      "position": {"x": 6, "y": 6},
+      "angleRad": 0,
+      "shape": "circle"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "anchor_1",
+      "bodyBId": "box_2"
+    },
+    {
+      "id": "rope_2",
+      "kind": "rope",
+      "bodyAId": "box_2",
+      "bodyBId": "box_3"
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "gravity": 9.81,
+  "counter": 6,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Rampa 1",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0.1,
+      "restitution": 0,
+      "color": "#9ca3af",
+      "position": null,
+      "angleRad": null,
+      "points": [{"x": -6, "y": 0}, {"x": -2, "y": 2}, {"x": 2, "y": 2}, {"x": 5, "y": 5}],
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Vehículo",
+      "width": 1.2,
+      "height": 0.6,
+      "mass": 10,
+      "friction": 0.05,
+      "restitution": 0.2,
+      "color": "#3b82f6",
+      "position": {"x": -5, "y": 1},
+      "angleRad": 0.4636,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "box",
+      "vertices": null
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Obstáculo",
+      "width": 1,
+      "height": 1,
+      "mass": 2,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#ef4444",
+      "position": {"x": 0, "y": 1.5},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "polygon",
+      "vertices": [{"x": -0.5, "y": -0.5}, {"x": 0.5, "y": -0.5}, {"x": 0, "y": 0.5}]
+    },
+    {
+      "id": "anchor_4",
+      "kind": "anchor",
+      "label": "Ancla Cuerda",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": -6, "y": -1},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "anchor_4",
+      "bodyBId": "box_2",
+      "wheelId": null,
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    }
+  ]
+}

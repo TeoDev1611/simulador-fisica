@@ -1,0 +1,73 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Terreno Irregular",
+      "friction": 0.8,
+      "points": [{"x": -10, "y": 0}, {"x": -5, "y": 0}, {"x": -3, "y": 2}, {"x": 0, "y": 0}, {"x": 3, "y": 1}, {"x": 6, "y": -1}, {"x": 12, "y": 0}]
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Chasis",
+      "width": 4,
+      "height": 0.8,
+      "mass": 10,
+      "friction": 0.2,
+      "restitution": 0.1,
+      "color": "#14b8a6",
+      "position": {"x": -8, "y": 3},
+      "angleRad": 0,
+      "shape": "box"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Rueda Trasera",
+      "width": 1.2,
+      "height": 1.2,
+      "mass": 2,
+      "friction": 0.9,
+      "restitution": 0.3,
+      "color": "#334155",
+      "position": {"x": -9.5, "y": 1.5},
+      "angleRad": 0,
+      "shape": "circle"
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Rueda Delantera",
+      "width": 1.2,
+      "height": 1.2,
+      "mass": 2,
+      "friction": 0.9,
+      "restitution": 0.3,
+      "color": "#334155",
+      "position": {"x": -6.5, "y": 1.5},
+      "angleRad": 0,
+      "shape": "circle"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "spring_1",
+      "kind": "spring",
+      "bodyAId": "box_2",
+      "bodyBId": "box_3",
+      "frequencyHz": 4.0,
+      "dampingRatio": 0.5
+    },
+    {
+      "id": "spring_2",
+      "kind": "spring",
+      "bodyAId": "box_2",
+      "bodyBId": "box_4",
+      "frequencyHz": 4.0,
+      "dampingRatio": 0.5
+    }
+  ]
+}

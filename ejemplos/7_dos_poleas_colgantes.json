@@ -1,0 +1,73 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Polea Izquierda",
+      "position": {"x": -3, "y": 4}
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Polea Derecha",
+      "position": {"x": 3, "y": 4}
+    },
+    {
+      "id": "box_1",
+      "kind": "box",
+      "label": "Masa Izquierda",
+      "width": 1,
+      "height": 1,
+      "mass": 3,
+      "friction": 0.2,
+      "restitution": 0.1,
+      "color": "#ef4444",
+      "position": {"x": -3, "y": 0},
+      "shape": "box"
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Masa Central",
+      "width": 2,
+      "height": 1,
+      "mass": 2,
+      "friction": 0.2,
+      "restitution": 0.1,
+      "color": "#10b981",
+      "position": {"x": 0, "y": 1},
+      "shape": "box"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa Derecha",
+      "width": 1,
+      "height": 1,
+      "mass": 4,
+      "friction": 0.2,
+      "restitution": 0.1,
+      "color": "#8b5cf6",
+      "position": {"x": 3, "y": -2},
+      "shape": "box"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "pulley_1",
+      "kind": "pulley",
+      "bodyAId": "box_1",
+      "bodyBId": "box_2",
+      "wheelId": "anchor_1"
+    },
+    {
+      "id": "pulley_2",
+      "kind": "pulley",
+      "bodyAId": "box_2",
+      "bodyBId": "box_3",
+      "wheelId": "anchor_2"
+    }
+  ]
+}

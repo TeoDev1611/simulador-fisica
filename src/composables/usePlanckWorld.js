@@ -1,6 +1,6 @@
 // src/composables/usePlanckWorld.js
 import { reactive, markRaw } from 'vue'
-import { World, Box, Edge, Chain, Vec2, DistanceJoint, PulleyJoint, MouseJoint, AABB } from 'planck'
+import { World, Box, Circle, Polygon, Edge, Chain, Vec2, DistanceJoint, PulleyJoint, MouseJoint, AABB } from 'planck'
 
 const DEFAULT_GRAVITY = 9.81
 
@@ -38,7 +38,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // includeStatic: además de cajas (dinámicas), detecta anclajes y trozos de
   // suelo. Se usa para "seleccionar/borrar suelo" o "borrar anclaje", pero
   // NO para arrastrar/crear cuerdas (ahí solo interesan las cajas).
-  function queryPoint(x, y, { includeStatic = false } = {}) {
+  function queryPoint(x, y, { includeStatic = false, includeGround = true } = {}) {
     const point = Vec2(x, y)
     const aabb = new AABB(Vec2(x - 0.05, y - 0.05), Vec2(x + 0.05, y + 0.05))
     let foundId = null
@@ -139,22 +139,38 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     restitution = 0.1,
     color = '#34d399',
     label = '',
+    shape = 'box',
+    vertices = null,
     idOverride = null
   }) {
-    const area = width * height
+    let area = width * height
+    if (shape === 'circle' || shape === 'ring') area = Math.PI * (width / 2) * (width / 2)
+    else if (shape === 'polygon' && vertices) {
+      // simple approx
+      area = width * height * 0.5
+    }
+
     const density = area > 0 ? mass / area : 1
     const body = world.createDynamicBody({ position: Vec2(x, y), angle })
-
-    // MEJORA: Habilitar "Bullet" (Continuous Collision Detection)
-    // Evita que la caja atraviese el suelo si se arrastra muy rápido
     body.setBullet(true)
 
-    body.createFixture({ shape: new Box(width / 2, height / 2), density, friction, restitution })
+    let fixtureShape
+    if (shape === 'circle' || shape === 'ring') {
+      fixtureShape = new Circle(width / 2)
+    } else if (shape === 'polygon' && vertices) {
+      fixtureShape = new Polygon(vertices.map((v) => Vec2(v.x * width, v.y * height)))
+    } else {
+      fixtureShape = new Box(width / 2, height / 2)
+    }
+
+    body.createFixture({ shape: fixtureShape, density, friction, restitution })
 
     const id = idOverride || nextId('box')
     bodies.push({
       id,
       kind: 'box',
+      shape,
+      vertices,
       body: markRaw(body),
       label: label || id,
       width,
@@ -163,6 +179,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       friction,
       color,
       position: { x, y },
+      velocity: { x: 0, y: 0, magnitude: 0 },
+      acceleration: { x: 0, y: 0, magnitude: 0, radial: 0, transverse: 0 },
       angleRad: angle,
       normalForce: 0,
       weightForce: mass * gravityMagnitude,
@@ -209,12 +227,26 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     entry.body.setAwake(true)
   }
 
-  function updateBoxDimensions(id, width, height) {
+  function updateBoxVelocity(id, magnitude, angleDeg) {
+    const entry = bodies.find((b) => b.id === id && b.kind === 'box')
+    if (!entry) return
+    const rad = (angleDeg * Math.PI) / 180
+    const vx = magnitude * Math.cos(rad)
+    const vy = -magnitude * Math.sin(rad) // En el canvas, -y es hacia arriba. Pero en Planck, +y es hacia abajo. Wait, en Planck y canvas coinciden si lo configuraste así, pero en matemáticas estándar, vy = sin(rad). Reviso cómo lo renderizas.
+    // Usamos el vector directamente
+    entry.body.setLinearVelocity(Vec2(vx, vy))
+    entry.body.setAwake(true)
+  }
+
+  function updateBoxDimensions(id, width, height, newShape = null, newVertices = null) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
 
-    const safeWidth = Math.max(0.1, Math.min(10, width))
-    const safeHeight = Math.max(0.1, Math.min(10, height))
+    const safeWidth = Math.max(0.05, Math.min(10, width))
+    const safeHeight = Math.max(0.05, Math.min(10, height))
+
+    if (newShape) entry.shape = newShape
+    if (newVertices) entry.vertices = newVertices
 
     const body = entry.body
     const fixture = body.getFixtureList()
@@ -222,10 +254,23 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       body.destroyFixture(fixture)
     }
 
-    const area = safeWidth * safeHeight
+    let area = safeWidth * safeHeight
+    if (entry.shape === 'circle' || entry.shape === 'ring') area = Math.PI * (safeWidth / 2) * (safeWidth / 2)
+    else if (entry.shape === 'polygon' && entry.vertices) area = safeWidth * safeHeight * 0.5
+
     const density = area > 0 ? entry.mass / area : 1
+
+    let fixtureShape
+    if (entry.shape === 'circle' || entry.shape === 'ring') {
+      fixtureShape = new Circle(safeWidth / 2)
+    } else if (entry.shape === 'polygon' && entry.vertices) {
+      fixtureShape = new Polygon(entry.vertices.map((v) => Vec2(v.x * safeWidth, v.y * safeHeight)))
+    } else {
+      fixtureShape = new Box(safeWidth / 2, safeHeight / 2)
+    }
+
     body.createFixture({
-      shape: new Box(safeWidth / 2, safeHeight / 2),
+      shape: fixtureShape,
       density,
       friction: entry.friction,
       restitution: entry.restitution ?? 0.1
@@ -358,7 +403,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     const anchorA = entryA.body.getWorldCenter()
     const anchorB = entryB.body.getWorldCenter()
-    const length = Vec2.distance(anchorA, anchorB)
+    const length = Math.max(0.05, Vec2.distance(anchorA, anchorB))
 
     const joint = new DistanceJoint(
       { frequencyHz: 0, dampingRatio: 0, length },
@@ -381,7 +426,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     const anchorA = entryA.body.getWorldCenter()
     const anchorB = entryB.body.getWorldCenter()
-    const length = Vec2.distance(anchorA, anchorB)
+    const length = Math.max(0.05, Vec2.distance(anchorA, anchorB))
 
     const joint = new DistanceJoint({ frequencyHz, dampingRatio, length }, entryA.body, entryB.body, anchorA, anchorB)
     const created = world.createJoint(joint)
@@ -533,6 +578,15 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     ropes.splice(idx, 1)
   }
 
+  function updateTrackRadius(id, newRadius) {
+    const entry = ropes.find((r) => r.id === id)
+    if (!entry || entry.kind !== 'track') return
+    entry.radius = newRadius
+    if (entry.joint && typeof entry.joint.setLength === 'function') {
+      entry.joint.setLength(newRadius)
+    }
+  }
+
   function reset() {
     if (m_mouseJoint) {
       world.destroyJoint(m_mouseJoint)
@@ -557,18 +611,12 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         entry.angleRad = entry.body.getAngle() || 0
 
         // Si la caja explota (NaN) o se cae infinitamente al vacío, la marcamos para borrar
-        if (
-          Number.isNaN(p.x) ||
-          Number.isNaN(p.y) ||
-          Math.abs(p.x) > 2000 ||
-          p.y < -300 ||
-          p.y > 2000
-        ) {
+        if (Number.isNaN(p.x) || Number.isNaN(p.y) || Math.abs(p.x) > 2000 || p.y < -300 || p.y > 2000) {
           outOfBoundsIds.push(entry.id)
         }
       } catch (err) {}
     }
-    outOfBoundsIds.forEach(id => removeBody(id))
+    outOfBoundsIds.forEach((id) => removeBody(id))
   }
 
   function applyExternalForces() {
@@ -620,10 +668,67 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
   function step(dt = 1 / 60) {
     try {
+      // 1. Guardar velocidad anterior para cálculo de aceleración
+      for (const entry of bodies) {
+        if (entry.kind === 'box') {
+          const v = entry.body.getLinearVelocity()
+          entry.prevVelocity = { x: v.x || 0, y: v.y || 0 }
+        }
+      }
+
       applyExternalForces()
       world.step(dt, 8, 3)
       syncTransforms()
       computeForces(dt)
+
+      // 2. Calcular aceleración actual y actualizar velocidad
+      const invDt = dt > 0 ? 1 / dt : 0
+      for (const entry of bodies) {
+        if (entry.kind === 'box') {
+          const v = entry.body.getLinearVelocity()
+          entry.velocity.x = v.x || 0
+          entry.velocity.y = v.y || 0
+          entry.velocity.magnitude = Math.hypot(entry.velocity.x, entry.velocity.y)
+
+          const prevX = entry.prevVelocity?.x || 0
+          const prevY = entry.prevVelocity?.y || 0
+          const ax = (entry.velocity.x - prevX) * invDt
+          const ay = (entry.velocity.y - prevY) * invDt
+
+          entry.acceleration.x = ax
+          entry.acceleration.y = ay
+          entry.acceleration.magnitude = Math.hypot(ax, ay)
+          entry.acceleration.radial = 0
+          entry.acceleration.transverse = 0
+        }
+      }
+
+      // 3. Proyectar aceleración radial y transversal para cuerpos en rieles
+      for (const r of ropes) {
+        if (r.kind === 'track') {
+          const bodyEntry = bodies.find((b) => b.id === r.bodyAId)
+          const centerEntry = bodies.find((b) => b.id === r.bodyBId)
+          if (bodyEntry && centerEntry) {
+            const dx = bodyEntry.position.x - centerEntry.position.x
+            const dy = bodyEntry.position.y - centerEntry.position.y
+            const dist = Math.hypot(dx, dy)
+            if (dist > 0.001) {
+              // Vector unitario radial (hacia afuera del centro)
+              const urx = dx / dist
+              const ury = dy / dist
+              // Vector unitario transversal (rotado 90 grados: sentido antihorario)
+              const utx = -ury
+              const uty = urx
+
+              const ax = bodyEntry.acceleration.x
+              const ay = bodyEntry.acceleration.y
+
+              bodyEntry.acceleration.radial = ax * urx + ay * ury
+              bodyEntry.acceleration.transverse = ax * utx + ay * uty
+            }
+          }
+        }
+      }
 
       // Chequeo de límites de caída (Out-of-Bounds)
       const toRemove = []
@@ -657,7 +762,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         position,
         angleRad,
         points,
-        appliedForce
+        appliedForce,
+        shape,
+        vertices
       } = b
       return {
         id,
@@ -672,7 +779,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         position,
         angleRad,
         points,
-        appliedForce
+        appliedForce,
+        shape,
+        vertices
       }
     })
 
@@ -719,6 +828,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
             restitution: b.restitution,
             color: b.color,
             label: b.label,
+            shape: b.shape,
+            vertices: b.vertices,
             idOverride: b.id
           })
           if (b.appliedForce) setAppliedForce(b.id, b.appliedForce)
@@ -753,7 +864,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     updateBoxMass,
     updateBoxFriction,
     updateBoxAngle,
+    updateBoxVelocity,
     updateBoxDimensions,
+    updateTrackRadius,
     setAppliedForce,
     applyImpulse,
     addGround,

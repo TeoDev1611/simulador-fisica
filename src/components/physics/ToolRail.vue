@@ -9,26 +9,38 @@
 defineProps({
   activeTool: { type: String, required: true }
 })
-import { MousePointer2, Box, Ruler, Link, Spline, Disc, CircleDashed, ArrowUpToLine, Trash2 } from 'lucide-vue-next'
+import {
+  MousePointer2,
+  Hand,
+  Box,
+  Ruler,
+  Link,
+  Spline,
+  Disc,
+  CircleDashed,
+  ArrowUpToLine,
+  Trash2
+} from 'lucide-vue-next'
 
 const emit = defineEmits(['select-tool'])
 
 const tools = [
-  { id: 'drag', label: 'Mover / Seleccionar', icon: MousePointer2 },
-  { id: 'box', label: 'Crear caja', icon: Box },
+  { id: 'drag', label: 'Seleccionar Objeto', icon: MousePointer2 },
+  { id: 'pan', label: 'Mover Cámara', icon: Hand },
+  { id: 'box', label: 'Crear Objeto', icon: Box },
   { id: 'ground', label: 'Dibujar suelo', icon: Ruler },
   { id: 'rope', label: 'Cuerda', icon: Link },
   { id: 'spring', label: 'Resorte', icon: Spline },
   { id: 'pulley', label: 'Polea', icon: Disc },
-  { id: 'circular', label: 'Riel circular', icon: CircleDashed },
+  { id: 'circular', label: 'Anillo en Riel', icon: CircleDashed },
   { id: 'force', label: 'Fuerza / Impulso', icon: ArrowUpToLine },
-  { id: 'delete', label: 'Borrar', icon: Trash2 } 
+  { id: 'delete', label: 'Borrar', icon: Trash2 }
 ]
 </script>
 
 <template>
   <div
-    class="pointer-events-auto flex flex-row md:flex-col gap-2 md:gap-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 md:p-3 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-visible md:overflow-y-auto max-w-[calc(100vw-32px)] md:max-w-none md:max-h-[calc(100vh-120px)] custom-scrollbar"
+    class="pointer-events-auto flex flex-row md:flex-col gap-2 md:gap-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 md:p-3 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-visible md:overflow-y-visible max-w-[calc(100vw-32px)] md:max-w-none md:max-h-[calc(100vh-120px)] [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
   >
     <div class="group relative" v-for="t in tools" :key="t.id">
       <button

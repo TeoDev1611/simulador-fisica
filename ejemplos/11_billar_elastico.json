@@ -1,0 +1,56 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Mesa",
+      "friction": 0,
+      "points": [{"x": -10, "y": 0}, {"x": 10, "y": 0}]
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Bola Izquierda",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0,
+      "restitution": 1.0,
+      "color": "#eab308",
+      "position": {"x": -6, "y": 0.5},
+      "angleRad": 0,
+      "shape": "circle"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Bola Central",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0,
+      "restitution": 1.0,
+      "color": "#ef4444",
+      "position": {"x": 0, "y": 0.5},
+      "angleRad": 0,
+      "shape": "circle"
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Bola Derecha",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0,
+      "restitution": 1.0,
+      "color": "#3b82f6",
+      "position": {"x": 1.2, "y": 0.5},
+      "angleRad": 0,
+      "shape": "circle"
+    }
+  ],
+  "ropes": []
+}

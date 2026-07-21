@@ -1,0 +1,34 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Pivote",
+      "position": {"x": 0, "y": 4}
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Masa del Péndulo",
+      "width": 1,
+      "height": 1,
+      "mass": 2,
+      "friction": 0.2,
+      "restitution": 0.5,
+      "color": "#ef4444",
+      "position": {"x": 4, "y": 4},
+      "angleRad": 0,
+      "shape": "circle"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "anchor_1",
+      "bodyBId": "box_2"
+    }
+  ]
+}

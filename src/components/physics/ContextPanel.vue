@@ -20,15 +20,26 @@ const props = defineProps({
   selectedBox: { type: Object, default: null }, // caja objetivo explícito (o null)
   selectedGround: { type: Object, default: null }, // trozo de suelo seleccionado con "drag"
   groundCount: { type: Number, default: 0 }, // cuántos trozos de suelo existen ya
+  ropes: { type: Array, default: () => [] },
   pendingPulley: { type: Boolean, default: false }, // true = ya se definió la rueda, falta el 2º cable
-  ropesCount: { type: Number, default: 0 }
+  ropesCount: { type: Number, default: 0 },
+  nextBoxShape: { type: String, default: 'box' },
+  nextBoxMass: { type: Number, default: 2.0 },
+  nextBoxWidth: { type: Number, default: 1.0 },
+  nextBoxHeight: { type: Number, default: 1.0 },
+  nextBoxFriction: { type: Number, default: 0.3 }
 })
 
 const emit = defineEmits([
+  'update-next-box-shape',
+  'update-next-box-config',
   'update-box-mass',
   'update-box-friction',
   'update-box-angle',
+  'update-box-velocity',
   'update-box-dimensions',
+  'update-track-radius',
+  'set-applied-force',
   'update-ground-friction',
   'update-selected-ground-friction',
   'update-ground-mode',
@@ -83,21 +94,30 @@ function applyForceNow(enabled) {
   <div
     class="pointer-events-auto bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border border-gray-300/60 dark:border-gray-800/60 shadow-lg relative transition-all duration-300"
     :class="[
-      isCollapsed ? 'w-10 h-10 rounded-full flex items-center justify-center p-0' : 'w-64 rounded-[2rem] p-5 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] overflow-hidden dark:shadow-2xl'
+      isCollapsed
+        ? 'w-10 h-10 rounded-full flex items-center justify-center p-0'
+        : 'w-64 rounded-[2rem] p-5 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] overflow-hidden dark:shadow-2xl'
     ]"
   >
     <!-- Botón de toggle -->
     <button
       @click="isCollapsed = !isCollapsed"
       class="absolute z-50 rounded-full text-gray-500 hover:text-gray-800 dark:text-gray-400 dark:hover:text-gray-100 transition-colors"
-      :class="isCollapsed ? 'inset-0 w-full h-full flex items-center justify-center bg-transparent' : 'p-1.5 top-3 right-3 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700'"
+      :class="
+        isCollapsed
+          ? 'inset-0 w-full h-full flex items-center justify-center bg-transparent'
+          : 'p-1.5 top-3 right-3 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-200 dark:hover:bg-gray-700'
+      "
       :title="isCollapsed ? 'Mostrar propiedades' : 'Ocultar propiedades'"
     >
       <Eye v-if="isCollapsed" class="w-5 h-5" />
       <EyeOff v-else class="w-4 h-4" />
     </button>
 
-    <div v-show="!isCollapsed" class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"></div>
+    <div
+      v-show="!isCollapsed"
+      class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"
+    ></div>
     <div v-show="!isCollapsed" class="relative z-10 mt-1">
       <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa;
          si hay un trozo de SUELO seleccionado, ajustar su fricción individual -->
@@ -133,6 +153,101 @@ function applyForceNow(enabled) {
             />
           </div>
 
+          <template v-if="ropes.some((r) => r.kind === 'track' && r.bodyAId === selectedBox.id)">
+            <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+              <span>Radio del Riel (m)</span>
+              <span class="font-mono text-emerald-700 dark:text-emerald-300">{{
+                (ropes.find((r) => r.kind === 'track' && r.bodyAId === selectedBox.id)?.radius || 0).toFixed(3)
+              }}</span>
+            </label>
+            <div class="flex gap-2 mb-3">
+              <input
+                type="range"
+                min="0.05"
+                max="5"
+                step="0.01"
+                :value="ropes.find((r) => r.kind === 'track' && r.bodyAId === selectedBox.id)?.radius || 0.1"
+                @input="
+                  emit(
+                    'update-track-radius',
+                    ropes.find((r) => r.kind === 'track' && r.bodyAId === selectedBox.id).id,
+                    Number($event.target.value)
+                  )
+                "
+                class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+              />
+              <input
+                type="number"
+                min="0.05"
+                step="0.01"
+                :value="(ropes.find((r) => r.kind === 'track' && r.bodyAId === selectedBox.id)?.radius || 0).toFixed(3)"
+                @input="
+                  emit(
+                    'update-track-radius',
+                    ropes.find((r) => r.kind === 'track' && r.bodyAId === selectedBox.id).id,
+                    Number($event.target.value)
+                  )
+                "
+                class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              />
+            </div>
+          </template>
+
+          <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3"
+            >Forma Geométrica</label
+          >
+          <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 gap-1">
+            <button
+              v-for="s in [
+                { id: 'box', label: 'Caja' },
+                { id: 'circle', label: 'Esfera' },
+                { id: 'ring', label: 'Anilla' },
+                {
+                  id: 'polygon',
+                  label: 'Rampa',
+                  verts: [
+                    { x: -0.5, y: -0.5 },
+                    { x: 0.5, y: -0.5 },
+                    { x: -0.5, y: 0.5 }
+                  ]
+                },
+                {
+                  id: 'polygon-hex',
+                  label: 'Hexágono',
+                  shape: 'polygon',
+                  verts: [
+                    { x: 0, y: 0.5 },
+                    { x: 0.433, y: 0.25 },
+                    { x: 0.433, y: -0.25 },
+                    { x: 0, y: -0.5 },
+                    { x: -0.433, y: -0.25 },
+                    { x: -0.433, y: 0.25 }
+                  ]
+                }
+              ]"
+              :key="s.id"
+              @click="
+                emit(
+                  'update-box-dimensions',
+                  selectedBox.id,
+                  selectedBox.width,
+                  selectedBox.height,
+                  s.shape || s.id,
+                  s.verts
+                )
+              "
+              class="flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors leading-tight"
+              :class="
+                selectedBox.shape === (s.shape || s.id) &&
+                (!s.verts || JSON.stringify(selectedBox.vertices) === JSON.stringify(s.verts))
+                  ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-300 shadow-sm'
+                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+              "
+            >
+              {{ s.label }}
+            </button>
+          </div>
+
           <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
             <span>Fricción (μ) de esta caja</span>
             <span class="font-mono text-emerald-700 dark:text-emerald-300">{{
@@ -154,7 +269,7 @@ function applyForceNow(enabled) {
               min="0"
               step="0.05"
               :value="selectedBox.friction ?? 0.3"
-              @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
+              @change="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
@@ -185,55 +300,102 @@ function applyForceNow(enabled) {
               type="number"
               step="1"
               :value="Math.round((selectedBox.angleRad * 180) / Math.PI)"
-              @input="emit('update-box-angle', selectedBox.id, Number($event.target.value))"
+              @change="emit('update-box-angle', selectedBox.id, Number($event.target.value))"
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
 
+          <label
+            class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-4 border-t border-gray-300 dark:border-gray-800 pt-3"
+          >
+            <span>Velocidad Actual (m/s)</span>
+          </label>
+          <div class="flex gap-2">
+            <div class="flex-1">
+              <span class="text-[9px] text-gray-500 block mb-1">Magnitud</span>
+              <input
+                type="number"
+                step="0.1"
+                :value="(selectedBox.velocity?.magnitude || 0).toFixed(1)"
+                @change="
+                  emit(
+                    'update-box-velocity',
+                    selectedBox.id,
+                    Number($event.target.value),
+                    selectedBox.velocityAngle || 0
+                  )
+                "
+                class="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              />
+            </div>
+            <div class="flex-1">
+              <span class="text-[9px] text-gray-500 block mb-1">Ángulo (°)</span>
+              <input
+                type="number"
+                step="1"
+                :value="Math.round(selectedBox.velocityAngle || 0)"
+                @change="
+                  emit(
+                    'update-box-velocity',
+                    selectedBox.id,
+                    selectedBox.velocity?.magnitude || 0,
+                    Number($event.target.value)
+                  )
+                "
+                class="w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              />
+            </div>
+          </div>
+
           <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
-            <span>Ancho (m)</span>
-            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ selectedBox.width.toFixed(1) }} m</span>
+            <span>{{
+              selectedBox.shape === 'circle' || selectedBox.shape === 'ring' ? 'Diámetro (m)' : 'Ancho (m)'
+            }}</span>
+            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ selectedBox.width.toFixed(3) }} m</span>
           </label>
           <div class="flex gap-2">
             <input
               type="range"
-              min="0.2"
-              max="6.0"
-              step="0.1"
+              min="0.05"
+              max="10"
+              step="0.01"
               :value="selectedBox.width"
               @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
               class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
             />
             <input
               type="number"
-              min="0.2"
-              step="0.1"
-              :value="selectedBox.width"
-              @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
+              min="0.05"
+              step="0.01"
+              :value="selectedBox.width.toFixed(3)"
+              @change="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
 
-          <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+          <label
+            v-if="selectedBox.shape !== 'circle' && selectedBox.shape !== 'ring'"
+            class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3"
+          >
             <span>Alto (m)</span>
-            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ selectedBox.height.toFixed(1) }} m</span>
+            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ selectedBox.height.toFixed(3) }} m</span>
           </label>
-          <div class="flex gap-2">
+          <div v-if="selectedBox.shape !== 'circle' && selectedBox.shape !== 'ring'" class="flex gap-2 mb-3">
             <input
               type="range"
-              min="0.2"
-              max="6.0"
-              step="0.1"
+              min="0.05"
+              max="10"
+              step="0.01"
               :value="selectedBox.height"
               @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
               class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
             />
             <input
               type="number"
-              min="0.2"
-              step="0.1"
-              :value="selectedBox.height"
-              @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
+              min="0.05"
+              step="0.01"
+              :value="selectedBox.height.toFixed(3)"
+              @change="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
@@ -264,7 +426,7 @@ function applyForceNow(enabled) {
               max="1"
               step="0.05"
               :value="selectedGround.friction"
-              @input="emit('update-selected-ground-friction', Number($event.target.value))"
+              @change="emit('update-selected-ground-friction', Number($event.target.value))"
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
@@ -431,13 +593,12 @@ function applyForceNow(enabled) {
             class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
           <input
-            :value="springFreq"
-            @input="emit('update-spring-preset', Number($event.target.value))"
             type="number"
             min="0.1"
             max="8"
             step="0.1"
             class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none"
+            @change="emit('update-spring-preset', Number($event.target.value))"
           />
         </div>
         <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1">
@@ -455,13 +616,12 @@ function applyForceNow(enabled) {
             class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500"
           />
           <input
-            :value="springDamping"
-            @input="emit('update-spring-stiffness', Number($event.target.value))"
             type="number"
             min="0"
             max="1"
             step="0.05"
             class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none"
+            @change="emit('update-spring-stiffness', Number($event.target.value))"
           />
         </div>
         <p v-if="ropesCount" class="mt-2 text-[10px] text-gray-600 dark:text-gray-500 italic">
@@ -626,10 +786,166 @@ function applyForceNow(enabled) {
       <!-- Herramienta: Crear caja -->
       <template v-else-if="activeTool === 'box'">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
-          Crear caja
+          Crear Objeto
         </h3>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-3">
+          Haz clic en cualquier punto del lienzo para soltar un objeto nuevo.
+        </p>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1"
+          >Forma del próximo objeto</label
+        >
+        <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 gap-1 mb-2">
+          <button
+            v-for="s in [
+              { id: 'box', label: 'Caja' },
+              { id: 'circle', label: 'Esfera / Cilindro' },
+              {
+                id: 'polygon',
+                label: 'Rampa',
+                verts: [
+                  { x: -0.5, y: -0.5 },
+                  { x: 0.5, y: -0.5 },
+                  { x: -0.5, y: 0.5 }
+                ]
+              },
+              {
+                id: 'polygon-hex',
+                label: 'Hexágono',
+                shape: 'polygon',
+                verts: [
+                  { x: 0, y: 0.5 },
+                  { x: 0.433, y: 0.25 },
+                  { x: 0.433, y: -0.25 },
+                  { x: 0, y: -0.5 },
+                  { x: -0.433, y: -0.25 },
+                  { x: -0.433, y: 0.25 }
+                ]
+              }
+            ]"
+            :key="s.id"
+            @click="emit('update-next-box-shape', s.shape || s.id, s.verts)"
+            class="flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors leading-tight"
+            :class="
+              nextBoxShape === (s.shape || s.id)
+                ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-300 shadow-sm'
+                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+            "
+          >
+            {{ s.label }}
+          </button>
+        </div>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-4">
+          <span>Masa (kg)</span>
+          <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ nextBoxMass.toFixed(1) }}</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="range"
+            min="0.1"
+            max="15"
+            step="0.1"
+            :value="nextBoxMass"
+            @input="emit('update-next-box-config', 'mass', Number($event.target.value))"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+          <input
+            type="number"
+            min="0.1"
+            step="0.1"
+            :value="nextBoxMass"
+            @input="emit('update-next-box-config', 'mass', Number($event.target.value))"
+            class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+          />
+        </div>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+          <span>{{ nextBoxShape === 'circle' ? 'Diámetro (m)' : 'Ancho (m)' }}</span>
+          <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ nextBoxWidth.toFixed(1) }} m</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="range"
+            min="0.2"
+            max="10"
+            step="0.1"
+            :value="nextBoxWidth"
+            @input="emit('update-next-box-config', 'width', Number($event.target.value))"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+          <input
+            type="number"
+            min="0.2"
+            step="0.1"
+            :value="nextBoxWidth"
+            @input="emit('update-next-box-config', 'width', Number($event.target.value))"
+            class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+          />
+        </div>
+
+        <div v-if="nextBoxShape !== 'circle'">
+          <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+            <span>Alto (m)</span>
+            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ nextBoxHeight.toFixed(1) }} m</span>
+          </label>
+          <div class="flex gap-2">
+            <input
+              type="range"
+              min="0.2"
+              max="10"
+              step="0.1"
+              :value="nextBoxHeight"
+              @input="emit('update-next-box-config', 'height', Number($event.target.value))"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <input
+              type="number"
+              min="0.2"
+              step="0.1"
+              :value="nextBoxHeight"
+              @input="emit('update-next-box-config', 'height', Number($event.target.value))"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            />
+          </div>
+        </div>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+          <span>Fricción (μ)</span>
+          <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ nextBoxFriction.toFixed(2) }}</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="range"
+            min="0"
+            max="1.5"
+            step="0.05"
+            :value="nextBoxFriction"
+            @input="emit('update-next-box-config', 'friction', Number($event.target.value))"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+          <input
+            type="number"
+            min="0"
+            step="0.05"
+            :value="nextBoxFriction"
+            @input="emit('update-next-box-config', 'friction', Number($event.target.value))"
+            class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+          />
+        </div>
+      </template>
+
+      <!-- Herramienta: Anillo en Riel -->
+      <template v-else-if="activeTool === 'circular'">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
+          Anillo en Riel
+        </h3>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 mb-2">
+          Haz clic en el vacío para fijar el <strong>centro</strong> del riel, arrastra para definir el radio, y suelta.
+        </p>
         <p class="text-[11px] text-gray-600 dark:text-gray-400">
-          Haz clic en cualquier punto del lienzo para soltar una caja nueva de 2 kg.
+          Al soltar, se creará automáticamente una <strong>anilla (masa de 1.5kg)</strong> ensartada en el riel. ¡No
+          necesitas anclarlo al suelo!
         </p>
       </template>
 

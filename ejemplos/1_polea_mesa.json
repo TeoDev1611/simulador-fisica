@@ -1,0 +1,85 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Mesa",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0.3,
+      "restitution": 0,
+      "color": "#9ca3af",
+      "position": null,
+      "angleRad": null,
+      "points": [{"x": -4, "y": 0}, {"x": 2, "y": 0}],
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Rueda de Polea",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": 2.5, "y": 1},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa en Mesa",
+      "width": 1,
+      "height": 1,
+      "mass": 5,
+      "friction": 0.2,
+      "restitution": 0.1,
+      "color": "#34d399",
+      "position": {"x": -2, "y": -0.5},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "box",
+      "vertices": null
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Masa Colgante",
+      "width": 1,
+      "height": 1,
+      "mass": 3,
+      "friction": 0.3,
+      "restitution": 0.1,
+      "color": "#f87171",
+      "position": {"x": 2.5, "y": 4},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "box",
+      "vertices": null
+    }
+  ],
+  "ropes": [
+    {
+      "id": "pulley_1",
+      "kind": "pulley",
+      "bodyAId": "box_3",
+      "bodyBId": "box_4",
+      "wheelId": "anchor_2",
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    }
+  ]
+}

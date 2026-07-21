@@ -28,7 +28,8 @@ import {
   ArrowUpToLine,
   Trash2,
   Magnet,
-  BarChart2
+  BarChart2,
+  Library
 } from 'lucide-vue-next'
 
 const GRAVITY = 9.81
@@ -39,7 +40,9 @@ const {
   updateBoxMass,
   updateBoxFriction,
   updateBoxAngle,
+  updateBoxVelocity,
   updateBoxDimensions,
+  updateTrackRadius,
   setAppliedForce,
   applyImpulse,
   addGround,
@@ -69,7 +72,8 @@ const isRunning = ref(true)
 const showDataPanel = ref(false)
 const activeTool = ref('drag')
 const toolLabels = {
-  drag: 'MOVER / SELECCIONAR',
+  drag: 'SELECCIONAR OBJETO',
+  pan: 'MOVER CÁMARA',
   box: 'CREAR CAJA',
   ground: 'DIBUJAR SUELO',
   rope: 'CUERDA',
@@ -149,11 +153,30 @@ function nextColor() {
   return BOX_COLORS[colorIdx++ % BOX_COLORS.length]
 }
 
-const groundFriction = ref(0.5)
-const groundMode = ref('free') // 'free' | 'straight'
-const groundAngleDeg = ref(0) // solo se usa en modo 'straight'
+const groundFriction = ref(0.3)
+const groundMode = ref('free')
+const groundAngleDeg = ref(0)
+const canvasScale = ref(40)
+
+function zoomIn() {
+  const newScale = canvasScale.value * 1.2
+  if (newScale <= 5000) canvasScale.value = newScale
+}
+
+function zoomOut() {
+  const newScale = canvasScale.value / 1.2
+  if (newScale >= 10) canvasScale.value = newScale
+}
 const springFreq = ref(2.0)
 const springDamping = ref(0.1)
+
+// UX: Propiedades del próximo objeto a crear
+const nextBoxShape = ref('box')
+const nextBoxVertices = ref(null)
+const nextBoxMass = ref(2.0)
+const nextBoxWidth = ref(1.0)
+const nextBoxHeight = ref(1.0)
+const nextBoxFriction = ref(0.3)
 
 const selectedBoxId = ref(null)
 const selectedBox = computed(() => boxEntries.value.find((b) => b.id === selectedBoxId.value) || null)
@@ -221,13 +244,16 @@ watch(
 
 function toggleFullscreen() {
   if (!document.fullscreenElement) {
-    containerRef.value?.requestFullscreen().then(() => {
-      if (screen.orientation && screen.orientation.lock) {
-        screen.orientation.lock('landscape').catch(() => {
-          // Ignorar error si el dispositivo no soporta bloqueo de orientación
-        })
-      }
-    }).catch((err) => console.error(err))
+    containerRef.value
+      ?.requestFullscreen()
+      .then(() => {
+        if (screen.orientation && screen.orientation.lock) {
+          screen.orientation.lock('landscape').catch(() => {
+            // Ignorar error si el dispositivo no soporta bloqueo de orientación
+          })
+        }
+      })
+      .catch((err) => console.error(err))
   } else {
     if (screen.orientation && screen.orientation.unlock) {
       screen.orientation.unlock()
@@ -332,12 +358,14 @@ function handleCanvasDown({ x, y }) {
     const id = addBox({
       x,
       y,
-      width: 1,
-      height: 1,
-      mass: 2,
-      friction: 0.3,
+      width: nextBoxWidth.value,
+      height: nextBoxHeight.value,
+      mass: nextBoxMass.value,
+      friction: nextBoxFriction.value,
+      shape: nextBoxShape.value,
+      vertices: nextBoxVertices.value,
       color: nextColor(),
-      label: `Caja ${boxEntries.value.length + 1}`
+      label: `Objeto ${boxEntries.value.length + 1}`
     })
     selectedBoxId.value = id
     saveHistoryState()
@@ -364,23 +392,24 @@ function handleCanvasDown({ x, y }) {
         previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
       }
     }
-  } else if (['rope', 'spring', 'pulley'].includes(activeTool.value)) {
-    const targetId = queryPoint(x, y, { includeStatic: true })
+  } else if (['rope', 'spring', 'pulley', 'circular'].includes(activeTool.value)) {
+    let targetId = queryPoint(x, y, { includeStatic: true, includeGround: false })
+
+    // Permitir crear anclaje desde el vacío (pared) para cuerdas, resortes y rieles
+    if (!targetId && ['rope', 'spring', 'circular'].includes(activeTool.value)) {
+      targetId = addAnchor(x, y)
+      saveHistoryState()
+    }
+
     if (targetId) {
       jointStartBodyId = targetId
       const b = bodies.find((bx) => bx.id === targetId)
-      previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
-    }
-  } else if (activeTool.value === 'circular') {
-    // El riel circular solo puede arrancar desde una caja (es la que quedará
-    // ensartada en el aro); el otro extremo del arrastre será su centro.
-    if (bodyId) {
-      const b = bodies.find((bx) => bx.id === bodyId && bx.kind === 'box')
       if (b) {
-        jointStartBodyId = bodyId
         previewLine.value = { x1: b.position.x, y1: b.position.y, x2: x, y2: y }
       }
     }
+  } else if (activeTool.value === 'circular') {
+    // Obsoleto, integrado arriba
   }
 }
 
@@ -458,33 +487,48 @@ function handleCanvasUp({ x, y }) {
     forceDragOrigin = null
     previewLine.value = null
   } else if (jointStartBodyId && activeTool.value === 'pulley') {
-    // Polea en 2 pasos, para que sea UNA sola rueda real y no dos puntos
-    // separados: el primer cable define/reutiliza la rueda (un anclaje); el
-    // segundo cable debe soltarse sobre ESA MISMA rueda para cerrar la polea.
-    const endId = queryPoint(x, y, { includeStatic: true })
-    const endEntry = endId ? bodies.find((b) => b.id === endId) : null
-
-    if (pendingPulley.value && endId === pendingPulley.value.wheelId) {
-      addPulley(pendingPulley.value.idA, jointStartBodyId, pendingPulley.value.wheelId)
-      pendingPulley.value = null
-      saveHistoryState()
-    } else {
-      const wheelId = endEntry && endEntry.kind === 'anchor' ? endId : addAnchor(x, y)
-      pendingPulley.value = { idA: jointStartBodyId, wheelId }
+    // Polea en 1 solo paso intuitivo
+    let endBodyId = queryPoint(x, y, { includeStatic: true })
+    if (endBodyId && endBodyId !== jointStartBodyId) {
+      const startEntry = bodies.find((b) => b.id === jointStartBodyId)
+      const endEntry = bodies.find((b) => b.id === endBodyId)
+      if (startEntry && endEntry) {
+        const midX = (startEntry.position.x + endEntry.position.x) / 2
+        const maxY = Math.max(startEntry.position.y, endEntry.position.y) + 5
+        const wheelId = addAnchor(midX, maxY)
+        addPulley(jointStartBodyId, endBodyId, wheelId)
+        saveHistoryState()
+      }
     }
     jointStartBodyId = null
     previewLine.value = null
   } else if (jointStartBodyId) {
-    let endBodyId = queryPoint(x, y)
+    let endBodyId = queryPoint(x, y, { includeStatic: true })
     if (!endBodyId) {
       endBodyId = addAnchor(x, y)
     }
-    if (endBodyId && endBodyId !== jointStartBodyId) {
+    if (endBodyId !== jointStartBodyId) {
       if (activeTool.value === 'rope') addRope(jointStartBodyId, endBodyId)
-      else if (activeTool.value === 'circular') addCircularTrack(jointStartBodyId, endBodyId)
-      else if (activeTool.value === 'spring')
+      if (activeTool.value === 'spring')
         addSpring(jointStartBodyId, endBodyId, { frequencyHz: springFreq.value, dampingRatio: springDamping.value })
+      if (activeTool.value === 'circular') {
+        const startEntry = bodies.find((b) => b.id === jointStartBodyId)
+        const rTrack = startEntry ? Math.hypot(x - startEntry.position.x, y - startEntry.position.y) : 1
+        const ringSize = Math.max(0.05, rTrack * 0.25)
 
+        // Anillo en riel: creamos la masa de 1.5kg (anilla) automáticamente en el extremo soltado
+        const newBoxId = addBox({
+          x,
+          y,
+          width: ringSize,
+          height: ringSize,
+          mass: 1.5,
+          shape: 'ring',
+          color: '#f59e0b',
+          label: `Anillo ${boxEntries.value.length + 1}`
+        })
+        addCircularTrack(newBoxId, jointStartBodyId)
+      }
       saveHistoryState()
     }
     jointStartBodyId = null
@@ -514,9 +558,9 @@ function stopAndExportTelemetry() {
   if (telemetryData.length === 0) return
 
   let csv =
-    'Tiempo (s),Caja,Posicion X (m),Posicion Y (m),Velocidad X (m/s),Velocidad Y (m/s),Angulo (deg),Velocidad Ang (deg/s)\n'
+    'Tiempo (s),Caja,Posicion X (m),Posicion Y (m),Velocidad X (m/s),Velocidad Y (m/s),Aceleracion X (m/s2),Aceleracion Y (m/s2),Angulo (deg),Velocidad Ang (deg/s)\n'
   for (const row of telemetryData) {
-    csv += `${row.t.toFixed(4)},${row.id},${row.px.toFixed(4)},${row.py.toFixed(4)},${row.vx.toFixed(4)},${row.vy.toFixed(4)},${row.aDeg.toFixed(4)},${row.vaDeg.toFixed(4)}\n`
+    csv += `${row.t.toFixed(4)},${row.id},${row.px.toFixed(4)},${row.py.toFixed(4)},${row.vx.toFixed(4)},${row.vy.toFixed(4)},${row.ax.toFixed(4)},${row.ay.toFixed(4)},${row.aDeg.toFixed(4)},${row.vaDeg.toFixed(4)}\n`
   }
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
@@ -544,6 +588,8 @@ function recordTelemetrySample() {
           py: p.y || 0,
           vx: v.x || 0,
           vy: v.y || 0,
+          ax: entry.acceleration?.x || 0,
+          ay: entry.acceleration?.y || 0,
           aDeg: ((aRad || 0) * 180) / Math.PI,
           vaDeg: ((vaRad || 0) * 180) / Math.PI
         })
@@ -594,8 +640,18 @@ function handleGlobalKeyDown(e) {
     activeTool.value = 'track'
   } else if (e.key === '8' || e.key.toLowerCase() === 'f') {
     activeTool.value = 'force'
+  } else if (e.key.toLowerCase() === 'h') {
+    activeTool.value = 'pan'
   } else if (e.key === 'Delete' || e.key === 'Backspace' || e.key === '9') {
     activeTool.value = 'delete'
+  } else if (e.key === '+' || e.key === '=') {
+    zoomIn()
+  } else if (e.key === '-') {
+    zoomOut()
+  } else if (e.ctrlKey && e.key.toLowerCase() === 'r') {
+    e.preventDefault()
+    if (isRecordingTelemetry.value) stopAndExportTelemetry()
+    else startTelemetry()
   } else if (e.ctrlKey && e.key.toLowerCase() === 'z') {
     e.preventDefault()
     if (e.shiftKey) redo()
@@ -633,12 +689,18 @@ onBeforeUnmount(() => {
         class="relative select-none flex-1 min-h-[320px] md:min-h-[560px] bg-gray-50 dark:bg-gray-950 border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] shadow-[0_0_50px_-15px_rgba(0,0,0,0.8)] overflow-hidden transition-all duration-300"
       >
         <!-- Overlay para forzar fullscreen en móviles -->
-        <div v-if="!isFullscreen" class="absolute inset-0 z-50 flex md:hidden items-center justify-center bg-gray-900/90 backdrop-blur-md p-6 text-center">
-          <div class="bg-white/10 dark:bg-gray-800/40 p-8 rounded-[2rem] border border-white/20 shadow-2xl max-w-xs backdrop-blur-xl">
+        <div
+          v-if="!isFullscreen"
+          class="absolute inset-0 z-50 flex md:hidden items-center justify-center bg-gray-900/90 backdrop-blur-md p-6 text-center"
+        >
+          <div
+            class="bg-white/10 dark:bg-gray-800/40 p-8 rounded-[2rem] border border-white/20 shadow-2xl max-w-xs backdrop-blur-xl"
+          >
             <Maximize class="w-16 h-16 text-emerald-400 mx-auto mb-4 drop-shadow-md" />
             <h3 class="text-xl font-bold text-white mb-2 tracking-wide">Mejor en horizontal</h3>
             <p class="text-sm text-gray-200 mb-8 leading-relaxed">
-              Newton Lab requiere espacio. Maximiza la pantalla para rotar tu dispositivo y usar el simulador cómodamente.
+              Newton Lab requiere espacio. Maximiza la pantalla para rotar tu dispositivo y usar el simulador
+              cómodamente.
             </p>
             <button
               @click="toggleFullscreen"
@@ -653,13 +715,14 @@ onBeforeUnmount(() => {
         <PhysicsCanvas
           ref="canvasRef"
           class="absolute inset-0 w-full h-full"
-          :scale="40"
+          :scale="canvasScale"
           :vector-scale="6"
           :selected-id="selectedBoxId"
           :active-tool="activeTool"
           @canvas-down="handleCanvasDown"
           @canvas-move="handleCanvasMove"
           @canvas-up="handleCanvasUp"
+          @update-scale="(s) => (canvasScale = s)"
         />
 
         <div
@@ -669,7 +732,9 @@ onBeforeUnmount(() => {
             class="pointer-events-auto text-[10px] font-mono bg-white/90 dark:bg-gray-950/90 backdrop-blur px-2 py-1.5 rounded-lg border border-gray-300 dark:border-gray-800 text-gray-600 dark:text-gray-400"
           >
             Herramienta:
-            <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{ toolLabels[activeTool] || activeTool.toUpperCase() }}</span>
+            <span class="text-emerald-700 dark:text-emerald-300 font-bold">{{
+              toolLabels[activeTool] || activeTool.toUpperCase()
+            }}</span>
             <template v-if="activeTool === 'ground' && groundLiveInfo">
               &nbsp;·&nbsp;θ =
               <span class="text-emerald-700 dark:text-emerald-300 font-bold"
@@ -687,7 +752,55 @@ onBeforeUnmount(() => {
             </template>
           </span>
           <div class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
-            <!-- BOTONES DE DESHACER / REHACER -->
+            <!-- BOTONES DE DESHACER / REHACER / ZOOM -->
+            <button
+              type="button"
+              @click="zoomOut"
+              class="bg-white/90 dark:bg-gray-900/90 backdrop-blur text-gray-700 dark:text-gray-300 p-2.5 rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              title="Alejar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-zoom-out"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                <line x1="8" x2="14" y1="11" y2="11" />
+              </svg>
+            </button>
+            <button
+              type="button"
+              @click="zoomIn"
+              class="bg-white/90 dark:bg-gray-900/90 backdrop-blur text-gray-700 dark:text-gray-300 p-2.5 rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+              title="Acercar"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                class="lucide lucide-zoom-in"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <line x1="21" x2="16.65" y1="21" y2="16.65" />
+                <line x1="11" x2="11" y1="8" y2="14" />
+                <line x1="8" x2="14" y1="11" y2="11" />
+              </svg>
+            </button>
+
             <button
               type="button"
               @click="undo"
@@ -726,6 +839,14 @@ onBeforeUnmount(() => {
             >
               <FolderOpen class="w-4 h-4" />
             </button>
+            <a
+              href="https://github.com/TeoDev1611/simulador-fisica/tree/main/ejemplos"
+              target="_blank"
+              class="w-8 h-8 rounded-lg border bg-emerald-500 hover:bg-emerald-400 border-emerald-600 text-white shadow-lg transition-colors flex items-center justify-center"
+              title="Descargar Ejemplos"
+            >
+              <Library class="w-4 h-4" />
+            </a>
 
             <!-- BOTONES DE GRABACIÓN DE DATOS -->
             <button
@@ -809,7 +930,9 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
-        <div class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end">
+        <div
+          class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end"
+        >
           <ContextPanel
             :active-tool="activeTool"
             :ground-friction="groundFriction"
@@ -821,26 +944,48 @@ onBeforeUnmount(() => {
             :selected-box="selectedBox"
             :selected-ground="selectedGround"
             :ground-count="getGroundIds().length"
+            :ropes="ropes"
             :pending-pulley="!!pendingPulley"
             :ropes-count="ropes.length"
+            :next-box-shape="nextBoxShape"
+            :next-box-mass="nextBoxMass"
+            :next-box-width="nextBoxWidth"
+            :next-box-height="nextBoxHeight"
+            :next-box-friction="nextBoxFriction"
+            @update-next-box-shape="
+              (s, v) => {
+                nextBoxShape = s
+                nextBoxVertices = v
+              }
+            "
+            @update-next-box-config="
+              (k, v) => {
+                if (k === 'mass') nextBoxMass = v
+                else if (k === 'width') nextBoxWidth = v
+                else if (k === 'height') nextBoxHeight = v
+                else if (k === 'friction') nextBoxFriction = v
+              }
+            "
             @update-box-mass="updateBoxMass"
             @update-box-friction="updateBoxFriction"
             @update-box-angle="updateBoxAngle"
+            @update-box-velocity="updateBoxVelocity"
             @update-box-dimensions="updateBoxDimensions"
+            @update-track-radius="updateTrackRadius"
+            @update-force="handleUpdateForce"
             @update-ground-friction="handleUpdateGroundFriction"
             @update-selected-ground-friction="handleUpdateSelectedGroundFriction"
             @update-ground-mode="handleUpdateGroundMode"
             @update-ground-angle="handleUpdateGroundAngle"
             @update-spring-preset="handleSpringPreset"
             @update-spring-stiffness="handleSpringDamping"
-            @update-force="handleUpdateForce"
             @apply-impulse="handleApplyImpulse"
             class="max-h-[calc(100vh-140px)] md:max-h-none overflow-y-auto custom-scrollbar"
           />
         </div>
 
         <!-- DataPanel: Oculto por defecto, mostrable con el botón de estadísticas -->
-        <div 
+        <div
           class="pointer-events-none absolute bottom-3 left-[4.5rem] lg:left-20 z-20"
           :class="showDataPanel ? 'block' : 'hidden'"
         >

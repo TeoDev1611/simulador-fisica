@@ -1,0 +1,62 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Pivote Central",
+      "position": {"x": 0, "y": 0}
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Brazo Balancín",
+      "width": 8,
+      "height": 0.4,
+      "mass": 2,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#8b5cf6",
+      "position": {"x": 0, "y": -0.5},
+      "angleRad": 0,
+      "shape": "box"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa Pesada",
+      "width": 1.5,
+      "height": 1.5,
+      "mass": 20,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#1f2937",
+      "position": {"x": -3.5, "y": 4},
+      "angleRad": 0,
+      "shape": "box"
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Proyectil",
+      "width": 0.8,
+      "height": 0.8,
+      "mass": 0.5,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#facc15",
+      "position": {"x": 3.5, "y": 0.5},
+      "angleRad": 0,
+      "shape": "circle"
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "anchor_1",
+      "bodyBId": "box_2"
+    }
+  ]
+}

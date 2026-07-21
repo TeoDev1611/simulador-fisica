@@ -1,0 +1,56 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Rampa",
+      "friction": 1.0,
+      "points": [{"x": -8, "y": 6}, {"x": 8, "y": -2}]
+    },
+    {
+      "id": "box_2",
+      "kind": "box",
+      "label": "Hielo (μ=0)",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0.0,
+      "restitution": 0.1,
+      "color": "#38bdf8",
+      "position": {"x": -6, "y": 6.5},
+      "angleRad": -0.46,
+      "shape": "box"
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Madera (μ=0.3)",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0.3,
+      "restitution": 0.1,
+      "color": "#fb923c",
+      "position": {"x": -4, "y": 7.5},
+      "angleRad": -0.46,
+      "shape": "box"
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Goma (μ=0.8)",
+      "width": 1,
+      "height": 1,
+      "mass": 1,
+      "friction": 0.8,
+      "restitution": 0.1,
+      "color": "#475569",
+      "position": {"x": -2, "y": 8.5},
+      "angleRad": -0.46,
+      "shape": "box"
+    }
+  ],
+  "ropes": []
+}

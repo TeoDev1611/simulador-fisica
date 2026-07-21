@@ -9,7 +9,7 @@ const props = defineProps({
   activeTool: { type: String, default: '' }
 })
 
-const emit = defineEmits(['canvas-down', 'canvas-move', 'canvas-up'])
+const emit = defineEmits(['canvas-down', 'canvas-move', 'canvas-up', 'update-scale'])
 
 const canvasRef = ref(null)
 let ctx = null
@@ -18,8 +18,14 @@ let resizeObserver = null
 let currentWidth = 800
 let currentHeight = 480
 
-const originX = () => currentWidth / 2
-const originY = () => currentHeight - (props.scale * 2.5)
+const cameraOffsetX = ref(0)
+const cameraOffsetY = ref(0)
+const isPanning = ref(false)
+let lastPanX = 0
+let lastPanY = 0
+
+const originX = () => currentWidth / 2 + cameraOffsetX.value
+const originY = () => currentHeight - props.scale * 2.5 + cameraOffsetY.value
 
 function worldToScreen(x, y) {
   return { sx: originX() + x * props.scale, sy: originY() - y * props.scale }
@@ -33,13 +39,53 @@ function screenToWorld(cx, cy) {
 }
 
 function handlePointerDown(e) {
+  if (props.activeTool === 'pan') {
+    isPanning.value = true
+    lastPanX = e.clientX
+    lastPanY = e.clientY
+    return
+  }
   emit('canvas-down', screenToWorld(e.clientX, e.clientY))
 }
+
 function handlePointerMove(e) {
+  if (props.activeTool === 'pan') {
+    if (isPanning.value) {
+      const dx = e.clientX - lastPanX
+      const dy = e.clientY - lastPanY
+      cameraOffsetX.value += dx
+      cameraOffsetY.value += dy
+      lastPanX = e.clientX
+      lastPanY = e.clientY
+    }
+    return
+  }
   emit('canvas-move', screenToWorld(e.clientX, e.clientY))
 }
+
 function handlePointerUp(e) {
+  if (props.activeTool === 'pan') {
+    isPanning.value = false
+    return
+  }
   emit('canvas-up', screenToWorld(e.clientX, e.clientY))
+}
+
+function handleWheel(e) {
+  const delta = e.deltaY < 0 ? 1.1 : 0.9
+  const newScale = props.scale * delta
+  if (newScale >= 10 && newScale <= 5000) {
+    const rect = canvasRef.value.getBoundingClientRect()
+    const cx = e.clientX - rect.left
+    const cy = e.clientY - rect.top
+    const wx = (cx - originX()) / props.scale
+    const wy = (originY() - cy) / props.scale
+
+    emit('update-scale', newScale)
+
+    cameraOffsetX.value = cx - currentWidth / 2 - wx * newScale
+    cameraOffsetY.value = cy - currentHeight + newScale * 2.5 + wy * newScale
+  }
 }
 
 function preventDefaultTouch(e) {
@@ -197,7 +243,19 @@ function drawBox(entry) {
     ctx.lineWidth = 3
     ctx.setLineDash([6, 4])
     ctx.beginPath()
-    ctx.roundRect(-wPx / 2 - 7, -hPx / 2 - 7, wPx + 14, hPx + 14, 6)
+    if (entry.shape === 'circle' || entry.shape === 'ring') {
+      ctx.arc(0, 0, wPx / 2 + 7, 0, Math.PI * 2)
+    } else if (entry.shape === 'polygon' && entry.vertices) {
+      const vs = entry.vertices
+      ctx.moveTo(vs[0].x * wPx, -vs[0].y * hPx)
+      for (let i = 1; i < vs.length; i++) ctx.lineTo(vs[i].x * wPx, -vs[i].y * hPx)
+      ctx.closePath()
+      ctx.lineWidth = 14
+      ctx.stroke()
+      ctx.lineWidth = 3
+    } else {
+      ctx.roundRect(-wPx / 2 - 7, -hPx / 2 - 7, wPx + 14, hPx + 14, 6)
+    }
     ctx.stroke()
     ctx.restore()
   }
@@ -206,7 +264,24 @@ function drawBox(entry) {
   ctx.strokeStyle = isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)'
   ctx.lineWidth = isSelected ? 3 : 2
   ctx.beginPath()
-  ctx.rect(-wPx / 2, -hPx / 2, wPx, hPx)
+  if (entry.shape === 'circle') {
+    ctx.arc(0, 0, wPx / 2, 0, Math.PI * 2)
+    ctx.moveTo(0, 0)
+    ctx.lineTo(wPx / 2, 0)
+  } else if (entry.shape === 'ring') {
+    ctx.arc(0, 0, wPx / 2, 0, Math.PI * 2)
+    ctx.moveTo(wPx * 0.35, 0)
+    ctx.arc(0, 0, wPx * 0.35, 0, Math.PI * 2, true)
+  } else if (entry.shape === 'polygon' && entry.vertices) {
+    const vs = entry.vertices
+    ctx.moveTo(vs[0].x * wPx, -vs[0].y * hPx)
+    for (let i = 1; i < vs.length; i++) {
+      ctx.lineTo(vs[i].x * wPx, -vs[i].y * hPx)
+    }
+    ctx.closePath()
+  } else {
+    ctx.rect(-wPx / 2, -hPx / 2, wPx, hPx)
+  }
   ctx.fill()
   ctx.stroke()
 
@@ -569,11 +644,22 @@ defineExpose({ draw })
 <template>
   <canvas
     ref="canvasRef"
-    class="block bg-gray-50 dark:bg-gray-950 cursor-crosshair touch-none rounded-xl"
+    :class="[
+      'block bg-gray-50 dark:bg-gray-950 touch-none rounded-xl',
+      activeTool === 'pan'
+        ? isPanning
+          ? 'cursor-grabbing'
+          : 'cursor-grab'
+        : activeTool === 'drag'
+          ? 'cursor-default'
+          : 'cursor-crosshair'
+    ]"
     @pointerdown="handlePointerDown"
     @pointermove="handlePointerMove"
     @pointerup="handlePointerUp"
     @pointercancel="handlePointerUp"
+    @wheel.prevent="handleWheel"
+    @contextmenu.prevent
     @touchstart="preventDefaultTouch"
     @touchmove="preventDefaultTouch"
     @touchend="preventDefaultTouch"

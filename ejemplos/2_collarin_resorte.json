@@ -1,0 +1,77 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "anchor_1",
+      "kind": "anchor",
+      "label": "Centro del Riel",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": 0, "y": 0},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Techo Resorte",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": 0, "y": -4},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Collarín",
+      "width": 0.4,
+      "height": 0.4,
+      "mass": 2,
+      "friction": 0,
+      "restitution": 0.1,
+      "color": "#f59e0b",
+      "position": {"x": 2, "y": 0},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "ring",
+      "vertices": null
+    }
+  ],
+  "ropes": [
+    {
+      "id": "track_1",
+      "kind": "track",
+      "bodyAId": "box_3",
+      "bodyBId": "anchor_1",
+      "wheelId": null,
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    },
+    {
+      "id": "spring_2",
+      "kind": "spring",
+      "bodyAId": "anchor_2",
+      "bodyBId": "box_3",
+      "wheelId": null,
+      "frequencyHz": 2.0,
+      "dampingRatio": 0.05
+    }
+  ]
+}
