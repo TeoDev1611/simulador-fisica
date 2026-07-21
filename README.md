@@ -70,6 +70,14 @@ Se han implementado accesos directos para agilizar el uso en computadoras:
 El proyecto cuenta con las etiquetas de optimización y meta descripciones en su archivo `index.html` (apuntando de forma canónica a la universidad). 
 No cuenta con backend ni base de datos, toda la simulación se ejecuta directamente en el navegador del cliente (Client-Side). 
 
+## Documentación y Guías Adicionales
+
+El proyecto cuenta con documentos específicos detallando diferentes aspectos técnicos y pedagógicos. Puedes consultarlos directamente en el repositorio:
+
+- **[Reporte del Proyecto (Ingeniería de Software)](https://github.com/TeoDev1611/simulador-fisica/blob/main/documentacion_informe.md)**: Detalla la arquitectura, tecnologías y decisiones de diseño frontend.
+- **[Guía Técnica Docente (Física)](https://github.com/TeoDev1611/simulador-fisica/blob/main/GUIA_DOCENTE_FISICA.md)**: Documento enfocado en la validación del modelo físico, la telemetría y la explicación matemática detrás de las restricciones, fricciones y uniones (ideal para ingenieros físicos).
+- **[Plantillas de Ejemplo (JSON)](https://github.com/TeoDev1611/simulador-fisica/tree/main/ejemplos)**: Carpeta con 13 escenarios prediseñados y su respectiva documentación, listos para importarse al Sandbox 2D.
+
 ## Cómo Instalar y Ejecutar en Local
 
 El gestor de paquetes recomendado es `pnpm`, aunque `npm` también funciona.
