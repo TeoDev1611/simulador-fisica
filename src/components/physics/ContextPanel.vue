@@ -5,7 +5,9 @@
 // Ahora solo se muestra UN panel: el que corresponde a la herramienta activa.
 // Menos ruido, y coherente con "estoy usando la herramienta X ahora mismo".
 import { ref, watch } from 'vue'
-import { Eye, EyeOff } from 'lucide-vue-next'
+import { Eye, EyeOff, Sparkles } from 'lucide-vue-next'
+import { SHAPE_PRESETS } from '../../utils/shapeUtils.js'
+import ShapeSvgPreview from './ShapeSvgPreview.vue'
 
 const isCollapsed = ref(false)
 
@@ -24,13 +26,17 @@ const props = defineProps({
   pendingPulley: { type: Boolean, default: false }, // true = ya se definió la rueda, falta el 2º cable
   ropesCount: { type: Number, default: 0 },
   nextBoxShape: { type: String, default: 'box' },
+  nextBoxVertices: { type: Array, default: () => null },
   nextBoxMass: { type: Number, default: 2.0 },
   nextBoxWidth: { type: Number, default: 1.0 },
   nextBoxHeight: { type: Number, default: 1.0 },
-  nextBoxFriction: { type: Number, default: 0.3 }
+  nextBoxFriction: { type: Number, default: 0.3 },
+  nextBoxVx: { type: Number, default: 0 },
+  nextBoxVy: { type: Number, default: 0 }
 })
 
 const emit = defineEmits([
+  'open-shape-editor',
   'update-next-box-shape',
   'update-next-box-config',
   'update-box-mass',
@@ -193,58 +199,47 @@ function applyForceNow(enabled) {
             </div>
           </template>
 
-          <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3"
-            >Forma Geométrica</label
-          >
-          <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 gap-1">
+          <div class="flex items-center justify-between mt-3 mb-1">
+            <label class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Forma Geométrica</label>
             <button
-              v-for="s in [
-                { id: 'box', label: 'Caja' },
-                { id: 'circle', label: 'Esfera' },
-                { id: 'ring', label: 'Anilla' },
-                {
-                  id: 'polygon',
-                  label: 'Rampa',
-                  verts: [
-                    { x: -0.5, y: -0.5 },
-                    { x: 0.5, y: -0.5 },
-                    { x: -0.5, y: 0.5 }
-                  ]
-                },
-                {
-                  id: 'polygon-hex',
-                  label: 'Hexágono',
-                  shape: 'polygon',
-                  verts: [
-                    { x: 0, y: 0.5 },
-                    { x: 0.433, y: 0.25 },
-                    { x: 0.433, y: -0.25 },
-                    { x: 0, y: -0.5 },
-                    { x: -0.433, y: -0.25 },
-                    { x: -0.433, y: 0.25 }
-                  ]
-                }
-              ]"
+              type="button"
+              @click="emit('open-shape-editor')"
+              class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
+            >
+              <Sparkles class="w-3 h-3" />
+              Editor Multiforma...
+            </button>
+          </div>
+          <div
+            class="grid grid-cols-4 gap-1.5 bg-gray-200 dark:bg-gray-800/80 p-1.5 rounded-xl max-h-36 overflow-y-auto"
+          >
+            <button
+              v-for="s in SHAPE_PRESETS"
               :key="s.id"
               @click="
-                emit(
-                  'update-box-dimensions',
-                  selectedBox.id,
-                  selectedBox.width,
-                  selectedBox.height,
-                  s.shape || s.id,
-                  s.verts
-                )
+                emit('update-box-dimensions', selectedBox.id, selectedBox.width, selectedBox.height, s.shape, s.verts)
               "
-              class="flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors leading-tight"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg text-[10px] font-bold transition-all"
               :class="
-                selectedBox.shape === (s.shape || s.id) &&
+                selectedBox.shape === s.shape &&
                 (!s.verts || JSON.stringify(selectedBox.vertices) === JSON.stringify(s.verts))
-                  ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-300 shadow-sm'
-                  : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
+                  ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-300 shadow-sm ring-1 ring-emerald-500/50'
+                  : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
               "
+              :title="s.description"
             >
-              {{ s.label }}
+              <ShapeSvgPreview
+                :shape="s.shape"
+                :verts="s.verts"
+                :color="
+                  selectedBox.shape === s.shape &&
+                  (!s.verts || JSON.stringify(selectedBox.vertices) === JSON.stringify(s.verts))
+                    ? '#10b981'
+                    : '#64748b'
+                "
+                :size="24"
+              />
+              <span class="truncate max-w-full text-[9px] mt-0.5">{{ s.label }}</span>
             </button>
           </div>
 
@@ -792,47 +787,43 @@ function applyForceNow(enabled) {
           Haz clic en cualquier punto del lienzo para soltar un objeto nuevo.
         </p>
 
-        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1"
-          >Forma del próximo objeto</label
-        >
-        <div class="flex bg-gray-200 dark:bg-gray-800 rounded-lg p-1 gap-1 mb-2">
+        <div class="flex items-center justify-between mt-2 mb-1">
+          <label class="text-[11px] font-bold text-gray-700 dark:text-gray-300">Forma para Nuevos Objetos</label>
           <button
-            v-for="s in [
-              { id: 'box', label: 'Caja' },
-              { id: 'circle', label: 'Esfera / Cilindro' },
-              {
-                id: 'polygon',
-                label: 'Rampa',
-                verts: [
-                  { x: -0.5, y: -0.5 },
-                  { x: 0.5, y: -0.5 },
-                  { x: -0.5, y: 0.5 }
-                ]
-              },
-              {
-                id: 'polygon-hex',
-                label: 'Hexágono',
-                shape: 'polygon',
-                verts: [
-                  { x: 0, y: 0.5 },
-                  { x: 0.433, y: 0.25 },
-                  { x: 0.433, y: -0.25 },
-                  { x: 0, y: -0.5 },
-                  { x: -0.433, y: -0.25 },
-                  { x: -0.433, y: 0.25 }
-                ]
-              }
-            ]"
-            :key="s.id"
-            @click="emit('update-next-box-shape', s.shape || s.id, s.verts)"
-            class="flex-1 py-1.5 text-[10px] font-bold rounded-md transition-colors leading-tight"
-            :class="
-              nextBoxShape === (s.shape || s.id)
-                ? 'bg-white dark:bg-gray-600 text-emerald-600 dark:text-emerald-300 shadow-sm'
-                : 'text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200'
-            "
+            type="button"
+            @click="emit('open-shape-editor')"
+            class="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1"
           >
-            {{ s.label }}
+            <Sparkles class="w-3 h-3" />
+            Editor Multiforma...
+          </button>
+        </div>
+        <div
+          class="grid grid-cols-4 gap-1.5 bg-gray-200 dark:bg-gray-800/80 p-1.5 rounded-xl max-h-36 overflow-y-auto mb-3"
+        >
+          <button
+            v-for="s in SHAPE_PRESETS"
+            :key="s.id"
+            @click="emit('update-next-box-shape', s.shape, s.verts)"
+            class="flex flex-col items-center justify-center p-1.5 rounded-lg text-[10px] font-bold transition-all"
+            :class="
+              nextBoxShape === s.shape && (!s.verts || JSON.stringify(nextBoxVertices) === JSON.stringify(s.verts))
+                ? 'bg-white dark:bg-gray-700 text-emerald-600 dark:text-emerald-300 shadow-sm ring-1 ring-emerald-500/50'
+                : 'text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700/50'
+            "
+            :title="s.description"
+          >
+            <ShapeSvgPreview
+              :shape="s.shape"
+              :verts="s.verts"
+              :color="
+                nextBoxShape === s.shape && (!s.verts || JSON.stringify(nextBoxVertices) === JSON.stringify(s.verts))
+                  ? '#10b981'
+                  : '#64748b'
+              "
+              :size="24"
+            />
+            <span class="truncate max-w-full text-[9px] mt-0.5">{{ s.label }}</span>
           </button>
         </div>
 
@@ -933,6 +924,68 @@ function applyForceNow(enabled) {
             class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
           />
         </div>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+          <span>Velocidad Inicial Vx (m/s)</span>
+          <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ (nextBoxVx || 0).toFixed(1) }} m/s</span>
+        </label>
+        <div class="flex gap-2">
+          <input
+            type="range"
+            min="-30"
+            max="30"
+            step="0.5"
+            :value="nextBoxVx || 0"
+            @input="emit('update-next-box-config', 'vx', Number($event.target.value))"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+          <input
+            type="number"
+            step="0.5"
+            :value="nextBoxVx || 0"
+            @input="emit('update-next-box-config', 'vx', Number($event.target.value))"
+            class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+          />
+        </div>
+
+        <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+          <span>Velocidad Inicial Vy (m/s)</span>
+          <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ (nextBoxVy || 0).toFixed(1) }} m/s</span>
+        </label>
+        <div class="flex gap-2 mb-2">
+          <input
+            type="range"
+            min="-30"
+            max="30"
+            step="0.5"
+            :value="nextBoxVy || 0"
+            @input="emit('update-next-box-config', 'vy', Number($event.target.value))"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+          />
+          <input
+            type="number"
+            step="0.5"
+            :value="nextBoxVy || 0"
+            @input="emit('update-next-box-config', 'vy', Number($event.target.value))"
+            class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+          />
+        </div>
+      </template>
+
+      <!-- Herramienta: Fijador / Anclaje -->
+      <template v-else-if="activeTool === 'anchor'">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2 flex items-center gap-1"
+        >
+          📍 Fijador / Anclaje
+        </h3>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
+          Haz clic en cualquier punto del lienzo para colocar un <strong>fijador estático</strong>.
+        </p>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed">
+          Si haces clic sobre un objeto dinámico existente, se creará un anclaje y quedará
+          <strong>fijado en esa posición</strong>.
+        </p>
       </template>
 
       <!-- Herramienta: Anillo en Riel -->

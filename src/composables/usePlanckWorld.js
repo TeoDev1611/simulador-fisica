@@ -1,6 +1,7 @@
 // src/composables/usePlanckWorld.js
 import { reactive, markRaw } from 'vue'
 import { World, Box, Circle, Polygon, Edge, Chain, Vec2, DistanceJoint, PulleyJoint, MouseJoint, AABB } from 'planck'
+import { calculatePolygonArea } from '../utils/shapeUtils.js'
 
 const DEFAULT_GRAVITY = 9.81
 
@@ -141,18 +142,23 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     label = '',
     shape = 'box',
     vertices = null,
+    vx = 0,
+    vy = 0,
     idOverride = null
   }) {
     let area = width * height
     if (shape === 'circle' || shape === 'ring') area = Math.PI * (width / 2) * (width / 2)
     else if (shape === 'polygon' && vertices) {
-      // simple approx
-      area = width * height * 0.5
+      area = calculatePolygonArea(vertices, width, height)
     }
 
     const density = area > 0 ? mass / area : 1
     const body = world.createDynamicBody({ position: Vec2(x, y), angle })
     body.setBullet(true)
+
+    if (vx !== 0 || vy !== 0) {
+      body.setLinearVelocity(Vec2(vx, vy))
+    }
 
     let fixtureShape
     if (shape === 'circle' || shape === 'ring') {
@@ -179,7 +185,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       friction,
       color,
       position: { x, y },
-      velocity: { x: 0, y: 0, magnitude: 0 },
+      velocity: { x: vx, y: vy, magnitude: Math.hypot(vx, vy) },
       acceleration: { x: 0, y: 0, magnitude: 0, radial: 0, transverse: 0 },
       angleRad: angle,
       normalForce: 0,
@@ -256,7 +262,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
     let area = safeWidth * safeHeight
     if (entry.shape === 'circle' || entry.shape === 'ring') area = Math.PI * (safeWidth / 2) * (safeWidth / 2)
-    else if (entry.shape === 'polygon' && entry.vertices) area = safeWidth * safeHeight * 0.5
+    else if (entry.shape === 'polygon' && entry.vertices)
+      area = calculatePolygonArea(entry.vertices, safeWidth, safeHeight)
 
     const density = area > 0 ? entry.mass / area : 1
 

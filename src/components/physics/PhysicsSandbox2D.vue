@@ -6,6 +6,7 @@ import PhysicsCanvas from './PhysicsCanvas.vue'
 import ToolRail from './ToolRail.vue'
 import ContextPanel from './ContextPanel.vue'
 import PhysicsDataPanel from './PhysicsDataPanel.vue'
+import ShapeEditorModal from './ShapeEditorModal.vue'
 import {
   Undo2,
   Redo2,
@@ -81,6 +82,7 @@ const toolLabels = {
   pulley: 'POLEA',
   circular: 'RIEL CIRCULAR',
   force: 'FUERZA / IMPULSO',
+  anchor: 'FIJADOR / ANCLAJE',
   delete: 'BORRAR'
 }
 
@@ -144,6 +146,19 @@ function importSceneFile() {
 // bienvenida (HomePage.vue), así que aquí ya no se abre sola al entrar.
 // "Ayuda" solo muestra una referencia rápida de herramientas.
 const showWelcomeModal = ref(false)
+const showShapeEditorModal = ref(false)
+
+function handleApplyShapeToSelected({ id, width, height, shape, vertices }) {
+  updateBoxDimensions(id, width, height, shape, vertices)
+  saveHistoryState()
+}
+
+function handleApplyShapeToDefault({ shape, vertices, width, height }) {
+  nextBoxShape.value = shape
+  nextBoxVertices.value = vertices
+  if (width) nextBoxWidth.value = width
+  if (height) nextBoxHeight.value = height
+}
 
 const boxEntries = computed(() => bodies.filter((b) => b.kind === 'box'))
 
@@ -177,6 +192,8 @@ const nextBoxMass = ref(2.0)
 const nextBoxWidth = ref(1.0)
 const nextBoxHeight = ref(1.0)
 const nextBoxFriction = ref(0.3)
+const nextBoxVx = ref(0)
+const nextBoxVy = ref(0)
 
 const selectedBoxId = ref(null)
 const selectedBox = computed(() => boxEntries.value.find((b) => b.id === selectedBoxId.value) || null)
@@ -364,10 +381,20 @@ function handleCanvasDown({ x, y }) {
       friction: nextBoxFriction.value,
       shape: nextBoxShape.value,
       vertices: nextBoxVertices.value,
+      vx: nextBoxVx.value,
+      vy: nextBoxVy.value,
       color: nextColor(),
       label: `Objeto ${boxEntries.value.length + 1}`
     })
     selectedBoxId.value = id
+    saveHistoryState()
+  } else if (activeTool.value === 'anchor') {
+    const targetId = queryPoint(x, y, { includeStatic: false })
+    const anchorId = addAnchor(x, y)
+    if (targetId) {
+      addRope(anchorId, targetId)
+    }
+    selectedBoxId.value = anchorId
     saveHistoryState()
   } else if (activeTool.value === 'delete') {
     // includeStatic: ahora "Borrar" también funciona sobre suelos y anclajes,
@@ -948,10 +975,14 @@ onBeforeUnmount(() => {
             :pending-pulley="!!pendingPulley"
             :ropes-count="ropes.length"
             :next-box-shape="nextBoxShape"
+            :next-box-vertices="nextBoxVertices"
             :next-box-mass="nextBoxMass"
             :next-box-width="nextBoxWidth"
             :next-box-height="nextBoxHeight"
             :next-box-friction="nextBoxFriction"
+            :next-box-vx="nextBoxVx"
+            :next-box-vy="nextBoxVy"
+            @open-shape-editor="showShapeEditorModal = true"
             @update-next-box-shape="
               (s, v) => {
                 nextBoxShape = s
@@ -964,6 +995,8 @@ onBeforeUnmount(() => {
                 else if (k === 'width') nextBoxWidth = v
                 else if (k === 'height') nextBoxHeight = v
                 else if (k === 'friction') nextBoxFriction = v
+                else if (k === 'vx') nextBoxVx = v
+                else if (k === 'vy') nextBoxVy = v
               }
             "
             @update-box-mass="updateBoxMass"
@@ -1104,6 +1137,19 @@ onBeforeUnmount(() => {
             </div>
           </div>
         </Transition>
+
+        <!-- Modal de Editor Multiforma -->
+        <ShapeEditorModal
+          :is-open="showShapeEditorModal"
+          :selected-box="selectedBox"
+          :current-shape="nextBoxShape"
+          :current-vertices="nextBoxVertices"
+          :current-width="nextBoxWidth"
+          :current-height="nextBoxHeight"
+          @close="showShapeEditorModal = false"
+          @apply-to-selected="handleApplyShapeToSelected"
+          @apply-to-default="handleApplyShapeToDefault"
+        />
       </div>
     </main>
   </div>
