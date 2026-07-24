@@ -104,3 +104,15 @@ Esto asegura que si la Caja A baja 1 metro debido a la gravedad, la tensión se 
 Cuando el usuario arrastra la flecha de la herramienta Fuerza (➤):
 - **La Fuerza Constante:** Llama a `body.applyForceToCenter(vector)`. Esto suma un vector de Newtons continuo al sumatorio de fuerzas de la caja ($\Sigma F$). Genera una aceleración sostenida a lo largo de los cuadros por segundo.
 - **El Impulso (Empujón):** Llama a `body.applyLinearImpulse(vector)`. Esto no aplica aceleración progresiva, sino un salto de energía instantáneo (Delta de Momento Lineal, $\Delta p$). Se usa para simular "golpes" o explosiones en una fracción de segundo.
+
+### 5.7 Fijador (Anclajes Rígidos)
+- **Lógica en el código:** Cuando se aplica la herramienta Fijador sobre un cuerpo (o se quita), la función `toggleAnchor(bodyId)` altera el estado fundamental del objeto.
+- **La matemática:** Cambia dinámicamente el tipo de cuerpo en el integrador (de `dynamic` a `static` o viceversa). Al cambiar a `static`, Box2D descarta inmediatamente las sumatorias de fuerzas y momentos, obligando a sus derivadas a ser cero. Esto fija el cuerpo en su posición y rotación actual sin necesidad de añadir restricciones (Joints) que consuman cómputo adicional.
+
+### 5.8 Rodillos (Apoyos Deslizantes)
+- **Lógica en el código:** Similar al Fijador, la herramienta Rodillos utiliza `toggleRollers(bodyId)` para modificar las condiciones de contorno superficial del cuerpo.
+- **La matemática:** Reemplaza el coeficiente de fricción ($\mu$) del "Fixture" base a $0.0$, y bloquea cinemáticamente la rotación del cuerpo (`setFixedRotation(true)`). Esto transforma matemáticamente un sólido arbitrario en un deslizador ideal o carro de laboratorio libre de rozamiento que solo puede trasladarse y es inmune al torque, algo sumamente útil para estudiar conservación de la cantidad de movimiento puro en choques unidimensionales.
+
+### 5.9 Cotas de Medición (Telemetría de Distancia)
+- **Lógica en el código:** La herramienta Medición crea entidades puramente visuales (Cotas) almacenadas en el estado global.
+- **La matemática:** No interactúan con el motor Box2D ni afectan la simulación. En cada *frame* de dibujo, calculan en tiempo real la norma (distancia euclidiana) del vector diferencia entre dos puntos del espacio de mundo: $| \vec{r_2} - \vec{r_1} | = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$. El resultado se formatea dinámicamente según el Sistema de Unidades activo (SI o US Customary).

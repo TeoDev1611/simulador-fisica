@@ -22,7 +22,7 @@ Este módulo está enfocado en el análisis analítico y gráfico de una partíc
 
 A diferencia del módulo cinemático (basado en álgebra pura), Newton Lab utiliza un integrador numérico (Symplectic Euler basado en la arquitectura Box2D) que evalúa las ecuaciones diferenciales de Newton-Euler 60 veces por segundo. 
 
-La gravedad predeterminada se asume como el vector $\vec{g} = (0, -9.81 \, m/s^2)$, y el espacio se trata en un sistema de referencia inercial cartesiano estricto.
+La gravedad predeterminada se asume como el vector $\vec{g} = (0, -9.81 \, m/s^2)$ en el **Sistema Internacional (SI)**, pudiendo alternar al **Sistema Inglés (US)** con $\vec{g} = (0, -32.174 \, ft/s^2)$. Todo el espacio se trata en un sistema de referencia inercial cartesiano estricto.
 
 ### A. Naturaleza de los Cuerpos (Bodies)
 - **Cuerpos Dinámicos (Masas, Anillas)**: Resuelven ecuaciones de traslación ($\Sigma \vec{F} = m\vec{a}$) y rotación ($\Sigma \tau = I\alpha$). Al asignar masa, el motor calcula automáticamente la inercia rotacional ($I$) en función del tensor geométrico de la forma.
@@ -40,6 +40,9 @@ El motor resuelve sistemas de restricciones holonómicas y no holonómicas media
 - **Resortes Lineales**: Obedecen la Ley de Hooke amortiguada: $F = -k(\Delta x) - cv$. El usuario no ingresa el valor arbitrario de $k$, sino la **frecuencia natural ($f_n$, en Hertz)** y la **razón de amortiguamiento ($\zeta$)**. Esto permite a los ingenieros modelar osciladores subamortiguados ($\zeta < 1$) o críticamente amortiguados ($\zeta = 1$) con precisión analítica, independientemente de la masa anclada.
 - **Cuerdas y Poleas Ideales**: Se modelan como varillas de longitud máxima inextensibles con masa y fricción nulas. Las poleas conservan la transmisión de la tensión del cable, reduciendo el problema mecánicamente a una máquina de Atwood clásica.
 - **Rieles**: Aplican una restricción de distancia constante respecto a un punto, obligando a una partícula (anilla) a trasladarse sobre una curva o trayectoria fija sin ser absorbida por fuerzas normales.
+- **Fijador (Anclaje Rígido)**: Transforma matemáticamente un cuerpo dinámico a estático en tiempo de ejecución, eliminando instantáneamente sus seis grados de libertad.
+- **Rodillos (Apoyo Deslizante)**: Condición de frontera especial que anula la fricción inferior del cuerpo y transfiere toda la inercia a la traslación, evitando el torque por rodadura (ideal para simular carritos de laboratorio sin fricción).
+- **Cotas de Medición**: Herramienta de telemetría in situ que extrae la distancia euclidiana paramétrica exacta entre dos coordenadas del plano inercial.
 
 ### D. Sistema de Adquisición de Datos (Telemetría/DAQ)
 Newton Lab cuenta con un sistema robusto de toma de datos empíricos. Al presionar **Grabar Datos**, el motor toma 30 muestras discretas por segundo de los siguientes vectores referenciados al Centro de Masa (CM) de todos los cuerpos en movimiento:

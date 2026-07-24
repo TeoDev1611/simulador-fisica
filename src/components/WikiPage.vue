@@ -1,7 +1,6 @@
 <script setup>
 // src/components/WikiPage.vue
 import { ref } from 'vue'
-import katex from 'katex'
 import {
   TrendingUp,
   Magnet,
@@ -36,7 +35,10 @@ import {
   ChevronRight,
   ChevronDown,
   Info,
-  Library
+  Library,
+  Globe,
+  Compass,
+  Anchor
 } from 'lucide-vue-next'
 
 function m(expr) {
@@ -273,6 +275,34 @@ const sections = [
               </ul>
             </div>
 
+            <!-- NUEVO: SISTEMA DE UNIDADES -->
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
+            >
+              <h3 class="text-xl font-bold text-emerald-700 dark:text-emerald-400 mb-3 flex items-center gap-2">
+                <Globe class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Sistema Internacional vs Inglés
+              </h3>
+              <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
+                El simulador permite alternar libremente entre dos sistemas de unidades para todo el lienzo.
+              </p>
+              <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
+                <li>
+                  <strong>Sistema Internacional (SI):</strong> Trabaja en metros (m) para distancia, kilogramos (kg) para masa, y metros por segundo cuadrado (m/s²) para aceleración.
+                </li>
+                <li>
+                  <strong>Sistema Inglés (US):</strong> Trabaja en pies (ft) para distancia, libras de masa (lb) para masa, y pies por segundo cuadrado (ft/s²) para aceleración.
+                </li>
+              </ul>
+              <div
+                class="mt-4 bg-emerald-300/20 dark:bg-emerald-900/20 border border-emerald-200/50 dark:border-emerald-800/50 p-4 rounded-lg"
+              >
+                <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mb-2">💡 ¿Cómo cambiar de sistema?</h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
+                  En el panel derecho (Panel de Contexto), verás un interruptor <strong>(SI / US)</strong>. Al hacer clic, el entorno completo cambiará sus unidades (incluidas las herramientas de medición, la telemetría, y la gravedad que pasará de 9.81 a 32.174).
+                </p>
+              </div>
+            </div>
+
             <div
               class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-[2rem] p-8 shadow-lg dark:shadow-2xl relative overflow-hidden group hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] transition-all duration-500"
             >
@@ -371,6 +401,9 @@ const sections = [
                   <strong>Ocultar Propiedades (<EyeOff class="w-4 h-4 inline" />):</strong> El panel de propiedades
                   (donde cambias masas y ángulos) tiene un botón de "Ojo" en la esquina superior derecha. Tócalo para
                   colapsar todo el panel en un diminuto círculo y liberar aún más pantalla.
+                </li>
+                <li>
+                  <strong>Temas y Modo Oscuro:</strong> El simulador soporta un tema claro (colorido) y un modo oscuro (elegante) estilo LaTeX. Para cambiar entre ellos, usa el interruptor situado en la esquina superior derecha de la aplicación.
                 </li>
               </ul>
             </div>
@@ -482,6 +515,58 @@ const sections = [
                 <p class="text-xs text-blue-600 dark:text-blue-400 mt-2 font-medium">
                   💡 Tip: Puedes cambiar la geometría (ancho y alto) en caliente; el motor físico empujará
                   instantáneamente cualquier objeto que se superponga (resolución de interpenetración).
+                </p>
+              </div>
+            </div>
+
+            <!-- HERRAMIENTA 2.5: MEDICIÓN Y COTAS -->
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
+            >
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <Compass class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Medición y Cotas
+                </h3>
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  Arrastra el ratón desde cualquier punto del lienzo hasta otro. El simulador trazará una cota de arquitectura permanente, mostrando la distancia exacta entre ambos puntos en el sistema de unidades actual.
+                </p>
+              </div>
+            </div>
+
+            <!-- HERRAMIENTA: FIJADOR Y RODILLOS -->
+            <div
+              class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md border border-gray-300/60 dark:border-gray-800/60 rounded-3xl p-6 shadow-md dark:shadow-xl relative overflow-hidden group hover:shadow-[0_10px_20px_-10px_rgba(16,185,129,0.15)] transition-all duration-300"
+            >
+              <div
+                class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
+              >
+                <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
+                  <Anchor class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Fijador y 
+                  <CircleDot class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Rodillos
+                </h3>
+              </div>
+
+              <div class="mb-5">
+                <h4
+                  class="text-sm font-bold text-gray-800 dark:text-gray-200 mb-2 uppercase tracking-wider flex items-center gap-2"
+                >
+                  <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
+                </h4>
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
+                  <strong>Fijador (Anclaje):</strong> Da clic en cualquier cuerpo dinámico con la herramienta Fijador. Esto convertirá el objeto instantáneamente en un cuerpo estático de masa infinita (anclado en el espacio). Vuelve a dar clic para liberarlo.
+                </p>
+                <p class="text-sm text-gray-600 dark:text-gray-400">
+                  <strong>Rodillos:</strong> Da clic en cualquier objeto estático o dinámico con la herramienta Rodillos. Esto le agregará un apoyo deslizante en la parte inferior, ideal para simular carritos de dinámica sin preocuparse por rotaciones complejas.
                 </p>
               </div>
             </div>
