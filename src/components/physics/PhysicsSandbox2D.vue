@@ -3,6 +3,8 @@
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { usePlanckWorld } from '../../composables/usePlanckWorld.js'
 import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 import PhysicsCanvas from './PhysicsCanvas.vue'
 import ToolRail from './ToolRail.vue'
 import ContextPanel from './ContextPanel.vue'
@@ -20,6 +22,7 @@ import {
   Pause,
   RotateCcw,
   Maximize,
+  HelpCircle,
   MousePointer2,
   Box,
   Ruler,
@@ -194,6 +197,46 @@ function resetCameraView() {
   if (canvasRef.value?.resetCamera) {
     canvasRef.value.resetCamera()
   }
+}
+
+function startNewtonTour() {
+  const driverObj = driver({
+    showProgress: true,
+    nextBtnText: 'Siguiente →',
+    prevBtnText: '← Anterior',
+    doneBtnText: '¡Entendido!',
+    steps: [
+      {
+        element: '#tour-tool-rail',
+        popover: {
+          title: '🛠️ Caja de Herramientas Flotante',
+          description: 'Selecciona entre 13 herramientas especializadas: Cajas/Multiformas, Suelos, Cuerdas, Resortes, Poleas, Cotas de Medición y Rodillos.'
+        }
+      },
+      {
+        element: '#tour-physics-canvas',
+        popover: {
+          title: '🎨 Lienzo de Simulación 2D',
+          description: 'Dibuja o spawnea objetos interactivos sobre la pantalla. Puedes mover la cámara con la mano (Atajo H) y usar la rueda para hacer zoom.'
+        }
+      },
+      {
+        element: '#tour-context-panel',
+        popover: {
+          title: '⚙️ Panel de Propiedades y Unidades',
+          description: 'Ajusta masas, fricciones, la restitución (e) de rebote, velocidad inicial (Vx, Vy) y cambia entre el Sistema Internacional ($m, kg$) y el Sistema Inglés ($ft, lb$).'
+        }
+      },
+      {
+        element: '#tour-action-bar',
+        popover: {
+          title: '🎮 Barra de Control y Telemetría',
+          description: 'Controla el flujo de tiempo (Pausa/Play), Deshacer (Ctrl+Z), Rehacer, Importar/Exportar escenas en JSON y grabar telemetría a Excel (CSV).'
+        }
+      }
+    ]
+  })
+  driverObj.drive()
 }
 const springFreq = ref(2.0)
 const springDamping = ref(0.1)
@@ -800,6 +843,7 @@ onBeforeUnmount(() => {
         </div>
 
         <PhysicsCanvas
+          id="tour-physics-canvas"
           ref="canvasRef"
           class="absolute inset-0 w-full h-full"
           :scale="canvasScale"
@@ -840,7 +884,16 @@ onBeforeUnmount(() => {
               >
             </template>
           </span>
-          <div class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
+          <div id="tour-action-bar" class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
+            <button
+              type="button"
+              @click="startNewtonTour"
+              class="bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold px-3 py-2 rounded-[14px] shadow-md border border-emerald-500/30 text-xs flex items-center gap-1.5 transition-all"
+              title="Guía interactiva paso a paso"
+            >
+              <HelpCircle class="w-4 h-4" />
+              <span>Tour</span>
+            </button>
             <!-- BOTONES DE DESHACER / REHACER / ZOOM -->
             <button
               type="button"
@@ -1015,11 +1068,12 @@ onBeforeUnmount(() => {
         <div
           class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 md:bottom-auto md:left-3 md:translate-x-0 md:top-1/2 md:-translate-y-1/2 z-30"
         >
-          <ToolRail :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" />
+          <ToolRail id="tour-tool-rail" :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" />
         </div>
 
         <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
         <div
+          id="tour-context-panel"
           class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end"
         >
           <ContextPanel

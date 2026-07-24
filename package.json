@@ -13,6 +13,7 @@
     },
     "dependencies": {
         "chart.js": "^4.4.2",
+        "driver.js": "^1.8.0",
         "html2canvas": "^1.4.1",
         "katex": "^0.17.0",
         "lucide-vue-next": "^1.0.0",

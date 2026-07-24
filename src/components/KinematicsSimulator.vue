@@ -8,7 +8,9 @@ import ResultsCards from './kinematics/ResultsCards.vue'
 import Track1D from './kinematics/Track1D.vue'
 import ChartsPanel from './kinematics/ChartsPanel.vue'
 import html2canvas from 'html2canvas'
-import { Play, Pause, Repeat, FileText, Image as ImageIcon, Settings, ChevronDown, ChevronUp } from 'lucide-vue-next'
+import { Play, Pause, Repeat, FileText, Image as ImageIcon, Settings, ChevronDown, ChevronUp, HelpCircle } from 'lucide-vue-next'
+import { driver } from 'driver.js'
+import 'driver.js/dist/driver.css'
 
 // ----------------------------
 // Estado reactivo principal
@@ -59,6 +61,53 @@ function exportEquationsTxt() {
   a.download = 'ecuaciones_cinematica.txt'
   a.click()
   URL.revokeObjectURL(url)
+}
+
+function startGalileoTour() {
+  const driverObj = driver({
+    showProgress: true,
+    nextBtnText: 'Siguiente →',
+    prevBtnText: '← Anterior',
+    doneBtnText: '¡Entendido!',
+    steps: [
+      {
+        element: '#tour-equation-input',
+        popover: {
+          title: '📐 Ecuaciones Cinemáticas 1D',
+          description: 'Escribe aquí cualquier función matemática de posición x(t) (ej. A*sin(w*t)). El motor la derivará analíticamente para hallar v(t) y a(t).'
+        }
+      },
+      {
+        element: '#tour-math-keyboard',
+        popover: {
+          title: '⌨️ Teclado Matemático Virtual',
+          description: 'Utiliza estos botones para insertar funciones trigonométricas, exponenciales, raíces y constantes sin cometer errores de sintaxis.'
+        }
+      },
+      {
+        element: '#tour-track-1d',
+        popover: {
+          title: '🏎️ Pista de Animación 1D',
+          description: 'Observa la partícula o móvil desplazándose en tiempo real a lo largo de la pista según la función de posición ingresada.'
+        }
+      },
+      {
+        element: '#tour-charts-panel',
+        popover: {
+          title: '📊 Gráficas Sincronizadas',
+          description: 'Tres gráficos analíticos en tiempo real (Posición, Velocidad y Aceleración) creados con Chart.js y sincronizados frame a frame.'
+        }
+      },
+      {
+        element: '#tour-results-cards',
+        popover: {
+          title: '📈 Datos y Exportación Excel',
+          description: 'Consulta lecturas instantáneas y exporta toda la telemetría cinemática a archivos CSV compatibles con Excel.'
+        }
+      }
+    ]
+  })
+  driverObj.drive()
 }
 
 // Parámetros de la ecuación
@@ -521,6 +570,7 @@ onBeforeUnmount(() => {
       <section class="lg:col-span-4 flex flex-col gap-6">
         <!-- Panel de entrada de ecuación -->
         <div
+          id="tour-equation-input"
           class="bg-white/60 dark:bg-gray-900/40 backdrop-blur-xl border rounded-[2rem] p-6 shadow-lg dark:shadow-2xl relative overflow-hidden transition-all duration-300 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)]"
           :class="
             errorMessage
@@ -534,9 +584,19 @@ onBeforeUnmount(() => {
             class="absolute inset-0 bg-gradient-to-br from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"
           ></div>
           <div class="flex items-center justify-between mb-2 relative z-10">
-            <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400"
-              >Ecuación de posición x(t)</label
-            >
+            <div class="flex items-center gap-2">
+              <label class="block text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400"
+                >Ecuación de posición x(t)</label
+              >
+              <button
+                type="button"
+                @click="startGalileoTour"
+                class="px-2 py-0.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-[10px] border border-emerald-500/30 flex items-center gap-1 transition-all"
+              >
+                <HelpCircle class="w-3 h-3" />
+                <span>Tour</span>
+              </button>
+            </div>
             <span class="flex items-center gap-1 text-[10px] font-medium">
               <template v-if="isValidating"
                 ><span class="w-2 h-2 rounded-full bg-yellow-700 dark:bg-yellow-400 animate-pulse"></span
@@ -629,6 +689,7 @@ onBeforeUnmount(() => {
 
           <!-- Teclado virtual -->
           <MathKeyboard
+            id="tour-math-keyboard"
             v-model="equationInput"
             v-model:cursorPosition="cursorPosition"
             :parameters="parameters"
@@ -820,16 +881,16 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Tarjetas de resultados -->
-        <ResultsCards :position="positionValue" :velocity="velocityValue" :acceleration="accelerationValue" />
+        <ResultsCards id="tour-results-cards" :position="positionValue" :velocity="velocityValue" :acceleration="accelerationValue" />
       </section>
 
       <!-- COLUMNA DERECHA -->
       <section class="lg:col-span-8 flex flex-col gap-6">
         <!-- Pista 1D -->
-        <Track1D :positionValue="positionValue" :trackMinX="trackMinX" :trackMaxX="trackMaxX" />
+        <Track1D id="tour-track-1d" :positionValue="positionValue" :trackMinX="trackMinX" :trackMaxX="trackMaxX" />
 
         <!-- Gráficos -->
-        <ChartsPanel :chartDataset="chartDataset" :time="time" />
+        <ChartsPanel id="tour-charts-panel" :chartDataset="chartDataset" :time="time" />
       </section>
     </main>
 
