@@ -1,0 +1,41 @@
+{
+  "name": "Ejemplo 14: Medicion y Cotas en Rampa",
+  "description": "Simulacion con plano inclinado, objeto deslizante y cotas de medicion fijadas (distancia, desnivel y angulo).",
+  "unitSystem": "metric",
+  "bodies": [
+    {
+      "id": "box_1",
+      "kind": "box",
+      "shape": "box",
+      "label": "Esfera A",
+      "width": 0.8,
+      "height": 0.8,
+      "mass": 2.0,
+      "friction": 0.1,
+      "restitution": 0.8,
+      "position": { "x": -5.0, "y": 8.0 },
+      "velocity": { "x": 0, "y": 0 },
+      "angleRad": 0
+    },
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "points": [
+        { "x": -10.0, "y": 10.0 },
+        { "x": 5.0, "y": 0.0 }
+      ],
+      "friction": 0.1,
+      "restitution": 0.8
+    }
+  ],
+  "measurements": [
+    {
+      "p1": { "x": -10.0, "y": 10.0 },
+      "p2": { "x": 5.0, "y": 0.0 }
+    },
+    {
+      "p1": { "x": -5.0, "y": 8.0 },
+      "p2": { "x": -5.0, "y": 3.33 }
+    }
+  ]
+}

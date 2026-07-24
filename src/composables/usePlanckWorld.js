@@ -207,6 +207,34 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     entry.friction = safeFriction
   }
 
+  function updateBoxRestitution(id, newRestitution) {
+    const entry = bodies.find((b) => b.id === id && b.kind === 'box')
+    if (!entry) return
+    const safeRestitution = Math.max(0, Math.min(1, newRestitution))
+    const fixture = entry.body.getFixtureList()
+    if (fixture) {
+      fixture.setRestitution(safeRestitution)
+      entry.body.setAwake(true)
+    }
+    entry.restitution = safeRestitution
+  }
+
+  function toggleRollers(id) {
+    const entry = bodies.find((b) => b.id === id && b.kind === 'box')
+    if (!entry) return false
+    entry.hasRollers = !entry.hasRollers
+    const fixture = entry.body.getFixtureList()
+    if (entry.hasRollers) {
+      if (fixture) fixture.setFriction(0)
+      entry.body.setFixedRotation(true)
+    } else {
+      if (fixture) fixture.setFriction(entry.friction ?? 0.3)
+      entry.body.setFixedRotation(false)
+    }
+    entry.body.setAwake(true)
+    return entry.hasRollers
+  }
+
   function updateBoxMass(id, newMass) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
@@ -617,6 +645,11 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
         entry.position.y = p.y || 0
         entry.angleRad = entry.body.getAngle() || 0
 
+        // Seguimiento de altura máxima alcanzada (sensor h_max)
+        if (entry.maxHeightReached === undefined || entry.position.y > entry.maxHeightReached) {
+          entry.maxHeightReached = entry.position.y
+        }
+
         // Si la caja explota (NaN) o se cae infinitamente al vacío, la marcamos para borrar
         if (Number.isNaN(p.x) || Number.isNaN(p.y) || Math.abs(p.x) > 2000 || p.y < -300 || p.y > 2000) {
           outOfBoundsIds.push(entry.id)
@@ -870,6 +903,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     addBox,
     updateBoxMass,
     updateBoxFriction,
+    updateBoxRestitution,
+    toggleRollers,
     updateBoxAngle,
     updateBoxVelocity,
     updateBoxDimensions,
@@ -878,6 +913,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     applyImpulse,
     addGround,
     setGroundFriction,
+    updateGroundRestitution,
     getGroundIds,
     addAnchor,
     moveAnchor,

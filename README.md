@@ -11,16 +11,19 @@ Este proyecto es una aplicación web interactiva desarrollada para la enseñanza
    - Exportación de tablas de datos cinemáticos hacia **Excel (CSV)**.
    - Gráficas sincronizadas e interactivas generadas con Chart.js con soporte nativo de exportación a PNG.
    - Pista de simulación interactiva.
-2. ** Newton Lab:** 
+2. **Newton Lab (Sandbox 2D):** 
    - Motor de físicas 2D realista construido sobre **Planck.js** (basado en Box2D).
-   - Sistema de **Deshacer y Rehacer (Undo/Redo)** con atajos de teclado (`Ctrl+Z`, `Ctrl+Y`) capaz de memorizar hasta 50 estados.
-   - Herramientas de construcción libres: cajas, terrenos poligonales (múltiples simultáneos), anclajes, cuerdas, poleas, resortes y fuerzas constantes. Snap en vivo para facilitar conexiones.
-   - **Grabador de Telemetría:** Exportación a **Excel (CSV)** de 30 muestras por segundo con posiciones, velocidades, **aceleraciones lineales**, ángulos y telemetría de cada cuerpo.
-   - **Persistencia:** Capacidad para Importar y Exportar el estado completo de la escena en archivos `.json`.
-   - Modificación en caliente de propiedades físicas como masa, fricción, coeficientes elásticos (k) y amortiguamiento, calculando todo 60 veces por segundo.
-3. **Optimización Móvil y Tablet (UX):** Interfaz fluida adaptable (docks inferiores) con manejo estricto de eventos de toque (`pointerevents` y bloqueo de scroll) previniendo bugs de multitouch.
-4. **Manual / Wiki Integrado:** Documentación interactiva in-app para que el usuario aprenda a utilizar cada módulo.
-5. **Modo Claro / Oscuro:** Soporte completo de temas visuales mediante `darkMode: 'class'` de Tailwind CSS, con un diseño "Glassmorphism" en todos los componentes.
+   - **Editor Multiforma & Polígonos de N-Lados:** Galería visual para crear cajas, círculos, anillos, triángulos, rombos, pentágonos, hexágonos, heptágonos, octágonos y trapecios con cálculo exacto de área vía fórmula de Shoelace.
+   - **Herramienta de Medición & Cotas de Ingeniería (`measure`):** Trazado de cotas estilo plano técnico con lectura directa de distancia ($d$), altura/desnivel ($h$), ángulo ($\theta$) y sensor automático de **Altura Máxima ($h_{\text{max}}$)**.
+   - **Herramienta de Rodillos / Apoyos Deslizantes (`rollers`):** Se aplica a *cualquier cuerpo/figura* para convertirlo en un apoyo deslizante en floor sin vuelco (ideal para cuñas de examen).
+   - **Selector Global de Sistema de Unidades:** Toggle directo para trabajar en el **Sistema Internacional (SI: $m, m/s, kg$)** o en el **Sistema Inglés (Imperial: $ft, ft/s, lb$)**.
+   - **Restitución $e$ & Terrenos Múltiples:** Ajuste explícito del coeficiente de rebote $e \in [0, 1]$ para cajas y terrenos independientes.
+   - **Sistema de Deshacer y Rehacer (Undo/Redo):** Memoriza hasta 50 estados (`Ctrl+Z`, `Ctrl+Y`).
+   - **Grabador de Telemetría:** Exportación a **Excel (CSV)** de 30 muestras/seg con datos cinemáticos, alturas máximas $h_{\text{max}}$ y tabla de cotas de ingeniería fijadas.
+   - **Persistencia:** Importación y exportación de escenas en JSON (`.json`).
+3. **Optimización Móvil y Tablet (UX):** Interfaz fluida adaptada con navegadores flotantes de scroll táctil, botones de scroll móvil e interfaz responsiva.
+4. **Manual / Wiki Integrado:** Documentación interactiva in-app con KaTeX.
+5. **Modo Claro / Oscuro:** Diseño visual Glassmorphism adaptable.
 
 ## Estructura Actual del Proyecto
 

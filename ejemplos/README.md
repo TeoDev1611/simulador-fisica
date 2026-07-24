@@ -14,9 +14,8 @@ Esta carpeta contiene 13 archivos JSON de escenas listas para importar en el sim
 - **`8_plano_inclinado_friccion.json`**: Tres cajas (Hielo, Madera, Goma) sobre una rampa pronunciada. Perfecto para ver cómo sus distintos coeficientes de fricción afectan su deslizamiento.
 - **`9_pendulo_doble.json`**: Demuestra la física del caos. Un anclaje conectado a un círculo, que a su vez está conectado a un segundo círculo.
 
-## 🔴 Nivel Avanzado (Ingeniería y Mecanismos)
-- **`2_collarin_resorte.json`**: Una anilla unida a un riel circular, traccionada por un resorte desde el techo.
-- **`3_rampa_y_obstaculo.json`**: Demuestra el uso del generador de terrenos poligonales, obstáculos triangulares personalizados y amarras.
-- **`10_coche_amortiguado.json`**: ¡Construcción de un chasis de automóvil! Dos ruedas unidas a un bloque central mediante 2 resortes que actúan como suspensión sobre un terreno montañoso.
-- **`12_catapulta_balancin.json`**: Aprovecha una cuerda muy corta unida al centro de una tabla para crear un pivote/bisagra. Una masa pesada cae sobre un lado del balancín para disparar un proyectil.
-- **`13_puente_colgante.json`**: Varios "tramos" de tabla amarrados entre sí por pequeñas cuerdas en secuencia, anclados a dos columnas maestras, soportando el peso de una carga pesada.
+## 🎓 Nivel Pruebas y Exámenes (ESPE / Dinámica de Partículas)
+- **`14_medicion_cotas_rampa.json`**: Plano inclinado con esfera cayendo y cotas de ingeniería fijadas ($d, h, \theta$) para cálculo de distancia entre rebotes.
+- **`15_cuna_rodillos_impacto.json`**: Cuña triangular montada sobre rodillos apoyados en piso liso sin fricción e impacto oblicuo de esfera (Problemas de cuñas deslizantes de examen).
+- **`16_rebote_placas_restitucion.json`**: Pelota en rebote continuo sobre placas con restitución ($e = 0.8$), sensores de altura máxima ($h_{\text{max}}$) y configuración en sistema Inglés ($ft, ft/s$).
+

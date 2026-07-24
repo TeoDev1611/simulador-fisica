@@ -1,12 +1,14 @@
 <script setup>
 // src/components/physics/PhysicsCanvas.vue
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
 
 const props = defineProps({
   scale: { type: Number, default: 40 },
   vectorScale: { type: Number, default: 6 },
   selectedId: { type: String, default: null },
-  activeTool: { type: String, default: '' }
+  activeTool: { type: String, default: '' },
+  unitSystem: { type: String, default: 'metric' },
+  measurements: { type: Array, default: () => [] }
 })
 
 const emit = defineEmits(['canvas-down', 'canvas-move', 'canvas-up', 'update-scale'])
@@ -290,7 +292,127 @@ function drawBox(entry) {
   ctx.font = 'bold 11px monospace'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
-  ctx.fillText(`${entry.mass} kg`, 0, 0)
+  const massVal = formatValue(entry.mass, 'mass', props.unitSystem, 1)
+  const massLabel = getUnitLabel('mass', props.unitSystem)
+  ctx.fillText(`${massVal} ${massLabel}`, 0, 0)
+  ctx.restore()
+
+  if (entry.hasRollers) drawRollers(entry)
+  drawPeakMarkers(entry, props.unitSystem)
+}
+
+function drawRollers(entry) {
+  const { sx, sy } = worldToScreen(entry.position.x, entry.position.y)
+  const hPx = entry.height * props.scale
+  const wPx = entry.width * props.scale
+  ctx.save()
+  ctx.translate(sx, sy)
+  ctx.rotate(-entry.angleRad)
+  ctx.fillStyle = '#64748b'
+  ctx.strokeStyle = '#1e293b'
+  ctx.lineWidth = 1.5
+
+  const r = 5
+  const yOffset = hPx / 2 + r
+  const xLeft = -wPx * 0.3
+  const xRight = wPx * 0.3
+
+  ctx.beginPath()
+  ctx.arc(xLeft, yOffset, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.beginPath()
+  ctx.arc(xRight, yOffset, r, 0, Math.PI * 2)
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.restore()
+}
+
+function drawPeakMarkers(entry, unitSystem) {
+  if (entry.maxHeightReached === undefined || entry.maxHeightReached <= entry.position.y + 0.1) return
+  const { sx, sy } = worldToScreen(entry.position.x, entry.maxHeightReached)
+  const unitLabel = getUnitLabel('length', unitSystem)
+  const val = formatValue(entry.maxHeightReached, 'length', unitSystem, 2)
+
+  ctx.save()
+  ctx.strokeStyle = 'rgba(245, 158, 11, 0.7)'
+  ctx.lineWidth = 1.5
+  ctx.setLineDash([4, 4])
+  ctx.beginPath()
+  ctx.moveTo(sx - 35, sy)
+  ctx.lineTo(sx + 35, sy)
+  ctx.stroke()
+
+  ctx.fillStyle = '#f59e0b'
+  ctx.font = 'bold 9px monospace'
+  ctx.textAlign = 'center'
+  ctx.fillText(`h_max = ${val} ${unitLabel}`, sx, sy - 6)
+  ctx.restore()
+}
+
+function drawMeasurementLine(m, unitSystem) {
+  if (!m || !m.p1 || !m.p2) return
+  const p1 = worldToScreen(m.p1.x, m.p1.y)
+  const p2 = worldToScreen(m.p2.x, m.p2.y)
+  const dx = m.p2.x - m.p1.x
+  const dy = m.p2.y - m.p1.y
+  const distance = Math.hypot(dx, dy)
+  const unitLabel = getUnitLabel('length', unitSystem)
+  const distFormatted = formatValue(distance, 'length', unitSystem, 2)
+  const dyFormatted = formatValue(Math.abs(dy), 'length', unitSystem, 2)
+
+  ctx.save()
+  ctx.strokeStyle = '#38bdf8'
+  ctx.lineWidth = 2
+  ctx.setLineDash([5, 3])
+
+  ctx.beginPath()
+  ctx.moveTo(p1.sx, p1.sy)
+  ctx.lineTo(p2.sx, p2.sy)
+  ctx.stroke()
+
+  const angle = Math.atan2(p2.sy - p1.sy, p2.sx - p1.sx)
+  drawArrowHead(p1.sx, p1.sy, angle + Math.PI, '#38bdf8')
+  drawArrowHead(p2.sx, p2.sy, angle, '#38bdf8')
+
+  const midX = (p1.sx + p2.sx) / 2
+  const midY = (p1.sy + p2.sy) / 2
+  const text = `d = ${distFormatted} ${unitLabel}` + (Math.abs(dy) > 0.05 ? ` | h = ${dyFormatted} ${unitLabel}` : '')
+
+  ctx.font = 'bold 11px monospace'
+  const metrics = ctx.measureText(text)
+  const tw = metrics.width + 14
+  const th = 20
+
+  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'
+  ctx.strokeStyle = '#38bdf8'
+  ctx.lineWidth = 1
+  ctx.setLineDash([])
+  ctx.beginPath()
+  ctx.roundRect(midX - tw / 2, midY - th / 2, tw, th, 4)
+  ctx.fill()
+  ctx.stroke()
+
+  ctx.fillStyle = '#7dd3fc'
+  ctx.textAlign = 'center'
+  ctx.textBaseline = 'middle'
+  ctx.fillText(text, midX, midY)
+
+  ctx.restore()
+}
+
+function drawArrowHead(x, y, angle, color) {
+  const headLen = 7
+  ctx.save()
+  ctx.fillStyle = color
+  ctx.beginPath()
+  ctx.moveTo(x, y)
+  ctx.lineTo(x + headLen * Math.cos(angle - Math.PI / 6), y + headLen * Math.sin(angle - Math.PI / 6))
+  ctx.lineTo(x + headLen * Math.cos(angle + Math.PI / 6), y + headLen * Math.sin(angle + Math.PI / 6))
+  ctx.closePath()
+  ctx.fill()
   ctx.restore()
 }
 
@@ -634,6 +756,13 @@ function draw(bodies, ropes, previewLine, groundPreviewPoints, groundInfo) {
     if (entry.kind === 'box') {
       drawWeightVector(entry)
       drawAppliedForceVector(entry)
+    }
+  }
+
+  // Renderizar cotas de medición fijadas o activas
+  if (props.measurements) {
+    for (const m of props.measurements) {
+      drawMeasurementLine(m, props.unitSystem)
     }
   }
 }

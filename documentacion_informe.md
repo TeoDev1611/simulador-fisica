@@ -2,6 +2,8 @@
 
 Este documento detalla la estructura profunda del proyecto "Simulador Cinemático y Dinámico". Está diseñado para que los miembros del equipo de desarrollo comprendan exactamente la separación de responsabilidades del código (dónde es lógica, dónde es interfaz, cómo se calculan las físicas) y cuenten con la base técnica para redactar el informe o tesis final.
 
+> **💡 Prompt para IA Generadora de Informes:** Se ha incluido el archivo dedicado [`PROMPT_GUIA_INFORME_IA.md`](file:///c:/Users/Mateo/Desktop/Fisica/PROMPT_GUIA_INFORME_IA.md) con todo el contexto técnico, físico y matemático listo para copiar y pegar en ChatGPT/Claude/Gemini.
+
 ---
 
 ## 1. Arquitectura General: Desacoplamiento Lógica vs Vista

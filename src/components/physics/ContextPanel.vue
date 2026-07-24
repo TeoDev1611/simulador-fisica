@@ -5,9 +5,10 @@
 // Ahora solo se muestra UN panel: el que corresponde a la herramienta activa.
 // Menos ruido, y coherente con "estoy usando la herramienta X ahora mismo".
 import { ref, watch } from 'vue'
-import { Eye, EyeOff, Sparkles } from 'lucide-vue-next'
+import { Eye, EyeOff, Sparkles, CircleDot, Compass } from 'lucide-vue-next'
 import { SHAPE_PRESETS } from '../../utils/shapeUtils.js'
 import ShapeSvgPreview from './ShapeSvgPreview.vue'
+import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
 
 const isCollapsed = ref(false)
 
@@ -32,7 +33,8 @@ const props = defineProps({
   nextBoxHeight: { type: Number, default: 1.0 },
   nextBoxFriction: { type: Number, default: 0.3 },
   nextBoxVx: { type: Number, default: 0 },
-  nextBoxVy: { type: Number, default: 0 }
+  nextBoxVy: { type: Number, default: 0 },
+  unitSystem: { type: String, default: 'metric' }
 })
 
 const emit = defineEmits([
@@ -41,6 +43,8 @@ const emit = defineEmits([
   'update-next-box-config',
   'update-box-mass',
   'update-box-friction',
+  'update-box-restitution',
+  'toggle-box-rollers',
   'update-box-angle',
   'update-box-velocity',
   'update-box-dimensions',
@@ -48,12 +52,15 @@ const emit = defineEmits([
   'set-applied-force',
   'update-ground-friction',
   'update-selected-ground-friction',
+  'update-ground-restitution',
   'update-ground-mode',
   'update-ground-angle',
   'update-spring-preset',
   'update-spring-stiffness',
-  'update-force',
-  'apply-impulse'
+  'apply-impulse',
+  'update-unit-system',
+  'clear-measurements',
+  'update-force'
 ])
 
 // Ángulos típicos de problemas de plano inclinado (con su reflejo negativo
@@ -125,6 +132,29 @@ function applyForceNow(enabled) {
       class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"
     ></div>
     <div v-show="!isCollapsed" class="relative z-10 mt-1">
+      <!-- Selector Global de Sistema de Unidades -->
+      <div class="flex items-center justify-between p-2 mb-3 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Unidades</span>
+        <div class="flex gap-1">
+          <button
+            type="button"
+            @click="emit('update-unit-system', 'metric')"
+            class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all"
+            :class="unitSystem === 'metric' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
+          >
+            SI (m, kg)
+          </button>
+          <button
+            type="button"
+            @click="emit('update-unit-system', 'imperial')"
+            class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all"
+            :class="unitSystem === 'imperial' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
+          >
+            Inglés (ft, lb)
+          </button>
+        </div>
+      </div>
+
       <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa;
          si hay un trozo de SUELO seleccionado, ajustar su fricción individual -->
       <template v-if="activeTool === 'drag'">
@@ -268,6 +298,47 @@ function applyForceNow(enabled) {
               class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
+          <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
+            <span>Restitución (e) de Rebote</span>
+            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ (selectedBox.restitution ?? 0.1).toFixed(2) }}</span>
+          </label>
+          <div class="flex gap-2">
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.05"
+              :value="selectedBox.restitution ?? 0.1"
+              @input="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500"
+            />
+            <input
+              type="number"
+              min="0"
+              max="1"
+              step="0.05"
+              :value="selectedBox.restitution ?? 0.1"
+              @change="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            />
+          </div>
+
+          <div class="mt-3 pt-2 border-t border-gray-200 dark:border-gray-800">
+            <button
+              type="button"
+              @click="emit('toggle-box-rollers', selectedBox.id)"
+              class="w-full py-2 px-3 rounded-xl border text-xs font-bold transition-all flex items-center justify-center gap-2"
+              :class="
+                selectedBox.hasRollers
+                  ? 'bg-amber-500 text-white border-amber-600 shadow-md'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-gray-300 dark:border-gray-700 hover:bg-gray-200'
+              "
+            >
+              <CircleDot class="w-4 h-4" />
+              <span>{{ selectedBox.hasRollers ? 'Rodillos Activos (Fricción 0)' : 'Añadir Rodillos / Apoyo' }}</span>
+            </button>
+          </div>
+
           <p class="mt-1 text-[10px] text-gray-600 dark:text-gray-500 italic">
             Fricción de la caja consigo misma contra lo que toque (suelo, otra caja). El coeficiente efectivo en el
             contacto combina el de ambas superficies.
@@ -988,7 +1059,43 @@ function applyForceNow(enabled) {
         </p>
       </template>
 
-      <!-- Herramienta: Anillo en Riel -->
+      <!-- Herramienta: Medición y Cotas -->
+      <template v-else-if="activeTool === 'measure'">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400 mb-2 flex items-center gap-1.5">
+          📏 Medición y Cotas de Ingeniería
+        </h3>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+          Haz clic y arrastra entre dos puntos o centros de objetos para medir distancias ($d$), alturas ($h$) y ángulos ($\theta$).
+        </p>
+
+        <div class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800/60 mb-3 space-y-2">
+          <div class="text-[11px] font-bold text-sky-900 dark:text-sky-300">Sensores Físicos Activos:</div>
+          <div class="text-[10px] text-sky-700 dark:text-sky-400 flex items-center gap-1">
+            <span>• Altura Máxima ($h_{\text{max}}$): Marcada en el ápice de rotación o rebote.</span>
+          </div>
+          <div class="text-[10px] text-sky-700 dark:text-sky-400 flex items-center gap-1">
+            <span>• Distancia entre Impactos ($A \to B$).</span>
+          </div>
+        </div>
+
+        <button
+          type="button"
+          @click="emit('clear-measurements')"
+          class="w-full py-2 px-3 rounded-xl border border-sky-300 dark:border-sky-800 bg-sky-100 dark:bg-sky-900/50 text-sky-800 dark:text-sky-200 font-bold text-xs hover:bg-sky-200 transition-colors"
+        >
+          Limpiar Cotas de Pantalla
+        </button>
+      </template>
+
+      <!-- Herramienta: Rodillos / Apoyo Deslizante -->
+      <template v-else-if="activeTool === 'rollers'">
+        <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5">
+          ⚙️ Rodillos / Apoyo Deslizante
+        </h3>
+        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
+          Haz clic sobre <strong>cualquier figura u objeto</strong> (cuñas, bloques, polígonos) para colocarle o quitarle rodillos de apoyo deslizante (fricción 0 y deslizamiento sin vuelco).
+        </p>
+      </template>
       <template v-else-if="activeTool === 'circular'">
         <h3 class="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-400 mb-2">
           Anillo en Riel

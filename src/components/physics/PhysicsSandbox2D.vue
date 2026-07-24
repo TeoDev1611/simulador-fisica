@@ -2,6 +2,7 @@
 // src/components/physics/PhysicsSandbox2D.vue
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
 import { usePlanckWorld } from '../../composables/usePlanckWorld.js'
+import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
 import PhysicsCanvas from './PhysicsCanvas.vue'
 import ToolRail from './ToolRail.vue'
 import ContextPanel from './ContextPanel.vue'
@@ -40,6 +41,8 @@ const {
   addBox,
   updateBoxMass,
   updateBoxFriction,
+  updateBoxRestitution,
+  toggleRollers,
   updateBoxAngle,
   updateBoxVelocity,
   updateBoxDimensions,
@@ -48,6 +51,7 @@ const {
   applyImpulse,
   addGround,
   setGroundFriction,
+  updateGroundRestitution,
   getGroundIds,
   addAnchor,
   moveAnchor,
@@ -83,6 +87,8 @@ const toolLabels = {
   circular: 'RIEL CIRCULAR',
   force: 'FUERZA / IMPULSO',
   anchor: 'FIJADOR / ANCLAJE',
+  measure: 'MEDICIÓN Y COTAS',
+  rollers: 'RODILLOS / APOYO DESLIZANTE',
   delete: 'BORRAR'
 }
 
@@ -194,6 +200,16 @@ const nextBoxHeight = ref(1.0)
 const nextBoxFriction = ref(0.3)
 const nextBoxVx = ref(0)
 const nextBoxVy = ref(0)
+
+const unitSystem = ref('metric') // 'metric' | 'imperial'
+const fixedMeasurements = ref([])
+const measureDragLine = ref(null)
+
+const allMeasurements = computed(() => {
+  const list = [...fixedMeasurements.value]
+  if (measureDragLine.value) list.push(measureDragLine.value)
+  return list
+})
 
 const selectedBoxId = ref(null)
 const selectedBox = computed(() => boxEntries.value.find((b) => b.id === selectedBoxId.value) || null)
@@ -396,6 +412,13 @@ function handleCanvasDown({ x, y }) {
     }
     selectedBoxId.value = anchorId
     saveHistoryState()
+  } else if (activeTool.value === 'measure') {
+    measureDragLine.value = { p1: { x, y }, p2: { x, y } }
+  } else if (activeTool.value === 'rollers') {
+    if (bodyId) {
+      toggleRollers(bodyId)
+      saveHistoryState()
+    }
   } else if (activeTool.value === 'delete') {
     // includeStatic: ahora "Borrar" también funciona sobre suelos y anclajes,
     // no solo sobre cajas — necesario para poder quitar un trozo de suelo
@@ -445,6 +468,8 @@ function handleCanvasMove({ x, y }) {
     updateMouseDrag(x, y, !isRunning.value)
   } else if (activeTool.value === 'drag' && isDraggingAnchor && draggedAnchorId) {
     moveAnchor(draggedAnchorId, x, y)
+  } else if (activeTool.value === 'measure' && measureDragLine.value) {
+    measureDragLine.value.p2 = { x, y }
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
     if (groundMode.value === 'straight') {
       // Modo recto: el segundo punto queda SIEMPRE sobre la recta que pasa
@@ -494,6 +519,10 @@ function handleCanvasUp({ x, y }) {
   } else if (activeTool.value === 'drag' && isDraggingAnchor) {
     isDraggingAnchor = false
     draggedAnchorId = null
+    saveHistoryState()
+  } else if (activeTool.value === 'measure' && measureDragLine.value) {
+    fixedMeasurements.value.push({ ...measureDragLine.value })
+    measureDragLine.value = null
     saveHistoryState()
   } else if (activeTool.value === 'ground' && groundDrawPoints.value) {
     // AGREGA un trozo de suelo nuevo, sin borrar los que ya existían — así
@@ -584,17 +613,40 @@ function stopAndExportTelemetry() {
   isRecordingTelemetry.value = false
   if (telemetryData.length === 0) return
 
-  let csv =
-    'Tiempo (s),Caja,Posicion X (m),Posicion Y (m),Velocidad X (m/s),Velocidad Y (m/s),Aceleracion X (m/s2),Aceleracion Y (m/s2),Angulo (deg),Velocidad Ang (deg/s)\n'
+  const lUnit = getUnitLabel('length', unitSystem.value)
+  const vUnit = getUnitLabel('velocity', unitSystem.value)
+  const aUnit = getUnitLabel('accel', unitSystem.value)
+
+  let csv = `Tiempo (s),Objeto,Posicion X (${lUnit}),Posicion Y (${lUnit}),Velocidad X (${vUnit}),Velocidad Y (${vUnit}),Aceleracion X (${aUnit}),Aceleracion Y (${aUnit}),Angulo (deg),Velocidad Ang (deg/s),Altura Maxima (${lUnit})\n`
   for (const row of telemetryData) {
-    csv += `${row.t.toFixed(4)},${row.id},${row.px.toFixed(4)},${row.py.toFixed(4)},${row.vx.toFixed(4)},${row.vy.toFixed(4)},${row.ax.toFixed(4)},${row.ay.toFixed(4)},${row.aDeg.toFixed(4)},${row.vaDeg.toFixed(4)}\n`
+    const px = formatValue(row.px, 'length', unitSystem.value, 4)
+    const py = formatValue(row.py, 'length', unitSystem.value, 4)
+    const vx = formatValue(row.vx, 'velocity', unitSystem.value, 4)
+    const vy = formatValue(row.vy, 'velocity', unitSystem.value, 4)
+    const ax = formatValue(row.ax, 'accel', unitSystem.value, 4)
+    const ay = formatValue(row.ay, 'accel', unitSystem.value, 4)
+    const hmax = formatValue(row.hmax || 0, 'length', unitSystem.value, 4)
+    csv += `${row.t.toFixed(4)},${row.id},${px},${py},${vx},${vy},${ax},${ay},${row.aDeg.toFixed(4)},${row.vaDeg.toFixed(4)},${hmax}\n`
+  }
+
+  if (fixedMeasurements.value.length > 0) {
+    csv += `\n--- COTAS Y MEDICIONES DE INGENIERÍA ---\n`
+    csv += `ID Cota,Distancia (${lUnit}),Desnivel H (${lUnit}),Angulo (deg)\n`
+    fixedMeasurements.value.forEach((m, idx) => {
+      const dx = m.p2.x - m.p1.x
+      const dy = m.p2.y - m.p1.y
+      const dist = formatValue(Math.hypot(dx, dy), 'length', unitSystem.value, 4)
+      const hVal = formatValue(Math.abs(dy), 'length', unitSystem.value, 4)
+      const deg = ((Math.atan2(dy, dx) * 180) / Math.PI).toFixed(2)
+      csv += `Cota_${idx + 1},${dist},${hVal},${deg}\n`
+    })
   }
 
   const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = 'telemetria_2d.csv'
+  a.download = `telemetria_2d_${unitSystem.value}.csv`
   a.click()
   URL.revokeObjectURL(url)
 }
@@ -618,7 +670,8 @@ function recordTelemetrySample() {
           ax: entry.acceleration?.x || 0,
           ay: entry.acceleration?.y || 0,
           aDeg: ((aRad || 0) * 180) / Math.PI,
-          vaDeg: ((vaRad || 0) * 180) / Math.PI
+          vaDeg: ((vaRad || 0) * 180) / Math.PI,
+          hmax: entry.maxHeightReached || 0
         })
       } catch (e) {}
     }
@@ -746,6 +799,8 @@ onBeforeUnmount(() => {
           :vector-scale="6"
           :selected-id="selectedBoxId"
           :active-tool="activeTool"
+          :unit-system="unitSystem"
+          :measurements="allMeasurements"
           @canvas-down="handleCanvasDown"
           @canvas-move="handleCanvasMove"
           @canvas-up="handleCanvasUp"
@@ -982,7 +1037,13 @@ onBeforeUnmount(() => {
             :next-box-friction="nextBoxFriction"
             :next-box-vx="nextBoxVx"
             :next-box-vy="nextBoxVy"
+            :unit-system="unitSystem"
             @open-shape-editor="showShapeEditorModal = true"
+            @update-unit-system="(sys) => (unitSystem = sys)"
+            @clear-measurements="fixedMeasurements = []"
+            @update-box-restitution="updateBoxRestitution"
+            @update-ground-restitution="updateGroundRestitution"
+            @toggle-box-rollers="toggleRollers"
             @update-next-box-shape="
               (s, v) => {
                 nextBoxShape = s
