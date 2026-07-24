@@ -34,7 +34,8 @@ const props = defineProps({
   nextBoxFriction: { type: Number, default: 0.3 },
   nextBoxVx: { type: Number, default: 0 },
   nextBoxVy: { type: Number, default: 0 },
-  unitSystem: { type: String, default: 'metric' }
+  unitSystem: { type: String, default: 'metric' },
+  canvasTheme: { type: String, default: 'colorful' }
 })
 
 const emit = defineEmits([
@@ -59,6 +60,7 @@ const emit = defineEmits([
   'update-spring-stiffness',
   'apply-impulse',
   'update-unit-system',
+  'update-canvas-theme',
   'clear-measurements',
   'update-force'
 ])
@@ -133,13 +135,13 @@ function applyForceNow(enabled) {
     ></div>
     <div v-show="!isCollapsed" class="relative z-10 mt-1">
       <!-- Selector Global de Sistema de Unidades -->
-      <div class="flex items-center justify-between p-2 mb-3 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
+      <div class="flex items-center justify-between p-2 mb-2 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
         <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Unidades</span>
         <div class="flex gap-1">
           <button
             type="button"
             @click="emit('update-unit-system', 'metric')"
-            class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all"
+            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
             :class="unitSystem === 'metric' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
           >
             SI (m, kg)
@@ -147,10 +149,33 @@ function applyForceNow(enabled) {
           <button
             type="button"
             @click="emit('update-unit-system', 'imperial')"
-            class="px-2.5 py-1 text-[10px] font-bold rounded-lg transition-all"
+            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
             :class="unitSystem === 'imperial' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
           >
             Inglés (ft, lb)
+          </button>
+        </div>
+      </div>
+
+      <!-- Selector Global de Tema del Lienzo -->
+      <div class="flex items-center justify-between p-2 mb-3 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
+        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Estilo</span>
+        <div class="flex gap-1">
+          <button
+            type="button"
+            @click="emit('update-canvas-theme', 'colorful')"
+            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
+            :class="canvasTheme === 'colorful' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
+          >
+            Color 🌈
+          </button>
+          <button
+            type="button"
+            @click="emit('update-canvas-theme', 'latex')"
+            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
+            :class="canvasTheme === 'latex' ? 'bg-slate-800 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
+          >
+            LaTeX 📐
           </button>
         </div>
       </div>

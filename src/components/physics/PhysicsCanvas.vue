@@ -8,6 +8,7 @@ const props = defineProps({
   selectedId: { type: String, default: null },
   activeTool: { type: String, default: '' },
   unitSystem: { type: String, default: 'metric' },
+  canvasTheme: { type: String, default: 'colorful' },
   measurements: { type: Array, default: () => [] }
 })
 
@@ -119,9 +120,16 @@ function drawEmpty() {
 }
 
 function drawGrid() {
+  const isLatex = props.canvasTheme === 'latex'
   const step = props.scale
   ctx.save()
-  ctx.strokeStyle = 'rgba(255,255,255,0.04)'
+  if (isLatex) {
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, currentWidth, currentHeight)
+    ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+  } else {
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)'
+  }
   ctx.lineWidth = 1
   for (let gx = originX() % step; gx < currentWidth; gx += step) {
     ctx.beginPath()
@@ -135,7 +143,7 @@ function drawGrid() {
     ctx.lineTo(currentWidth, gy)
     ctx.stroke()
   }
-  ctx.strokeStyle = 'rgba(255,255,255,0.12)'
+  ctx.strokeStyle = isLatex ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.12)'
   ctx.beginPath()
   ctx.moveTo(0, originY())
   ctx.lineTo(currentWidth, originY())
@@ -167,9 +175,10 @@ function drawArrow(fromX, fromY, toX, toY, color, lineWidth = 3) {
 /** Terreno como polilínea libre (ya no un segmento recto con ángulo fijo). */
 function drawGround(entry) {
   if (!entry.points || entry.points.length < 2) return
+  const isLatex = props.canvasTheme === 'latex'
   ctx.save()
-  ctx.strokeStyle = entry.color || '#9ca3af'
-  ctx.lineWidth = 5
+  ctx.strokeStyle = isLatex ? '#000000' : (entry.color || '#9ca3af')
+  ctx.lineWidth = isLatex ? 3 : 5
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
   ctx.beginPath()
@@ -181,19 +190,19 @@ function drawGround(entry) {
   }
   ctx.stroke()
 
-  ctx.strokeStyle = 'rgba(156,163,175,0.3)'
-  ctx.lineWidth = 1
+  ctx.strokeStyle = isLatex ? '#000000' : 'rgba(156,163,175,0.3)'
+  ctx.lineWidth = 1.2
   for (let i = 0; i < entry.points.length - 1; i++) {
     const a = worldToScreen(entry.points[i].x, entry.points[i].y)
     const b = worldToScreen(entry.points[i + 1].x, entry.points[i + 1].y)
-    const steps = Math.max(1, Math.floor(Math.hypot(b.sx - a.sx, b.sy - a.sy) / 12))
+    const steps = Math.max(1, Math.floor(Math.hypot(b.sx - a.sx, b.sy - a.sy) / 10))
     for (let s = 0; s <= steps; s++) {
       const t = s / steps
       const x = a.sx + (b.sx - a.sx) * t
       const y = a.sy + (b.sy - a.sy) * t
       ctx.beginPath()
       ctx.moveTo(x, y)
-      ctx.lineTo(x - 6, y + 10)
+      ctx.lineTo(x - 7, y + 10)
       ctx.stroke()
     }
   }
@@ -262,9 +271,10 @@ function drawBox(entry) {
     ctx.restore()
   }
 
-  ctx.fillStyle = entry.color || '#34d399'
-  ctx.strokeStyle = isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)'
-  ctx.lineWidth = isSelected ? 3 : 2
+  const isLatex = props.canvasTheme === 'latex'
+  ctx.fillStyle = isLatex ? '#ffffff' : (entry.color || '#34d399')
+  ctx.strokeStyle = isLatex ? '#000000' : (isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)')
+  ctx.lineWidth = isLatex ? 2.5 : (isSelected ? 3 : 2)
   ctx.beginPath()
   if (entry.shape === 'circle') {
     ctx.arc(0, 0, wPx / 2, 0, Math.PI * 2)
@@ -288,8 +298,9 @@ function drawBox(entry) {
   ctx.stroke()
 
   ctx.rotate(entry.angleRad)
-  ctx.fillStyle = 'rgba(10,10,10,0.85)'
-  ctx.font = 'bold 11px monospace'
+  const isLatexFont = props.canvasTheme === 'latex'
+  ctx.fillStyle = isLatexFont ? '#000000' : 'rgba(10,10,10,0.85)'
+  ctx.font = isLatexFont ? 'bold 12px serif' : 'bold 11px monospace'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const massVal = formatValue(entry.mass, 'mass', props.unitSystem, 1)
@@ -354,6 +365,7 @@ function drawPeakMarkers(entry, unitSystem) {
 
 function drawMeasurementLine(m, unitSystem) {
   if (!m || !m.p1 || !m.p2) return
+  const isLatex = props.canvasTheme === 'latex'
   const p1 = worldToScreen(m.p1.x, m.p1.y)
   const p2 = worldToScreen(m.p2.x, m.p2.y)
   const dx = m.p2.x - m.p1.x
@@ -364,7 +376,11 @@ function drawMeasurementLine(m, unitSystem) {
   const dyFormatted = formatValue(Math.abs(dy), 'length', unitSystem, 2)
 
   ctx.save()
-  ctx.strokeStyle = '#38bdf8'
+  const strokeColor = isLatex ? '#000000' : '#38bdf8'
+  const textColor = isLatex ? '#000000' : '#7dd3fc'
+  const cardBg = isLatex ? '#ffffff' : 'rgba(15, 23, 42, 0.85)'
+
+  ctx.strokeStyle = strokeColor
   ctx.lineWidth = 2
   ctx.setLineDash([5, 3])
 
@@ -374,20 +390,20 @@ function drawMeasurementLine(m, unitSystem) {
   ctx.stroke()
 
   const angle = Math.atan2(p2.sy - p1.sy, p2.sx - p1.sx)
-  drawArrowHead(p1.sx, p1.sy, angle + Math.PI, '#38bdf8')
-  drawArrowHead(p2.sx, p2.sy, angle, '#38bdf8')
+  drawArrowHead(p1.sx, p1.sy, angle + Math.PI, strokeColor)
+  drawArrowHead(p2.sx, p2.sy, angle, strokeColor)
 
   const midX = (p1.sx + p2.sx) / 2
   const midY = (p1.sy + p2.sy) / 2
   const text = `d = ${distFormatted} ${unitLabel}` + (Math.abs(dy) > 0.05 ? ` | h = ${dyFormatted} ${unitLabel}` : '')
 
-  ctx.font = 'bold 11px monospace'
+  ctx.font = isLatex ? 'bold 12px serif' : 'bold 11px monospace'
   const metrics = ctx.measureText(text)
   const tw = metrics.width + 14
   const th = 20
 
-  ctx.fillStyle = 'rgba(15, 23, 42, 0.85)'
-  ctx.strokeStyle = '#38bdf8'
+  ctx.fillStyle = cardBg
+  ctx.strokeStyle = strokeColor
   ctx.lineWidth = 1
   ctx.setLineDash([])
   ctx.beginPath()
@@ -395,7 +411,7 @@ function drawMeasurementLine(m, unitSystem) {
   ctx.fill()
   ctx.stroke()
 
-  ctx.fillStyle = '#7dd3fc'
+  ctx.fillStyle = textColor
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   ctx.fillText(text, midX, midY)

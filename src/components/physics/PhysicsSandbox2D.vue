@@ -252,6 +252,7 @@ const nextBoxVx = ref(0)
 const nextBoxVy = ref(0)
 
 const unitSystem = ref('metric') // 'metric' | 'imperial'
+const canvasTheme = ref('colorful') // 'colorful' | 'latex'
 const fixedMeasurements = ref([])
 const measureDragLine = ref(null)
 
@@ -728,7 +729,10 @@ function recordTelemetrySample() {
   }
 }
 
+let isUnmounted = false
+
 function loop() {
+  if (isUnmounted) return
   try {
     if (isRunning.value) {
       step(FIXED_DT)
@@ -741,11 +745,15 @@ function loop() {
         }
       }
     }
-    canvasRef.value?.draw(bodies, ropes, previewLine.value, groundDrawPoints.value, groundLiveInfo.value)
+    if (canvasRef.value && typeof canvasRef.value.draw === 'function') {
+      canvasRef.value.draw(bodies, ropes, previewLine.value, groundDrawPoints.value, groundLiveInfo.value)
+    }
   } catch (err) {
-    console.error('[Sandbox] Error crítico recuperado en el bucle principal', err)
+    console.error('[Sandbox] Error en bucle principal:', err)
   }
-  rafId = requestAnimationFrame(loop)
+  if (!isUnmounted) {
+    rafId = requestAnimationFrame(loop)
+  }
 }
 
 function handleGlobalKeyDown(e) {
@@ -805,6 +813,7 @@ onMounted(() => {
   document.addEventListener('fullscreenchange', onFullscreenChange)
 })
 onBeforeUnmount(() => {
+  isUnmounted = true
   if (rafId) cancelAnimationFrame(rafId)
   window.removeEventListener('keydown', handleGlobalKeyDown)
   document.removeEventListener('fullscreenchange', onFullscreenChange)
@@ -851,6 +860,7 @@ onBeforeUnmount(() => {
           :selected-id="selectedBoxId"
           :active-tool="activeTool"
           :unit-system="unitSystem"
+          :canvas-theme="canvasTheme"
           :measurements="allMeasurements"
           @canvas-down="handleCanvasDown"
           @canvas-move="handleCanvasMove"
@@ -1099,8 +1109,10 @@ onBeforeUnmount(() => {
             :next-box-vx="nextBoxVx"
             :next-box-vy="nextBoxVy"
             :unit-system="unitSystem"
+            :canvas-theme="canvasTheme"
             @open-shape-editor="showShapeEditorModal = true"
             @update-unit-system="(sys) => (unitSystem = sys)"
+            @update-canvas-theme="(thm) => (canvasTheme = thm)"
             @clear-measurements="fixedMeasurements = []"
             @update-box-restitution="updateBoxRestitution"
             @update-ground-restitution="updateGroundRestitution"

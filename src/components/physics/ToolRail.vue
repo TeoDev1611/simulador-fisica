@@ -68,13 +68,13 @@ function scrollRail(direction) {
     <!-- Contenedor del Rail con Scroll Suave -->
     <div
       ref="railRef"
-      class="flex flex-row md:flex-col gap-2 md:gap-3 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl md:rounded-2xl p-2 md:p-3 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-visible md:overflow-y-visible max-w-[calc(100vw-80px)] md:max-w-none md:max-h-[calc(100vh-120px)] scroll-smooth custom-scrollbar"
+      class="flex flex-row md:flex-col gap-1.5 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-hidden md:overflow-y-auto max-w-[calc(100vw-80px)] md:max-w-none md:max-h-[calc(100vh-140px)] scroll-smooth custom-scrollbar"
     >
       <div class="group relative flex-shrink-0" v-for="t in tools" :key="t.id">
         <button
           type="button"
           @click="emit('select-tool', t.id)"
-          class="w-9 h-9 md:w-10 md:h-10 flex items-center justify-center rounded-xl md:rounded-lg border transition-all duration-150 active:scale-95"
+          class="w-9 h-9 flex items-center justify-center rounded-xl md:rounded-lg border transition-all duration-150 active:scale-95"
           :class="
             activeTool === t.id
               ? 'bg-emerald-400 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-400 text-gray-950 dark:text-white font-bold shadow-md shadow-emerald-500/20'
