@@ -610,7 +610,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     const idx = bodies.findIndex((b) => b.id === id)
     if (idx === -1) return
     for (const r of [...ropes]) {
-      if (r.bodyAId === id || r.bodyBId === id) removeRope(r.id)
+      if (r.bodyAId === id || r.bodyBId === id || r.wheelId === id) removeRope(r.id)
     }
     world.destroyBody(bodies[idx].body)
     bodies.splice(idx, 1)
@@ -883,6 +883,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
             vertices: b.vertices,
             idOverride: b.id
           })
+          if (b.hasRollers) toggleRollers(b.id)
+          if (b.restitution !== undefined) updateBoxRestitution(b.id, b.restitution)
           if (b.appliedForce) setAppliedForce(b.id, b.appliedForce)
         }
       }

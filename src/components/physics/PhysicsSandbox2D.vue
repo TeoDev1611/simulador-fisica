@@ -188,6 +188,13 @@ function zoomOut() {
   const newScale = canvasScale.value / 1.2
   if (newScale >= 10) canvasScale.value = newScale
 }
+
+function resetCameraView() {
+  canvasScale.value = 40
+  if (canvasRef.value?.resetCamera) {
+    canvasRef.value.resetCamera()
+  }
+}
 const springFreq = ref(2.0)
 const springDamping = ref(0.1)
 

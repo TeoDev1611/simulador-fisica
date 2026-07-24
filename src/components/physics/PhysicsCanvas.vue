@@ -767,7 +767,12 @@ function draw(bodies, ropes, previewLine, groundPreviewPoints, groundInfo) {
   }
 }
 
-defineExpose({ draw })
+function resetCamera() {
+  cameraOffsetX.value = 0
+  cameraOffsetY.value = 0
+}
+
+defineExpose({ draw, resetCamera })
 </script>
 
 <template>
