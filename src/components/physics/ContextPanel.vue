@@ -9,6 +9,11 @@ import { Eye, EyeOff, Sparkles, CircleDot, Compass } from 'lucide-vue-next'
 import { SHAPE_PRESETS } from '../../utils/shapeUtils.js'
 import ShapeSvgPreview from './ShapeSvgPreview.vue'
 import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
+import katex from 'katex'
+
+function m(expr) {
+  return katex.renderToString(expr, { throwOnError: false })
+}
 
 const isCollapsed = ref(false)
 
@@ -1089,19 +1094,21 @@ function applyForceNow(enabled) {
         <h3 class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400 mb-2 flex items-center gap-1.5">
           📏 Medición y Cotas de Ingeniería
         </h3>
-        <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
-          Haz clic y arrastra entre dos puntos o centros de objetos para medir distancias ($d$), alturas ($h$) y ángulos ($\theta$).
+        <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
+          Haz clic y arrastra entre dos puntos o centros de objetos para medir distancias (<span v-html="m('d')"></span>), alturas (<span v-html="m('h')"></span>) y ángulos (<span v-html="m('\\theta')"></span>).
         </p>
 
-        <div class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800/60 mb-3 space-y-2">
+        <ul class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800/60 mb-3 space-y-2 text-[10px] text-sky-700 dark:text-sky-400">
           <div class="text-[11px] font-bold text-sky-900 dark:text-sky-300">Sensores Físicos Activos:</div>
-          <div class="text-[10px] text-sky-700 dark:text-sky-400 flex items-center gap-1">
-            <span>• Altura Máxima ($h_{\text{max}}$): Marcada en el ápice de rotación o rebote.</span>
-          </div>
-          <div class="text-[10px] text-sky-700 dark:text-sky-400 flex items-center gap-1">
-            <span>• Distancia entre Impactos ($A \to B$).</span>
-          </div>
-        </div>
+          <li class="flex items-start gap-1">
+            <span class="text-emerald-500 mt-0.5">•</span>
+            <span>Altura Máxima (<span v-html="m('h_{\\text{max}}')"></span>): Marcada en el ápice de rotación o rebote.</span>
+          </li>
+          <li class="flex items-start gap-1">
+            <span class="text-emerald-500 mt-0.5">•</span>
+            <span>Distancia entre Impactos (<span v-html="m('A \\to B')"></span>).</span>
+          </li>
+        </ul>
 
         <button
           type="button"

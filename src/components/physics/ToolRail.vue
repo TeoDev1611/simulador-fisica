@@ -31,19 +31,19 @@ const emit = defineEmits(['select-tool'])
 const railRef = ref(null)
 
 const tools = [
-  { id: 'drag', label: 'Seleccionar Objeto', icon: MousePointer2 },
-  { id: 'pan', label: 'Mover Cámara', icon: Hand },
-  { id: 'box', label: 'Crear Objeto / Multiforma', icon: Box },
-  { id: 'measure', label: 'Medición y Cotas', icon: Compass },
-  { id: 'anchor', label: 'Fijador / Anclaje', icon: Anchor },
-  { id: 'rollers', label: 'Rodillos / Apoyo Deslizante', icon: CircleDot },
-  { id: 'ground', label: 'Dibujar Suelo', icon: Ruler },
-  { id: 'rope', label: 'Cuerda', icon: Link },
-  { id: 'spring', label: 'Resorte', icon: Spline },
-  { id: 'pulley', label: 'Polea', icon: Disc },
-  { id: 'circular', label: 'Anillo en Riel', icon: CircleDashed },
-  { id: 'force', label: 'Fuerza / Impulso', icon: ArrowUpToLine },
-  { id: 'delete', label: 'Borrar', icon: Trash2 }
+  { id: 'drag', label: 'Seleccionar Objeto (V, 1)', icon: MousePointer2 },
+  { id: 'pan', label: 'Mover Cámara (H)', icon: Hand },
+  { id: 'box', label: 'Crear Objeto / Multiforma (B, 2)', icon: Box },
+  { id: 'measure', label: 'Medición y Cotas (M)', icon: Compass },
+  { id: 'anchor', label: 'Fijador / Anclaje (A)', icon: Anchor },
+  { id: 'rollers', label: 'Rodillos / Apoyo Deslizante (O)', icon: CircleDot },
+  { id: 'ground', label: 'Dibujar Suelo (G, 3)', icon: Ruler },
+  { id: 'rope', label: 'Cuerda (C, 4)', icon: Link },
+  { id: 'spring', label: 'Resorte (R, 5)', icon: Spline },
+  { id: 'pulley', label: 'Polea (P, 6)', icon: Disc },
+  { id: 'circular', label: 'Anillo en Riel (T, 7)', icon: CircleDashed },
+  { id: 'force', label: 'Fuerza / Impulso (F, 8)', icon: ArrowUpToLine },
+  { id: 'delete', label: 'Borrar (Del, 9)', icon: Trash2 }
 ]
 
 function scrollRail(direction) {
@@ -68,7 +68,7 @@ function scrollRail(direction) {
     <!-- Contenedor del Rail con Scroll Suave -->
     <div
       ref="railRef"
-      class="flex flex-row md:flex-col gap-1.5 bg-white/90 dark:bg-gray-950/90 backdrop-blur border border-gray-300 dark:border-gray-800 rounded-2xl p-2 shadow-md dark:shadow-xl overflow-x-auto md:overflow-x-hidden md:overflow-y-auto max-w-[calc(100vw-80px)] md:max-w-none md:max-h-[calc(100vh-140px)] scroll-smooth custom-scrollbar"
+      class="flex flex-row md:flex-col gap-1.5 bg-white/95 dark:bg-gray-950/90 backdrop-blur-xl border border-gray-200 dark:border-gray-800 rounded-2xl p-2 shadow-[0_8px_30px_rgb(0,0,0,0.12)] dark:shadow-xl overflow-x-auto md:overflow-x-hidden md:overflow-y-auto max-w-[calc(100vw-80px)] md:max-w-none md:max-h-[70vh] scroll-smooth custom-scrollbar"
     >
       <div class="group relative flex-shrink-0" v-for="t in tools" :key="t.id">
         <button
@@ -77,8 +77,8 @@ function scrollRail(direction) {
           class="w-9 h-9 flex items-center justify-center rounded-xl md:rounded-lg border transition-all duration-150 active:scale-95"
           :class="
             activeTool === t.id
-              ? 'bg-emerald-400 dark:bg-emerald-600 border-emerald-600 dark:border-emerald-400 text-gray-950 dark:text-white font-bold shadow-md shadow-emerald-500/20'
-              : 'bg-gray-100 dark:bg-gray-900 border-gray-300 dark:border-gray-800 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-700'
+              ? 'bg-emerald-100 dark:bg-emerald-600 border-emerald-500 dark:border-emerald-400 text-emerald-700 dark:text-white font-bold shadow-md shadow-emerald-500/20'
+              : 'bg-white dark:bg-gray-900 border-gray-200 dark:border-gray-800 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 hover:border-gray-400 dark:hover:border-gray-700'
           "
         >
           <component :is="t.icon" class="w-5 h-5" />

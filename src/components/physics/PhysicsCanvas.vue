@@ -1,6 +1,10 @@
 <script setup>
 // src/components/physics/PhysicsCanvas.vue
+import { ref, onMounted, onUnmounted, onBeforeUnmount } from 'vue'
 import { formatValue, getUnitLabel } from '../../utils/measurementUtils.js'
+import { useTheme } from '../../composables/useTheme.js'
+
+const { isDark } = useTheme()
 
 const props = defineProps({
   scale: { type: Number, default: 40 },
@@ -124,9 +128,9 @@ function drawGrid() {
   const step = props.scale
   ctx.save()
   if (isLatex) {
-    ctx.fillStyle = '#ffffff'
+    ctx.fillStyle = isDark.value ? '#030712' : '#f8f9fa'
     ctx.fillRect(0, 0, currentWidth, currentHeight)
-    ctx.strokeStyle = 'rgba(0,0,0,0.08)'
+    ctx.strokeStyle = isDark.value ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)'
   } else {
     ctx.strokeStyle = 'rgba(255,255,255,0.04)'
   }
@@ -143,7 +147,7 @@ function drawGrid() {
     ctx.lineTo(currentWidth, gy)
     ctx.stroke()
   }
-  ctx.strokeStyle = isLatex ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.12)'
+  ctx.strokeStyle = isLatex ? (isDark.value ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.25)') : 'rgba(255,255,255,0.12)'
   ctx.beginPath()
   ctx.moveTo(0, originY())
   ctx.lineTo(currentWidth, originY())
@@ -162,7 +166,6 @@ function drawArrow(fromX, fromY, toX, toY, color, lineWidth = 3) {
   ctx.beginPath()
   ctx.moveTo(fromX, fromY)
   ctx.lineTo(toX, toY)
-  ctx.stroke()
   ctx.beginPath()
   ctx.moveTo(toX, toY)
   ctx.lineTo(toX - headLen * Math.cos(angle - Math.PI / 6), toY - headLen * Math.sin(angle - Math.PI / 6))
@@ -176,8 +179,9 @@ function drawArrow(fromX, fromY, toX, toY, color, lineWidth = 3) {
 function drawGround(entry) {
   if (!entry.points || entry.points.length < 2) return
   const isLatex = props.canvasTheme === 'latex'
+  const latexLine = isDark.value ? '#ffffff' : '#000000'
   ctx.save()
-  ctx.strokeStyle = isLatex ? '#000000' : (entry.color || '#9ca3af')
+  ctx.strokeStyle = isLatex ? latexLine : (entry.color || '#9ca3af')
   ctx.lineWidth = isLatex ? 3 : 5
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
@@ -190,7 +194,7 @@ function drawGround(entry) {
   }
   ctx.stroke()
 
-  ctx.strokeStyle = isLatex ? '#000000' : 'rgba(156,163,175,0.3)'
+  ctx.strokeStyle = isLatex ? latexLine : 'rgba(156,163,175,0.3)'
   ctx.lineWidth = 1.2
   for (let i = 0; i < entry.points.length - 1; i++) {
     const a = worldToScreen(entry.points[i].x, entry.points[i].y)
@@ -272,8 +276,10 @@ function drawBox(entry) {
   }
 
   const isLatex = props.canvasTheme === 'latex'
-  ctx.fillStyle = isLatex ? '#ffffff' : (entry.color || '#34d399')
-  ctx.strokeStyle = isLatex ? '#000000' : (isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)')
+  const latexLine = isDark.value ? '#ffffff' : '#000000'
+  const latexBg = isDark.value ? '#111827' : '#ffffff'
+  ctx.fillStyle = isLatex ? latexBg : (entry.color || '#34d399')
+  ctx.strokeStyle = isLatex ? latexLine : (isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)')
   ctx.lineWidth = isLatex ? 2.5 : (isSelected ? 3 : 2)
   ctx.beginPath()
   if (entry.shape === 'circle') {
@@ -299,7 +305,8 @@ function drawBox(entry) {
 
   ctx.rotate(entry.angleRad)
   const isLatexFont = props.canvasTheme === 'latex'
-  ctx.fillStyle = isLatexFont ? '#000000' : 'rgba(10,10,10,0.85)'
+  const latexLineF = isDark.value ? '#ffffff' : '#000000'
+  ctx.fillStyle = isLatexFont ? latexLineF : 'rgba(10,10,10,0.85)'
   ctx.font = isLatexFont ? 'bold 12px serif' : 'bold 11px monospace'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -366,6 +373,8 @@ function drawPeakMarkers(entry, unitSystem) {
 function drawMeasurementLine(m, unitSystem) {
   if (!m || !m.p1 || !m.p2) return
   const isLatex = props.canvasTheme === 'latex'
+  const latexLine = isDark.value ? '#ffffff' : '#000000'
+  const latexBg = isDark.value ? '#111827' : '#ffffff'
   const p1 = worldToScreen(m.p1.x, m.p1.y)
   const p2 = worldToScreen(m.p2.x, m.p2.y)
   const dx = m.p2.x - m.p1.x
@@ -376,9 +385,9 @@ function drawMeasurementLine(m, unitSystem) {
   const dyFormatted = formatValue(Math.abs(dy), 'length', unitSystem, 2)
 
   ctx.save()
-  const strokeColor = isLatex ? '#000000' : '#38bdf8'
-  const textColor = isLatex ? '#000000' : '#7dd3fc'
-  const cardBg = isLatex ? '#ffffff' : 'rgba(15, 23, 42, 0.85)'
+  const strokeColor = isLatex ? latexLine : '#38bdf8'
+  const textColor = isLatex ? latexLine : '#7dd3fc'
+  const cardBg = isLatex ? latexBg : 'rgba(15, 23, 42, 0.85)'
 
   ctx.strokeStyle = strokeColor
   ctx.lineWidth = 2

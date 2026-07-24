@@ -34,7 +34,10 @@ import {
   Trash2,
   Magnet,
   BarChart2,
-  Library
+  Library,
+  Github,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-vue-next'
 
 const GRAVITY = 9.81
@@ -151,10 +154,7 @@ function importSceneFile() {
   }
   input.click()
 }
-// La explicación detallada (objetivo, ventajas) ahora vive en la página de
-// bienvenida (HomePage.vue), así que aquí ya no se abre sola al entrar.
-// "Ayuda" solo muestra una referencia rápida de herramientas.
-const showWelcomeModal = ref(false)
+const showNewDocumentModal = ref(true)
 const showShapeEditorModal = ref(false)
 
 function handleApplyShapeToSelected({ id, width, height, shape, vertices }) {
@@ -768,6 +768,12 @@ function handleGlobalKeyDown(e) {
     activeTool.value = 'box'
   } else if (e.key === '3' || e.key.toLowerCase() === 'g') {
     activeTool.value = 'ground'
+  } else if (e.key.toLowerCase() === 'm') {
+    activeTool.value = 'measure'
+  } else if (e.key.toLowerCase() === 'a') {
+    activeTool.value = 'anchor'
+  } else if (e.key.toLowerCase() === 'o') {
+    activeTool.value = 'rollers'
   } else if (e.key === '4' || e.key.toLowerCase() === 'c') {
     activeTool.value = 'rope'
   } else if (e.key === '5' || e.key.toLowerCase() === 'r') {
@@ -806,7 +812,6 @@ function onFullscreenChange() {
 }
 
 onMounted(() => {
-  buildInitialScene()
   saveHistoryState()
   rafId = requestAnimationFrame(loop)
   window.addEventListener('keydown', handleGlobalKeyDown)
@@ -895,6 +900,73 @@ onBeforeUnmount(() => {
             </template>
           </span>
           <div id="tour-action-bar" class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
+            <!-- BOTONES DE ARCHIVO (Agrupados) -->
+            <div class="flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden">
+              <button
+                type="button"
+                @click="exportSceneFile"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-r border-gray-200 dark:border-gray-700"
+                title="Exportar Escena"
+              >
+                <Download class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                @click="importSceneFile"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-r border-gray-200 dark:border-gray-700"
+                title="Cargar Escena"
+              >
+                <FolderOpen class="w-4 h-4" />
+              </button>
+              <a
+                href="https://github.com/TeoDev1611/simulador-fisica/tree/main/ejemplos"
+                target="_blank"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Ejemplos GitHub"
+              >
+                <Github class="w-4 h-4" />
+              </a>
+            </div>
+
+            <!-- HISTORIAL & ZOOM (Agrupados) -->
+            <div class="hidden sm:flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden">
+              <button
+                type="button"
+                @click="undo"
+                :disabled="historyIndex <= 0"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 border-r border-gray-200 dark:border-gray-700"
+                title="Deshacer (Ctrl+Z)"
+              >
+                <Undo2 class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                @click="redo"
+                :disabled="historyIndex >= history.length - 1"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:opacity-30 border-r border-gray-200 dark:border-gray-700"
+                title="Rehacer (Ctrl+Y)"
+              >
+                <Redo2 class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                @click="zoomOut"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border-r border-gray-200 dark:border-gray-700"
+                title="Alejar"
+              >
+                <ZoomOut class="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                @click="zoomIn"
+                class="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                title="Acercar"
+              >
+                <ZoomIn class="w-4 h-4" />
+              </button>
+            </div>
+
+            <!-- BOTONES ESPECIALES -->
             <button
               type="button"
               @click="startNewtonTour"
@@ -902,103 +974,8 @@ onBeforeUnmount(() => {
               title="Guía interactiva paso a paso"
             >
               <HelpCircle class="w-4 h-4" />
-              <span>Tour</span>
+              <span class="hidden sm:inline">Tour</span>
             </button>
-            <!-- BOTONES DE DESHACER / REHACER / ZOOM -->
-            <button
-              type="button"
-              @click="zoomOut"
-              class="bg-white/90 dark:bg-gray-900/90 backdrop-blur text-gray-700 dark:text-gray-300 p-2.5 rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              title="Alejar"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-zoom-out"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                <line x1="8" x2="14" y1="11" y2="11" />
-              </svg>
-            </button>
-            <button
-              type="button"
-              @click="zoomIn"
-              class="bg-white/90 dark:bg-gray-900/90 backdrop-blur text-gray-700 dark:text-gray-300 p-2.5 rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
-              title="Acercar"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                class="lucide lucide-zoom-in"
-              >
-                <circle cx="11" cy="11" r="8" />
-                <line x1="21" x2="16.65" y1="21" y2="16.65" />
-                <line x1="11" x2="11" y1="8" y2="14" />
-                <line x1="8" x2="14" y1="11" y2="11" />
-              </svg>
-            </button>
-
-            <button
-              type="button"
-              @click="undo"
-              :disabled="historyIndex <= 0"
-              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-50"
-              :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
-              title="Deshacer (Ctrl+Z)"
-            >
-              <Undo2 class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              @click="redo"
-              :disabled="historyIndex >= history.length - 1"
-              class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center disabled:opacity-50"
-              :class="'bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700'"
-              title="Rehacer (Ctrl+Y)"
-            >
-              <Redo2 class="w-4 h-4" />
-            </button>
-
-            <!-- BOTONES DE ARCHIVO -->
-            <button
-              type="button"
-              @click="exportSceneFile"
-              class="w-8 h-8 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center justify-center"
-              title="Exportar Escena"
-            >
-              <Download class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              @click="importSceneFile"
-              class="w-8 h-8 rounded-lg border bg-white/80 dark:bg-gray-800/80 border-gray-300 dark:border-gray-700 text-gray-800 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 shadow-lg transition-colors flex items-center justify-center"
-              title="Cargar Escena"
-            >
-              <FolderOpen class="w-4 h-4" />
-            </button>
-            <a
-              href="https://github.com/TeoDev1611/simulador-fisica/tree/main/ejemplos"
-              target="_blank"
-              class="w-8 h-8 rounded-lg border bg-emerald-500 hover:bg-emerald-400 border-emerald-600 text-white shadow-lg transition-colors flex items-center justify-center"
-              title="Descargar Ejemplos"
-            >
-              <Library class="w-4 h-4" />
-            </a>
 
             <!-- BOTONES DE GRABACIÓN DE DATOS -->
             <button
@@ -1037,14 +1014,6 @@ onBeforeUnmount(() => {
 
             <button
               type="button"
-              @click="showWelcomeModal = true"
-              class="w-8 h-8 rounded-lg border border-blue-200 dark:border-blue-800 bg-blue-350/80 dark:bg-blue-950/80 text-blue-700 dark:text-blue-300 hover:bg-blue-300/80 dark:bg-blue-900/80 shadow-lg transition-colors duration-150 flex items-center justify-center"
-              title="Ayuda"
-            >
-              <Info class="w-4 h-4" />
-            </button>
-            <button
-              type="button"
               @click="handleToggleRun"
               class="w-8 h-8 rounded-lg border shadow-lg transition-colors duration-150 flex items-center justify-center"
               :class="
@@ -1078,7 +1047,7 @@ onBeforeUnmount(() => {
         <div
           class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 md:bottom-auto md:left-3 md:translate-x-0 md:top-1/2 md:-translate-y-1/2 z-30"
         >
-          <ToolRail id="tour-tool-rail" :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" />
+          <ToolRail id="tour-tool-rail" :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" class="pointer-events-auto" />
         </div>
 
         <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
@@ -1168,103 +1137,78 @@ onBeforeUnmount(() => {
           leave-to-class="opacity-0"
         >
           <div
-            v-if="showWelcomeModal"
+            v-if="showNewDocumentModal"
             class="absolute inset-0 z-50 flex items-center justify-center bg-white/80 dark:bg-gray-950/80 backdrop-blur-md p-4"
           >
             <div
-              class="bg-gray-100/70 dark:bg-gray-900/70 backdrop-blur-2xl border border-blue-200/60 dark:border-blue-800/60 rounded-[2rem] shadow-lg dark:shadow-2xl max-w-xl w-full p-8 relative overflow-hidden"
+              class="bg-gray-100/90 dark:bg-gray-900/90 backdrop-blur-3xl border border-emerald-200/60 dark:border-emerald-800/60 rounded-[2rem] shadow-2xl max-w-md w-full p-8 relative overflow-hidden"
             >
               <div
-                class="absolute inset-0 bg-gradient-to-br from-blue-300/20 dark:from-blue-900/20 to-transparent pointer-events-none"
+                class="absolute inset-0 bg-gradient-to-br from-emerald-300/20 dark:from-emerald-900/20 to-transparent pointer-events-none"
               ></div>
-              <div class="relative z-10">
-                <div class="flex items-center gap-3 mb-5 border-b border-gray-300 dark:border-gray-800 pb-4">
-                  <Magnet class="w-8 h-8 text-blue-600 dark:text-blue-400 drop-shadow-md" />
-                  <div>
-                    <h2 class="text-xl font-bold text-blue-700 dark:text-blue-400">Newton Lab</h2>
-                    <p class="text-xs text-gray-600 dark:text-gray-400">Referencia rápida de herramientas</p>
+              <div class="relative z-10 flex flex-col gap-6">
+                <div class="flex flex-col items-center gap-2 mb-2 border-b border-gray-300 dark:border-gray-800 pb-6">
+                  <div class="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-2xl shadow-inner mb-2">
+                    <Magnet class="w-10 h-10 text-emerald-600 dark:text-emerald-400 drop-shadow-md" />
+                  </div>
+                  <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Nuevo Laboratorio</h2>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 text-center">Configura tu espacio de trabajo inicial</p>
+                </div>
+
+                <div class="flex flex-col gap-5">
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Sistema de Unidades</label>
+                    <div class="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
+                      <button
+                        @click="unitSystem = 'metric'"
+                        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
+                        :class="unitSystem === 'metric' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                      >
+                        SI (m, kg)
+                      </button>
+                      <button
+                        @click="unitSystem = 'imperial'"
+                        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
+                        :class="unitSystem === 'imperial' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                      >
+                        US (ft, lb)
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="flex flex-col gap-2">
+                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Tema del Lienzo</label>
+                    <div class="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
+                      <button
+                        @click="canvasTheme = 'colorful'"
+                        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
+                        :class="canvasTheme === 'colorful' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                      >
+                        Colorido
+                      </button>
+                      <button
+                        @click="canvasTheme = 'latex'"
+                        class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
+                        :class="canvasTheme === 'latex' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                      >
+                        Latex (Elegante)
+                      </button>
+                    </div>
                   </div>
                 </div>
 
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-gray-700 dark:text-gray-300">
-                  <div class="flex gap-3">
-                    <MousePointer2
-                      class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm"
-                    />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Mover / Seleccionar:</strong> Arrastra cajas
-                      libremente o selecciona una para ver su telemetría y ajustar sus propiedades en el panel derecho.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Box class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Crear Caja:</strong> Haz clic o arrastra para
-                      instanciar bloques afectados por gravedad. Su tamaño y geometría son dinámicos.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Ruler class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Dibujar Suelo:</strong> Traza barreras de
-                      colisión estáticas. Permite el modo libre o angular para planos inclinados.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Link class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Cuerda Inelástica:</strong> Arrastra de caja a
-                      caja o hacia el fondo. Mantendrá una distancia constante aplicando tensión reactiva.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Spline class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Resorte Elástico:</strong> Evalúa la Ley de Hooke
-                      con frecuencia (Hz) y amortiguamiento variables. Arrastra entre dos puntos.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Disc class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Polea Ideal:</strong> 1º Arrastra de Caja A a un
-                      punto en el aire (ancla la rueda). 2º Lleva Caja B al pin para cerrar la cuerda.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <CircleDashed class="w-5 h-5 flex-shrink-0 text-emerald-600 dark:text-emerald-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Riel Circular:</strong> Restricción radial pura.
-                      La caja seleccionada orbitará permanentemente en el círculo dibujado.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <ArrowUpToLine class="w-5 h-5 flex-shrink-0 text-orange-500 dark:text-orange-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Fuerzas:</strong> Selecciona un cuerpo objetivo
-                      para inyectarle fuerza motriz continua o aplicar un impulso violento inmediato.
-                    </p>
-                  </div>
-                  <div class="flex gap-3">
-                    <Trash2 class="w-5 h-5 flex-shrink-0 text-red-500 dark:text-red-400 drop-shadow-sm" />
-                    <p>
-                      <strong class="text-gray-900 dark:text-gray-100">Borrador:</strong> Haz clic o arrastra cruzando
-                      elementos (cajas, uniones) para sacarlos de la simulación.
-                    </p>
-                  </div>
-                </div>
-
-                <p class="mt-5 text-[11px] text-gray-600 dark:text-gray-500 leading-relaxed">
-                  ¿Buscas el objetivo del laboratorio o sus ventajas? Puedes verlos en la pestaña
-                  <span class="text-gray-600 dark:text-gray-400 font-semibold">Inicio</span> del menú superior.
-                </p>
-
-                <div class="mt-6 flex justify-end">
+                <div class="mt-4 flex flex-col gap-3">
                   <button
-                    @click="showWelcomeModal = false"
-                    class="px-6 py-3 bg-gradient-to-r from-blue-300 dark:from-blue-700 to-blue-200 dark:to-blue-600 hover:from-blue-200 dark:from-blue-600 hover:to-blue-800 dark:to-blue-500 text-gray-900 dark:text-white text-sm font-bold uppercase tracking-wider rounded-xl shadow-[0_5px_15px_rgba(29,78,216,0.4)] transition-all duration-300 hover:scale-105"
+                    @click="showNewDocumentModal = false; buildInitialScene()"
+                    class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
                   >
-                    Entendido
+                    Crear Proyecto en Blanco
+                  </button>
+                  <button
+                    @click="showNewDocumentModal = false; importSceneFile()"
+                    class="w-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3.5 px-4 rounded-xl shadow transition-all active:scale-95 flex justify-center items-center gap-2"
+                  >
+                    <FolderOpen class="w-5 h-5" /> Abrir Proyecto (.json)
                   </button>
                 </div>
               </div>

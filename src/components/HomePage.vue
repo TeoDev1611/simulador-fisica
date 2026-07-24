@@ -29,11 +29,11 @@ const apps = [
     summary:
       'Un entorno de físicas 2D libre, construido sobre un motor real de cuerpos rígidos: dibuja terrenos, suelta cajas, conéctalas con cuerdas, resortes o poleas, y mide fuerza normal y tensión en tiempo real.',
     features: [
-      'Motor de físicas continuo (Planck.js) — sin atravesar el suelo ni perder precisión',
-      'Terrenos dibujados a mano libre, fricción y masa ajustables en caliente',
-      'Cuerdas, resortes (k y amortiguamiento configurables) y poleas',
-      'Fuerza Normal y Tensión calculadas y visualizadas en vivo, no solo estimadas',
-      'Exportación/Importación de escenas y grabación de telemetría a Excel (CSV)'
+      'Motor de físicas continuo (Planck.js) con medición de Tensión y Normal en vivo',
+      '13 Herramientas interactivas: Cuerdas, resortes, poleas, rieles, apoyos deslizantes y fijadores',
+      'Cotas de Ingeniería: mide distancias, alturas máximas y ángulos en la simulación',
+      'Temas Visuales (Color / LaTeX) y selección de Sistema de Unidades (SI / Inglés)',
+      'Grabación de telemetría a Excel (CSV) y atajos de teclado completos para flujo veloz'
     ],
     cta: 'Abrir Newton Lab'
   }
@@ -230,7 +230,7 @@ const apps = [
             <Library class="w-7 h-7" /> Explora las Plantillas y Ejemplos
           </h2>
           <p class="text-emerald-50 text-sm leading-relaxed">
-            Hemos preparado 13 escenarios (básicos, intermedios y avanzados) como péndulos dobles, catapultas, pistas de
+            Hemos preparado 16 escenarios (básicos, intermedios y avanzados) como péndulos dobles, catapultas, pistas de
             hielo y suspensiones vehiculares. Descárgalos gratis e impórtalos en el Newton Lab 2D.
           </p>
         </div>

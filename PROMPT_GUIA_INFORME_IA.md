@@ -21,8 +21,8 @@ Su objetivo principal es permitir la experimentación, resolución y verificaci�
 
 El software cuenta con tres áreas principales:
 1. Galileo Lab (Simulador Cinemático 1D analítico con derivados CAS y gráficas).
-2. Newton Lab (Sandbox Dinámico 2D con simulación física continua sobre Planck.js/Box2D, editor multiforma de polígonos, herramientas de medición, cotas de ingeniería, sensores de picos $h_{max}$ y apoyos deslizantes).
-3. Wiki / Manual Interactivo con renderizado KaTeX de fórmulas LaTeX en vivo.
+2. Newton Lab (Sandbox Dinámico 2D con simulación física continua sobre Planck.js/Box2D, 13 herramientas interactivas con atajos de teclado, editor multiforma de polígonos, herramientas de medición, cotas de ingeniería, sensores de picos $h_{max}$, apoyos deslizantes y anclajes fijos).
+3. Wiki / Manual Interactivo con renderizado KaTeX de fórmulas LaTeX en vivo, además de una librería integrada de 16 escenarios JSON descargables (ejemplos que van desde péndulos simples hasta suspensiones vehiculares complejas).
 
 ================================================================================
 2. ARQUITECTURA DE SOFTWARE Y DESACOPLAMIENTO
@@ -34,7 +34,8 @@ Principios Arquitectónicos:
 - Bucle de Simulación a 60 FPS: Orquestado por `requestAnimationFrame` en `PhysicsSandbox2D.vue`. En cada frame, se ejecuta el integrador físico `step(1/60)`, se extraen las posiciones ($x, y, \theta$) y se le pasan al dibujante `PhysicsCanvas.vue`.
 - Canvas HTML5 Puro (`PhysicsCanvas.vue`): Renderiza a 60 FPS mediante transformaciones de matriz 2D (traslación, rotación, escala).
 - Sistema de Historial (Undo/Redo): Conserva hasta 50 estados serializados en formato JSON (`Ctrl+Z`, `Ctrl+Y`).
-- Exportación de Telemetría (CSV): Muestrea 30 lecturas por segundo de posición, velocidad, aceleración lineal, ángulo, velocidad angular, altura máxima ($h_{max}$) y tabla de cotas de ingeniería, permitiendo alternar entre el Sistema Internacional ($m, m/s$) y el Sistema Inglés ($ft, ft/s, lb$).
+- Interfaz Configurable Globalmente: Los usuarios deben seleccionar al inicio (mediante el Menú de Nuevo Documento) el Sistema de Unidades (Métrico SI o Imperial US) y el Tema de Renderizado (Colorido moderno o Estilo LaTeX monocromático). Todo el lienzo y telemetría reaccionan en vivo a estas preferencias.
+- Exportación de Telemetría (CSV): Muestrea 30 lecturas por segundo de posición, velocidad, aceleración lineal, ángulo, velocidad angular, altura máxima ($h_{max}$) y tabla de cotas de ingeniería, adaptado dinámicamente a las unidades seleccionadas.
 
 ================================================================================
 3. FUNDAMENTOS MATEMÁTICOS Y FÍSICOS
@@ -90,9 +91,11 @@ Por favor, genera un informe técnico estructurado en las siguientes secciones:
 5. HERRAMIENTAS DEL SIMULADOR Y CASOS DE PRUEBA ACADÉMICOS
    - Editor Multiforma.
    - Herramienta de Medición, Cotas de Ingeniería y Sensores de Altura Máxima ($h_{max}$).
-   - Herramienta de Rodillos / Apoyo Deslizante para ejercicios de cuñas.
-   - Exportación de telemetría a Excel (CSV).
+   - Herramientas de Rodillos (Apoyo Deslizante) y Fijador (Anclajes) para ejercicios estáticos.
+   - 13 atajos de teclado integrados para fluidez en la experimentación.
+   - Opciones Visuales (Latex vs Colorido) y Exportación de telemetría a Excel (CSV).
 6. RESOLUCIÓN DE CASOS DE ESTUDIO (Pruebas de la ESPE)
+   - Uso de las 16 plantillas JSON integradas.
    - Ejercicios de planos inclinados y rebote.
    - Ejercicios de colisión con péndulos y cuñas deslizantes.
 7. CONCLUSIONES Y RECOMENDACIONES TÉCNICAS

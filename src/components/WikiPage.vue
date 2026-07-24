@@ -40,6 +40,7 @@ import {
   Compass,
   Anchor
 } from 'lucide-vue-next'
+import katex from 'katex'
 
 function m(expr) {
   return katex.renderToString(expr, { throwOnError: false })
@@ -310,7 +311,7 @@ const sections = [
                 <FolderOpen class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Plantillas y Ejemplos
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                El simulador incluye 13 archivos JSON de ejemplos integrados que abarcan desde conceptos básicos hasta
+                El simulador incluye 16 archivos JSON de ejemplos integrados que abarcan desde conceptos básicos hasta
                 montajes complejos (poleas, vehículos, péndulos dobles, rieles y catapultas).
               </p>
               <div
