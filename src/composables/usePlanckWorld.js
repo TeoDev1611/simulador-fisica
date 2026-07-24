@@ -190,7 +190,8 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       angleRad: angle,
       normalForce: 0,
       weightForce: mass * gravityMagnitude,
-      appliedForce: { enabled: false, magnitude: 0, angleDeg: 0 }
+      appliedForce: { enabled: false, magnitude: 0, angleDeg: 0 },
+      maxHeightReached: y
     })
     return id
   }
@@ -390,6 +391,16 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     const fixture = entry.body.getFixtureList()
     if (fixture) fixture.setFriction(friction)
     entry.friction = friction
+    for (const b of bodies) if (b.kind === 'box') b.body.setAwake(true)
+  }
+
+  function updateGroundRestitution(id, restitution) {
+    const entry = bodies.find((b) => b.id === id && b.kind === 'ground')
+    if (!entry) return
+    const safeRestitution = Math.max(0, Math.min(1, restitution))
+    const fixture = entry.body.getFixtureList()
+    if (fixture) fixture.setRestitution(safeRestitution)
+    entry.restitution = safeRestitution
     for (const b of bodies) if (b.kind === 'box') b.body.setAwake(true)
   }
 
