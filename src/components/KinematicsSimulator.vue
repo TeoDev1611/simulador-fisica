@@ -772,14 +772,14 @@ onBeforeUnmount(() => {
                 :step="0.1"
                 :value="value"
                 @input="updateParameter(name, Number($event.target.value))"
-                class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+                class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
               />
               <input
                 type="number"
                 :value="value"
                 @input="updateParameter(name, Number($event.target.value))"
                 step="0.1"
-                class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+                class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
               />
               <button
                 @click="removeParameter(name)"
@@ -840,7 +840,7 @@ onBeforeUnmount(() => {
               :min="0"
               :max="T_MAX"
               :step="T_STEP"
-              class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
 
             <button

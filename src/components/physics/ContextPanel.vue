@@ -208,7 +208,7 @@ function applyForceNow(enabled) {
               step="0.1"
               :value="selectedBox.mass"
               @input="emit('update-box-mass', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -216,7 +216,7 @@ function applyForceNow(enabled) {
               step="0.1"
               :value="selectedBox.mass"
               @input="emit('update-box-mass', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
 
@@ -318,7 +318,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.friction ?? 0.3"
               @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -326,7 +326,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.friction ?? 0.3"
               @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
           <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
@@ -341,7 +341,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.restitution ?? 0.1"
               @input="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -350,7 +350,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.restitution ?? 0.1"
               @input="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
 
@@ -391,14 +391,14 @@ function applyForceNow(enabled) {
               step="1"
               :value="Math.round((selectedBox.angleRad * 180) / Math.PI)"
               @input="emit('update-box-angle', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
               step="1"
               :value="Math.round((selectedBox.angleRad * 180) / Math.PI)"
               @input="emit('update-box-angle', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
 
@@ -458,7 +458,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.width"
               @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -466,7 +466,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.width.toFixed(3)"
               @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
 
@@ -485,7 +485,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.height"
               @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -493,7 +493,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.height.toFixed(3)"
               @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
         </template>
@@ -515,7 +515,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedGround.friction"
               @input="emit('update-selected-ground-friction', Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -524,7 +524,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedGround.friction"
               @input="emit('update-selected-ground-friction', Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
           <p class="mt-2 text-[10px] text-gray-600 dark:text-gray-500 italic">
@@ -637,7 +637,7 @@ function applyForceNow(enabled) {
             min="0"
             max="1"
             step="0.05"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             :value="groundFriction"
@@ -646,7 +646,7 @@ function applyForceNow(enabled) {
             min="0"
             max="1"
             step="0.05"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
       </template>
@@ -687,14 +687,14 @@ function applyForceNow(enabled) {
             min="0.1"
             max="8"
             step="0.1"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500 md:hidden touch-none"
           />
           <input
             type="number"
             min="0.1"
             max="8"
             step="0.1"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none hidden md:block"
             @input="emit('update-spring-preset', Number($event.target.value))"
           />
         </div>
@@ -710,14 +710,14 @@ function applyForceNow(enabled) {
             min="0"
             max="1"
             step="0.05"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-purple-500 md:hidden touch-none"
           />
           <input
             type="number"
             min="0"
             max="1"
             step="0.05"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-purple-700 dark:text-purple-300 focus:border-purple-800 dark:border-purple-500 outline-none hidden md:block"
             @input="emit('update-spring-stiffness', Number($event.target.value))"
           />
         </div>
@@ -941,7 +941,7 @@ function applyForceNow(enabled) {
             step="0.1"
             :value="nextBoxMass"
             @input="emit('update-next-box-config', 'mass', Number($event.target.value))"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             type="number"
@@ -949,7 +949,7 @@ function applyForceNow(enabled) {
             step="0.1"
             :value="nextBoxMass"
             @input="emit('update-next-box-config', 'mass', Number($event.target.value))"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
 
@@ -965,7 +965,7 @@ function applyForceNow(enabled) {
             step="0.1"
             :value="nextBoxWidth"
             @input="emit('update-next-box-config', 'width', Number($event.target.value))"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             type="number"
@@ -973,7 +973,7 @@ function applyForceNow(enabled) {
             step="0.1"
             :value="nextBoxWidth"
             @input="emit('update-next-box-config', 'width', Number($event.target.value))"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
 
@@ -990,7 +990,7 @@ function applyForceNow(enabled) {
               step="0.1"
               :value="nextBoxHeight"
               @input="emit('update-next-box-config', 'height', Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
             />
             <input
               type="number"
@@ -998,7 +998,7 @@ function applyForceNow(enabled) {
               step="0.1"
               :value="nextBoxHeight"
               @input="emit('update-next-box-config', 'height', Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
             />
           </div>
         </div>
@@ -1015,7 +1015,7 @@ function applyForceNow(enabled) {
             step="0.05"
             :value="nextBoxFriction"
             @input="emit('update-next-box-config', 'friction', Number($event.target.value))"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             type="number"
@@ -1023,7 +1023,7 @@ function applyForceNow(enabled) {
             step="0.05"
             :value="nextBoxFriction"
             @input="emit('update-next-box-config', 'friction', Number($event.target.value))"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
 
@@ -1039,14 +1039,14 @@ function applyForceNow(enabled) {
             step="0.5"
             :value="nextBoxVx || 0"
             @input="emit('update-next-box-config', 'vx', Number($event.target.value))"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             type="number"
             step="0.5"
             :value="nextBoxVx || 0"
             @input="emit('update-next-box-config', 'vx', Number($event.target.value))"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
 
@@ -1062,14 +1062,14 @@ function applyForceNow(enabled) {
             step="0.5"
             :value="nextBoxVy || 0"
             @input="emit('update-next-box-config', 'vy', Number($event.target.value))"
-            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden"
+            class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
           />
           <input
             type="number"
             step="0.5"
             :value="nextBoxVy || 0"
             @input="emit('update-next-box-config', 'vy', Number($event.target.value))"
-            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
+            class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
           />
         </div>
       </template>

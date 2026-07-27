@@ -45,37 +45,94 @@ function screenToWorld(cx, cy) {
   return { x: (sx - originX()) / props.scale, y: (originY() - sy) / props.scale }
 }
 
+const activePointers = new Map()
+let initialPinchDistance = null
+let initialScale = null
+let pinchCenter = { cx: 0, cy: 0, wx: 0, wy: 0 }
+
 function handlePointerDown(e) {
-  if (props.activeTool === 'pan') {
-    isPanning.value = true
-    lastPanX = e.clientX
-    lastPanY = e.clientY
+  canvasRef.value.setPointerCapture(e.pointerId)
+  activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+
+  if (activePointers.size === 2) {
+    const ptrs = Array.from(activePointers.values())
+    initialPinchDistance = Math.hypot(ptrs[0].x - ptrs[1].x, ptrs[0].y - ptrs[1].y)
+    initialScale = props.scale
+    
+    const cx = (ptrs[0].x + ptrs[1].x) / 2
+    const cy = (ptrs[0].y + ptrs[1].y) / 2
+    const rect = canvasRef.value.getBoundingClientRect()
+    const localCx = cx - rect.left
+    const localCy = cy - rect.top
+    const wx = (localCx - originX()) / props.scale
+    const wy = (originY() - localCy) / props.scale
+    pinchCenter = { cx: localCx, cy: localCy, wx, wy }
     return
   }
-  emit('canvas-down', screenToWorld(e.clientX, e.clientY))
+
+  if (activePointers.size === 1) {
+    if (props.activeTool === 'pan') {
+      isPanning.value = true
+      lastPanX = e.clientX
+      lastPanY = e.clientY
+      return
+    }
+    emit('canvas-down', screenToWorld(e.clientX, e.clientY))
+  }
 }
 
 function handlePointerMove(e) {
-  if (props.activeTool === 'pan') {
-    if (isPanning.value) {
-      const dx = e.clientX - lastPanX
-      const dy = e.clientY - lastPanY
-      cameraOffsetX.value += dx
-      cameraOffsetY.value += dy
-      lastPanX = e.clientX
-      lastPanY = e.clientY
+  if (activePointers.has(e.pointerId)) {
+    activePointers.set(e.pointerId, { x: e.clientX, y: e.clientY })
+  }
+
+  if (activePointers.size === 2) {
+    const ptrs = Array.from(activePointers.values())
+    const currentDistance = Math.hypot(ptrs[0].x - ptrs[1].x, ptrs[0].y - ptrs[1].y)
+    
+    if (initialPinchDistance > 0) {
+      const scaleFactor = currentDistance / initialPinchDistance
+      const newScale = initialScale * scaleFactor
+      
+      if (newScale >= 10 && newScale <= 5000) {
+        emit('update-scale', newScale)
+        cameraOffsetX.value = pinchCenter.cx - currentWidth / 2 - pinchCenter.wx * newScale
+        cameraOffsetY.value = pinchCenter.cy - currentHeight + newScale * 2.5 + pinchCenter.wy * newScale
+      }
     }
     return
   }
-  emit('canvas-move', screenToWorld(e.clientX, e.clientY))
+
+  if (activePointers.size === 1) {
+    if (props.activeTool === 'pan') {
+      if (isPanning.value) {
+        const dx = e.clientX - lastPanX
+        const dy = e.clientY - lastPanY
+        cameraOffsetX.value += dx
+        cameraOffsetY.value += dy
+        lastPanX = e.clientX
+        lastPanY = e.clientY
+      }
+      return
+    }
+    emit('canvas-move', screenToWorld(e.clientX, e.clientY))
+  }
 }
 
 function handlePointerUp(e) {
-  if (props.activeTool === 'pan') {
-    isPanning.value = false
-    return
+  activePointers.delete(e.pointerId)
+  
+  if (activePointers.size < 2) {
+    initialPinchDistance = null
   }
-  emit('canvas-up', screenToWorld(e.clientX, e.clientY))
+  
+  if (activePointers.size === 0) {
+    if (props.activeTool === 'pan') {
+      isPanning.value = false
+      return
+    }
+    emit('canvas-up', screenToWorld(e.clientX, e.clientY))
+  }
 }
 
 function handleWheel(e) {
