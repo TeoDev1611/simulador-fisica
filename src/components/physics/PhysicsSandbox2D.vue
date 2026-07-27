@@ -1313,19 +1313,13 @@ onBeforeUnmount(() => {
 
                 <div class="mt-4 flex flex-col gap-3">
                   <button
-                    @click="
-                      showNewDocumentModal = false
-                      buildInitialScene()
-                    "
+                    @click="showNewDocumentModal = false; buildInitialScene()"
                     class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
                   >
                     Crear Proyecto en Blanco
                   </button>
                   <button
-                    @click="
-                      showNewDocumentModal = false
-                      importSceneFile()
-                    "
+                    @click="showNewDocumentModal = false; importSceneFile()"
                     class="w-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3.5 px-4 rounded-xl shadow transition-all active:scale-95 flex justify-center items-center gap-2"
                   >
                     <FolderOpen class="w-5 h-5" /> Abrir Proyecto (.json)

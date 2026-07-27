@@ -183,11 +183,7 @@ function scrollRail(direction) {
           <div v-for="t in g.tools" :key="t.id" class="group/sub relative flex-shrink-0">
             <button
               type="button"
-              @click.stop="
-                emit('select-tool', t.id)
-                hoveredGroup = null
-                clickedGroup = null
-              "
+              @click.stop="emit('select-tool', t.id); hoveredGroup = null; clickedGroup = null"
               class="w-9 h-9 flex items-center justify-center rounded-lg border transition-all duration-150 active:scale-95"
               :class="
                 activeTool === t.id
