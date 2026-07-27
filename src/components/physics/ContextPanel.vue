@@ -113,11 +113,11 @@ function applyForceNow(enabled) {
 
 <template>
   <div
-    class="pointer-events-auto bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border border-gray-300/60 dark:border-gray-800/60 shadow-lg relative transition-all duration-300"
+    class="pointer-events-auto flex flex-col bg-white/60 dark:bg-gray-950/60 backdrop-blur-2xl border border-gray-300/60 dark:border-gray-800/60 shadow-lg relative transition-all duration-300 max-h-full overflow-hidden"
     :class="[
       isCollapsed
-        ? 'w-10 h-10 rounded-full flex items-center justify-center p-0'
-        : 'w-64 rounded-[2rem] p-5 hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] overflow-hidden dark:shadow-2xl'
+        ? 'w-10 h-10 rounded-full items-center justify-center p-0'
+        : 'w-64 rounded-[2rem] hover:shadow-[0_15px_30px_-10px_rgba(16,185,129,0.15)] dark:shadow-2xl'
     ]"
   >
     <!-- Botón de toggle -->
@@ -139,53 +139,10 @@ function applyForceNow(enabled) {
       v-show="!isCollapsed"
       class="absolute inset-0 bg-gradient-to-bl from-emerald-300/10 dark:from-emerald-900/10 to-transparent pointer-events-none"
     ></div>
-    <div v-show="!isCollapsed" class="relative z-10 mt-1">
-      <!-- Selector Global de Sistema de Unidades -->
-      <div class="flex items-center justify-between p-2 mb-2 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Unidades</span>
-        <div class="flex gap-1">
-          <button
-            type="button"
-            @click="emit('update-unit-system', 'metric')"
-            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
-            :class="unitSystem === 'metric' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
-          >
-            SI (m, kg)
-          </button>
-          <button
-            type="button"
-            @click="emit('update-unit-system', 'imperial')"
-            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
-            :class="unitSystem === 'imperial' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
-          >
-            Inglés (ft, lb)
-          </button>
-        </div>
-      </div>
-
-      <!-- Selector Global de Tema del Lienzo -->
-      <div class="flex items-center justify-between p-2 mb-3 bg-gray-200/60 dark:bg-gray-800/60 rounded-xl border border-gray-300/40 dark:border-gray-700/40">
-        <span class="text-[10px] font-bold uppercase tracking-wider text-gray-600 dark:text-gray-400">Estilo</span>
-        <div class="flex gap-1">
-          <button
-            type="button"
-            @click="emit('update-canvas-theme', 'colorful')"
-            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
-            :class="canvasTheme === 'colorful' ? 'bg-emerald-500 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
-          >
-            Color 🌈
-          </button>
-          <button
-            type="button"
-            @click="emit('update-canvas-theme', 'latex')"
-            class="px-2 py-0.5 text-[10px] font-bold rounded-lg transition-all"
-            :class="canvasTheme === 'latex' ? 'bg-slate-800 text-white shadow-sm' : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100'"
-          >
-            LaTeX 📐
-          </button>
-        </div>
-      </div>
-
+    <div
+      v-show="!isCollapsed"
+      class="flex-1 min-h-0 overflow-y-auto overflow-x-hidden custom-scrollbar px-5 pb-5 pt-4 relative z-10 w-full"
+    >
       <!-- Herramienta: Mover/Seleccionar → si hay caja seleccionada, ajustar su masa;
          si hay un trozo de SUELO seleccionado, ajustar su fricción individual -->
       <template v-if="activeTool === 'drag'">
@@ -208,15 +165,15 @@ function applyForceNow(enabled) {
               step="0.1"
               :value="selectedBox.mass"
               @input="emit('update-box-mass', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
               min="0.1"
               step="0.1"
-              :value="selectedBox.mass"
+              :value="selectedBox.mass.toFixed(1)"
               @input="emit('update-box-mass', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
 
@@ -271,16 +228,14 @@ function applyForceNow(enabled) {
               Editor Multiforma...
             </button>
           </div>
-          <div
-            class="grid grid-cols-4 gap-1.5 bg-gray-200 dark:bg-gray-800/80 p-1.5 rounded-xl max-h-36 overflow-y-auto"
-          >
+          <div class="flex overflow-x-auto gap-2 bg-gray-200 dark:bg-gray-800/80 p-2 rounded-xl custom-scrollbar">
             <button
               v-for="s in SHAPE_PRESETS"
               :key="s.id"
               @click="
                 emit('update-box-dimensions', selectedBox.id, selectedBox.width, selectedBox.height, s.shape, s.verts)
               "
-              class="flex flex-col items-center justify-center p-1.5 rounded-lg text-[10px] font-bold transition-all"
+              class="flex flex-col items-center justify-center p-1.5 rounded-lg text-[10px] font-bold transition-all flex-shrink-0 min-w-[64px]"
               :class="
                 selectedBox.shape === s.shape &&
                 (!s.verts || JSON.stringify(selectedBox.vertices) === JSON.stringify(s.verts))
@@ -318,7 +273,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.friction ?? 0.3"
               @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
@@ -326,12 +281,14 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.friction ?? 0.3"
               @input="emit('update-box-friction', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
           <label class="text-[11px] text-gray-600 dark:text-gray-400 flex justify-between mb-1 mt-3">
             <span>Restitución (e) de Rebote</span>
-            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{ (selectedBox.restitution ?? 0.1).toFixed(2) }}</span>
+            <span class="font-mono text-emerald-700 dark:text-emerald-300">{{
+              (selectedBox.restitution ?? 0.1).toFixed(2)
+            }}</span>
           </label>
           <div class="flex gap-2">
             <input
@@ -341,7 +298,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.restitution ?? 0.1"
               @input="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
@@ -350,7 +307,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedBox.restitution ?? 0.1"
               @input="emit('update-box-restitution', selectedBox.id, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
 
@@ -458,7 +415,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.width"
               @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
@@ -466,7 +423,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.width.toFixed(3)"
               @input="emit('update-box-dimensions', selectedBox.id, Number($event.target.value), selectedBox.height)"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
 
@@ -485,7 +442,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.height"
               @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
@@ -493,7 +450,7 @@ function applyForceNow(enabled) {
               step="0.01"
               :value="selectedBox.height.toFixed(3)"
               @input="emit('update-box-dimensions', selectedBox.id, selectedBox.width, Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
         </template>
@@ -515,7 +472,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedGround.friction"
               @input="emit('update-selected-ground-friction', Number($event.target.value))"
-              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 self-center h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 touch-none"
             />
             <input
               type="number"
@@ -524,7 +481,7 @@ function applyForceNow(enabled) {
               step="0.05"
               :value="selectedGround.friction"
               @input="emit('update-selected-ground-friction', Number($event.target.value))"
-              class="w-16 md:w-full bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none hidden md:block"
+              class="w-16 bg-gray-50 dark:bg-gray-950 border border-gray-300 dark:border-gray-700 rounded-md px-1.5 py-1 text-xs font-mono text-emerald-700 dark:text-emerald-300 focus:border-emerald-800 dark:border-emerald-500 outline-none"
             />
           </div>
           <p class="mt-2 text-[10px] text-gray-600 dark:text-gray-500 italic">
@@ -1092,18 +1049,26 @@ function applyForceNow(enabled) {
 
       <!-- Herramienta: Medición y Cotas -->
       <template v-else-if="activeTool === 'measure'">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400 mb-2 flex items-center gap-1.5">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-400 mb-2 flex items-center gap-1.5"
+        >
           📏 Medición y Cotas de Ingeniería
         </h3>
         <p class="text-xs text-gray-700 dark:text-gray-300 leading-relaxed mb-3">
-          Haz clic y arrastra entre dos puntos o centros de objetos para medir distancias (<span v-html="m('d')"></span>), alturas (<span v-html="m('h')"></span>) y ángulos (<span v-html="m('\\theta')"></span>).
+          Haz clic y arrastra entre dos puntos o centros de objetos para medir distancias (<span v-html="m('d')"></span
+          >), alturas (<span v-html="m('h')"></span>) y ángulos (<span v-html="m('\\theta')"></span>).
         </p>
 
-        <ul class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800/60 mb-3 space-y-2 text-[10px] text-sky-700 dark:text-sky-400">
+        <ul
+          class="p-3 bg-sky-50 dark:bg-sky-950/40 rounded-xl border border-sky-200 dark:border-sky-800/60 mb-3 space-y-2 text-[10px] text-sky-700 dark:text-sky-400"
+        >
           <div class="text-[11px] font-bold text-sky-900 dark:text-sky-300">Sensores Físicos Activos:</div>
           <li class="flex items-start gap-1">
             <span class="text-emerald-500 mt-0.5">•</span>
-            <span>Altura Máxima (<span v-html="m('h_{\\text{max}}')"></span>): Marcada en el ápice de rotación o rebote.</span>
+            <span
+              >Altura Máxima (<span v-html="m('h_{\\text{max}}')"></span>): Marcada en el ápice de rotación o
+              rebote.</span
+            >
           </li>
           <li class="flex items-start gap-1">
             <span class="text-emerald-500 mt-0.5">•</span>
@@ -1122,11 +1087,14 @@ function applyForceNow(enabled) {
 
       <!-- Herramienta: Rodillos / Apoyo Deslizante -->
       <template v-else-if="activeTool === 'rollers'">
-        <h3 class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5">
+        <h3
+          class="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-400 mb-2 flex items-center gap-1.5"
+        >
           ⚙️ Rodillos / Apoyo Deslizante
         </h3>
         <p class="text-[11px] text-gray-600 dark:text-gray-400 leading-relaxed mb-3">
-          Haz clic sobre <strong>cualquier figura u objeto</strong> (cuñas, bloques, polígonos) para colocarle o quitarle rodillos de apoyo deslizante (fricción 0 y deslizamiento sin vuelco).
+          Haz clic sobre <strong>cualquier figura u objeto</strong> (cuñas, bloques, polígonos) para colocarle o
+          quitarle rodillos de apoyo deslizante (fricción 0 y deslizamiento sin vuelco).
         </p>
       </template>
       <template v-else-if="activeTool === 'circular'">

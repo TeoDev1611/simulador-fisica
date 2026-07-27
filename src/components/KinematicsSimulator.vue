@@ -8,7 +8,17 @@ import ResultsCards from './kinematics/ResultsCards.vue'
 import Track1D from './kinematics/Track1D.vue'
 import ChartsPanel from './kinematics/ChartsPanel.vue'
 import html2canvas from 'html2canvas'
-import { Play, Pause, Repeat, FileText, Image as ImageIcon, Settings, ChevronDown, ChevronUp, HelpCircle } from 'lucide-vue-next'
+import {
+  Play,
+  Pause,
+  Repeat,
+  FileText,
+  Image as ImageIcon,
+  Settings,
+  ChevronDown,
+  ChevronUp,
+  HelpCircle
+} from 'lucide-vue-next'
 import { driver } from 'driver.js'
 import 'driver.js/dist/driver.css'
 
@@ -74,35 +84,40 @@ function startGalileoTour() {
         element: '#tour-equation-input',
         popover: {
           title: '📐 Ecuaciones Cinemáticas 1D',
-          description: 'Escribe aquí cualquier función matemática de posición x(t) (ej. A*sin(w*t)). El motor la derivará analíticamente para hallar v(t) y a(t).'
+          description:
+            'Escribe aquí cualquier función matemática de posición x(t) (ej. A*sin(w*t)). El motor la derivará analíticamente para hallar v(t) y a(t).'
         }
       },
       {
         element: '#tour-math-keyboard',
         popover: {
           title: '⌨️ Teclado Matemático Virtual',
-          description: 'Utiliza estos botones para insertar funciones trigonométricas, exponenciales, raíces y constantes sin cometer errores de sintaxis.'
+          description:
+            'Utiliza estos botones para insertar funciones trigonométricas, exponenciales, raíces y constantes sin cometer errores de sintaxis.'
         }
       },
       {
         element: '#tour-track-1d',
         popover: {
           title: '🏎️ Pista de Animación 1D',
-          description: 'Observa la partícula o móvil desplazándose en tiempo real a lo largo de la pista según la función de posición ingresada.'
+          description:
+            'Observa la partícula o móvil desplazándose en tiempo real a lo largo de la pista según la función de posición ingresada.'
         }
       },
       {
         element: '#tour-charts-panel',
         popover: {
           title: '📊 Gráficas Sincronizadas',
-          description: 'Tres gráficos analíticos en tiempo real (Posición, Velocidad y Aceleración) creados con Chart.js y sincronizados frame a frame.'
+          description:
+            'Tres gráficos analíticos en tiempo real (Posición, Velocidad y Aceleración) creados con Chart.js y sincronizados frame a frame.'
         }
       },
       {
         element: '#tour-results-cards',
         popover: {
           title: '📈 Datos y Exportación Excel',
-          description: 'Consulta lecturas instantáneas y exporta toda la telemetría cinemática a archivos CSV compatibles con Excel.'
+          description:
+            'Consulta lecturas instantáneas y exporta toda la telemetría cinemática a archivos CSV compatibles con Excel.'
         }
       }
     ]
@@ -772,7 +787,7 @@ onBeforeUnmount(() => {
                 :step="0.1"
                 :value="value"
                 @input="updateParameter(name, Number($event.target.value))"
-                class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+                class="flex-1 h-1.5 bg-gray-700 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-pan-y"
               />
               <input
                 type="number"
@@ -840,7 +855,7 @@ onBeforeUnmount(() => {
               :min="0"
               :max="T_MAX"
               :step="T_STEP"
-              class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="flex-1 h-2 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-pan-y"
             />
 
             <button
@@ -881,7 +896,12 @@ onBeforeUnmount(() => {
         </div>
 
         <!-- Tarjetas de resultados -->
-        <ResultsCards id="tour-results-cards" :position="positionValue" :velocity="velocityValue" :acceleration="accelerationValue" />
+        <ResultsCards
+          id="tour-results-cards"
+          :position="positionValue"
+          :velocity="velocityValue"
+          :acceleration="accelerationValue"
+        />
       </section>
 
       <!-- COLUMNA DERECHA -->

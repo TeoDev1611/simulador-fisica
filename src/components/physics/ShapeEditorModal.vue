@@ -236,7 +236,7 @@ function handleApplyToDefault() {
               max="6"
               step="0.1"
               v-model.number="localWidth"
-              class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none accent-emerald-500 md:hidden touch-none"
+              class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none accent-emerald-500 md:hidden touch-pan-y"
             />
 
             <template v-if="localShape !== 'circle' && localShape !== 'ring'">
@@ -250,7 +250,7 @@ function handleApplyToDefault() {
                 max="6"
                 step="0.1"
                 v-model.number="localHeight"
-                class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none accent-emerald-500 md:hidden touch-none"
+                class="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-lg appearance-none accent-emerald-500 md:hidden touch-pan-y"
               />
             </template>
           </div>
@@ -322,7 +322,7 @@ function handleApplyToDefault() {
               max="8"
               step="1"
               v-model.number="customSides"
-              class="w-full h-3 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-none"
+              class="w-full h-3 bg-gray-200 dark:bg-gray-800 rounded-lg appearance-none cursor-pointer accent-emerald-500 md:hidden touch-pan-y"
             />
           </div>
 

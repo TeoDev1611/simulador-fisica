@@ -1,0 +1,123 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Suelo Principal",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0.5,
+      "restitution": 0,
+      "color": "#9ca3af",
+      "position": null,
+      "angleRad": null,
+      "points": [{"x": -10, "y": 0}, {"x": 10, "y": 0}],
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Fijador Central",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": 0, "y": 5},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa A (Izquierda)",
+      "width": 1.5,
+      "height": 1.5,
+      "mass": 10,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#8b5cf6",
+      "position": {"x": -4, "y": 0.75},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": true, "magnitude": 150, "angleDeg": 180},
+      "shape": "box",
+      "vertices": null
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Masa B (Centro)",
+      "width": 2,
+      "height": 1,
+      "mass": 20,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#10b981",
+      "position": {"x": 0, "y": 0.5},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "box",
+      "vertices": null
+    },
+    {
+      "id": "box_5",
+      "kind": "box",
+      "label": "Masa C (Derecha)",
+      "width": 1.5,
+      "height": 1.5,
+      "mass": 15,
+      "friction": 0.5,
+      "restitution": 0.1,
+      "color": "#f97316",
+      "position": {"x": 5, "y": 0.75},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": true, "magnitude": 250, "angleDeg": 30},
+      "shape": "box",
+      "vertices": null
+    }
+  ],
+  "ropes": [
+    {
+      "id": "rope_1",
+      "kind": "rope",
+      "bodyAId": "box_3",
+      "bodyBId": "box_4",
+      "anchorA": {"x": 0.75, "y": 0},
+      "anchorB": {"x": -1, "y": 0},
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    },
+    {
+      "id": "rope_2",
+      "kind": "rope",
+      "bodyAId": "box_4",
+      "bodyBId": "box_5",
+      "anchorA": {"x": 1, "y": 0},
+      "anchorB": {"x": -0.75, "y": 0},
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    },
+    {
+      "id": "spring_3",
+      "kind": "spring",
+      "bodyAId": "box_4",
+      "bodyBId": "anchor_2",
+      "anchorA": {"x": 0, "y": 0.5},
+      "anchorB": {"x": 0, "y": 0},
+      "frequencyHz": 2,
+      "dampingRatio": 0.5
+    }
+  ]
+}

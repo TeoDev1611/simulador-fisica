@@ -10,6 +10,7 @@ import ToolRail from './ToolRail.vue'
 import ContextPanel from './ContextPanel.vue'
 import PhysicsDataPanel from './PhysicsDataPanel.vue'
 import ShapeEditorModal from './ShapeEditorModal.vue'
+import SettingsPanel from './SettingsPanel.vue'
 import {
   Undo2,
   Redo2,
@@ -79,7 +80,7 @@ const {
 
 const canvasRef = ref(null)
 const containerRef = ref(null)
-const isRunning = ref(true)
+const isRunning = ref(false)
 const showDataPanel = ref(false)
 const activeTool = ref('drag')
 const toolLabels = {
@@ -102,11 +103,14 @@ const history = ref([])
 const historyIndex = ref(-1)
 
 function saveHistoryState() {
-  const json = exportState()
-  if (historyIndex.value < history.value.length - 1) {
-    history.value.splice(historyIndex.value + 1)
+  const data = JSON.parse(exportState())
+  data.fixedMeasurements = [...fixedMeasurements.value]
+  const jsonStr = JSON.stringify(data)
+
+  if (history.value.length > 0 && historyIndex.value < history.value.length - 1) {
+    history.value = history.value.slice(0, historyIndex.value + 1)
   }
-  history.value.push(json)
+  history.value.push(jsonStr)
   if (history.value.length > 50) history.value.shift()
   historyIndex.value = history.value.length - 1
 }
@@ -114,21 +118,35 @@ function saveHistoryState() {
 function undo() {
   if (historyIndex.value > 0) {
     historyIndex.value--
-    importState(history.value[historyIndex.value])
-    colorIdx = bodies.length // approximate
+    const stateStr = history.value[historyIndex.value]
+    if (importState(stateStr)) {
+      try {
+        const data = JSON.parse(stateStr)
+        fixedMeasurements.value = data.fixedMeasurements || []
+      } catch (e) {}
+      colorIdx = bodies.length // approximate
+    }
   }
 }
 
 function redo() {
   if (historyIndex.value < history.value.length - 1) {
     historyIndex.value++
-    importState(history.value[historyIndex.value])
+    const stateStr = history.value[historyIndex.value]
+    if (importState(stateStr)) {
+      try {
+        const data = JSON.parse(stateStr)
+        fixedMeasurements.value = data.fixedMeasurements || []
+      } catch (e) {}
+    }
   }
 }
 
 function exportSceneFile() {
-  const json = exportState()
-  const blob = new Blob([json], { type: 'application/json' })
+  const data = JSON.parse(exportState())
+  data.fixedMeasurements = [...fixedMeasurements.value]
+  const jsonStr = JSON.stringify(data, null, 2)
+  const blob = new Blob([jsonStr], { type: 'application/json' })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
@@ -144,10 +162,21 @@ function importSceneFile() {
   input.onchange = (e) => {
     const file = e.target.files[0]
     if (!file) return
+
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().catch(() => {})
+    }
+
     const reader = new FileReader()
     reader.onload = (ev) => {
-      if (importState(ev.target.result)) {
+      const result = ev.target.result
+      if (importState(result)) {
+        try {
+          const data = JSON.parse(result)
+          fixedMeasurements.value = data.fixedMeasurements || []
+        } catch (e) {}
         saveHistoryState()
+        resetCameraView()
       }
     }
     reader.readAsText(file)
@@ -156,6 +185,14 @@ function importSceneFile() {
 }
 const showNewDocumentModal = ref(true)
 const showShapeEditorModal = ref(false)
+const showSettingsModal = ref(false)
+const labelStyle = ref('color')
+const gravity = ref(9.81)
+
+function handleUpdateGravity(val) {
+  gravity.value = val
+  worldState.updateGravity(val)
+}
 
 function handleApplyShapeToSelected({ id, width, height, shape, vertices }) {
   updateBoxDimensions(id, width, height, shape, vertices)
@@ -210,28 +247,32 @@ function startNewtonTour() {
         element: '#tour-tool-rail',
         popover: {
           title: '🛠️ Caja de Herramientas Flotante',
-          description: 'Selecciona entre 13 herramientas especializadas: Cajas/Multiformas, Suelos, Cuerdas, Resortes, Poleas, Cotas de Medición y Rodillos.'
+          description:
+            'Selecciona entre 13 herramientas especializadas: Cajas/Multiformas, Suelos, Cuerdas, Resortes, Poleas, Cotas de Medición y Rodillos.'
         }
       },
       {
         element: '#tour-physics-canvas',
         popover: {
           title: '🎨 Lienzo de Simulación 2D',
-          description: 'Dibuja o spawnea objetos interactivos sobre la pantalla. Puedes mover la cámara con la mano (Atajo H) y usar la rueda para hacer zoom.'
+          description:
+            'Dibuja o spawnea objetos interactivos sobre la pantalla. Puedes mover la cámara con la mano (Atajo H) y usar la rueda para hacer zoom.'
         }
       },
       {
         element: '#tour-context-panel',
         popover: {
           title: '⚙️ Panel de Propiedades y Unidades',
-          description: 'Ajusta masas, fricciones, la restitución (e) de rebote, velocidad inicial (Vx, Vy) y cambia entre el Sistema Internacional ($m, kg$) y el Sistema Inglés ($ft, lb$).'
+          description:
+            'Ajusta masas, fricciones, la restitución (e) de rebote, velocidad inicial (Vx, Vy) y cambia entre el Sistema Internacional ($m, kg$) y el Sistema Inglés ($ft, lb$).'
         }
       },
       {
         element: '#tour-action-bar',
         popover: {
           title: '🎮 Barra de Control y Telemetría',
-          description: 'Controla el flujo de tiempo (Pausa/Play), Deshacer (Ctrl+Z), Rehacer, Importar/Exportar escenas en JSON y grabar telemetría a Excel (CSV).'
+          description:
+            'Controla el flujo de tiempo (Pausa/Play), Deshacer (Ctrl+Z), Rehacer, Importar/Exportar escenas en JSON y grabar telemetría a Excel (CSV).'
         }
       }
     ]
@@ -901,7 +942,9 @@ onBeforeUnmount(() => {
           </span>
           <div id="tour-action-bar" class="pointer-events-auto flex items-center gap-2 flex-wrap justify-end">
             <!-- BOTONES DE ARCHIVO (Agrupados) -->
-            <div class="flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden">
+            <div
+              class="flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden"
+            >
               <button
                 type="button"
                 @click="exportSceneFile"
@@ -929,7 +972,9 @@ onBeforeUnmount(() => {
             </div>
 
             <!-- HISTORIAL & ZOOM (Agrupados) -->
-            <div class="hidden sm:flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden">
+            <div
+              class="hidden sm:flex items-center bg-white/90 dark:bg-gray-900/90 backdrop-blur rounded-[14px] shadow-md border border-gray-300/50 dark:border-gray-700/50 overflow-hidden"
+            >
               <button
                 type="button"
                 @click="undo"
@@ -1047,13 +1092,19 @@ onBeforeUnmount(() => {
         <div
           class="pointer-events-none absolute bottom-4 left-1/2 -translate-x-1/2 md:bottom-auto md:left-3 md:translate-x-0 md:top-1/2 md:-translate-y-1/2 z-30"
         >
-          <ToolRail id="tour-tool-rail" :active-tool="activeTool" @select-tool="(tool) => (activeTool = tool)" class="pointer-events-auto" />
+          <ToolRail
+            id="tour-tool-rail"
+            :active-tool="activeTool"
+            @select-tool="(tool) => (activeTool = tool)"
+            @open-settings="showSettingsModal = true"
+            class="pointer-events-auto"
+          />
         </div>
 
         <!-- ContextPanel: Flotante a la derecha, con altura máxima en móviles para no chocar con ToolRail -->
         <div
           id="tour-context-panel"
-          class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-auto z-20 flex flex-col items-end"
+          class="pointer-events-none absolute right-3 top-28 md:top-16 bottom-20 md:bottom-4 z-20 flex flex-col items-end"
         >
           <ContextPanel
             :active-tool="activeTool"
@@ -1090,23 +1141,64 @@ onBeforeUnmount(() => {
               (s, v) => {
                 nextBoxShape = s
                 nextBoxVertices = v
+                if (selectedBoxId) {
+                  const b = boxEntries.find((bx) => bx.id === selectedBoxId)
+                  if (b) {
+                    updateBoxDimensions(selectedBoxId, b.width, b.height, s, v)
+                    saveHistoryState()
+                  }
+                }
               }
             "
             @update-next-box-config="
               (k, v) => {
-                if (k === 'mass') nextBoxMass = v
-                else if (k === 'width') nextBoxWidth = v
-                else if (k === 'height') nextBoxHeight = v
-                else if (k === 'friction') nextBoxFriction = v
-                else if (k === 'vx') nextBoxVx = v
-                else if (k === 'vy') nextBoxVy = v
+                if (k === 'mass') {
+                  nextBoxMass = v
+                  if (selectedBoxId) {
+                    updateBoxMass(selectedBoxId, v)
+                  }
+                } else if (k === 'width') {
+                  nextBoxWidth = v
+                  if (selectedBoxId) {
+                    const b = boxEntries.find((bx) => bx.id === selectedBoxId)
+                    if (b) {
+                      updateBoxDimensions(selectedBoxId, v, b.height)
+                      saveHistoryState()
+                    }
+                  }
+                } else if (k === 'height') {
+                  nextBoxHeight = v
+                  if (selectedBoxId) {
+                    const b = boxEntries.find((bx) => bx.id === selectedBoxId)
+                    if (b) {
+                      updateBoxDimensions(selectedBoxId, b.width, v)
+                      saveHistoryState()
+                    }
+                  }
+                } else if (k === 'friction') {
+                  nextBoxFriction = v
+                  if (selectedBoxId) {
+                    updateBoxFriction(selectedBoxId, v)
+                  }
+                } else if (k === 'vx') {
+                  nextBoxVx = v
+                } else if (k === 'vy') {
+                  nextBoxVy = v
+                }
               }
             "
+            @update-box-label="updateBoxLabel"
+            @update-ground-label="updateGroundLabel"
             @update-box-mass="updateBoxMass"
             @update-box-friction="updateBoxFriction"
             @update-box-angle="updateBoxAngle"
             @update-box-velocity="updateBoxVelocity"
-            @update-box-dimensions="updateBoxDimensions"
+            @update-box-dimensions="
+              (id, w, h, s, v) => {
+                updateBoxDimensions(id, w, h, s, v)
+                saveHistoryState()
+              }
+            "
             @update-track-radius="updateTrackRadius"
             @update-force="handleUpdateForce"
             @update-ground-friction="handleUpdateGroundFriction"
@@ -1152,24 +1244,36 @@ onBeforeUnmount(() => {
                     <Magnet class="w-10 h-10 text-emerald-600 dark:text-emerald-400 drop-shadow-md" />
                   </div>
                   <h2 class="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">Nuevo Laboratorio</h2>
-                  <p class="text-sm text-gray-500 dark:text-gray-400 text-center">Configura tu espacio de trabajo inicial</p>
+                  <p class="text-sm text-gray-500 dark:text-gray-400 text-center">
+                    Configura tu espacio de trabajo inicial
+                  </p>
                 </div>
 
                 <div class="flex flex-col gap-5">
                   <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Sistema de Unidades</label>
+                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                      >Sistema de Unidades</label
+                    >
                     <div class="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
                       <button
                         @click="unitSystem = 'metric'"
                         class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
-                        :class="unitSystem === 'metric' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        :class="
+                          unitSystem === 'metric'
+                            ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        "
                       >
                         SI (m, kg)
                       </button>
                       <button
                         @click="unitSystem = 'imperial'"
                         class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
-                        :class="unitSystem === 'imperial' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        :class="
+                          unitSystem === 'imperial'
+                            ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        "
                       >
                         US (ft, lb)
                       </button>
@@ -1177,19 +1281,29 @@ onBeforeUnmount(() => {
                   </div>
 
                   <div class="flex flex-col gap-2">
-                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider">Tema del Lienzo</label>
+                    <label class="text-xs font-bold text-gray-700 dark:text-gray-300 uppercase tracking-wider"
+                      >Tema del Lienzo</label
+                    >
                     <div class="flex bg-gray-200 dark:bg-gray-800 p-1 rounded-xl">
                       <button
                         @click="canvasTheme = 'colorful'"
                         class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
-                        :class="canvasTheme === 'colorful' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        :class="
+                          canvasTheme === 'colorful'
+                            ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        "
                       >
                         Colorido
                       </button>
                       <button
                         @click="canvasTheme = 'latex'"
                         class="flex-1 py-2 text-sm font-semibold rounded-lg transition-all"
-                        :class="canvasTheme === 'latex' ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400' : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'"
+                        :class="
+                          canvasTheme === 'latex'
+                            ? 'bg-white dark:bg-gray-700 shadow text-emerald-600 dark:text-emerald-400'
+                            : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'
+                        "
                       >
                         Latex (Elegante)
                       </button>
@@ -1199,13 +1313,19 @@ onBeforeUnmount(() => {
 
                 <div class="mt-4 flex flex-col gap-3">
                   <button
-                    @click="showNewDocumentModal = false; buildInitialScene()"
+                    @click="
+                      showNewDocumentModal = false
+                      buildInitialScene()
+                    "
                     class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3.5 px-4 rounded-xl shadow-lg hover:shadow-xl transition-all active:scale-95 flex justify-center items-center gap-2"
                   >
                     Crear Proyecto en Blanco
                   </button>
                   <button
-                    @click="showNewDocumentModal = false; importSceneFile()"
+                    @click="
+                      showNewDocumentModal = false
+                      importSceneFile()
+                    "
                     class="w-full bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 font-bold py-3.5 px-4 rounded-xl shadow transition-all active:scale-95 flex justify-center items-center gap-2"
                   >
                     <FolderOpen class="w-5 h-5" /> Abrir Proyecto (.json)
@@ -1227,6 +1347,18 @@ onBeforeUnmount(() => {
           @close="showShapeEditorModal = false"
           @apply-to-selected="handleApplyShapeToSelected"
           @apply-to-default="handleApplyShapeToDefault"
+        />
+
+        <!-- Modal de Ajustes Globales -->
+        <SettingsPanel
+          :is-open="showSettingsModal"
+          :unit-system="unitSystem"
+          :label-style="labelStyle"
+          :gravity="gravity"
+          @close="showSettingsModal = false"
+          @update-unit-system="(sys) => (unitSystem = sys)"
+          @update-label-style="(sty) => (labelStyle = sty)"
+          @update-gravity="handleUpdateGravity"
         />
       </div>
     </main>

@@ -288,10 +288,12 @@ const sections = [
               </p>
               <ul class="list-disc list-inside text-sm text-gray-600 dark:text-gray-400 space-y-2">
                 <li>
-                  <strong>Sistema Internacional (SI):</strong> Trabaja en metros (m) para distancia, kilogramos (kg) para masa, y metros por segundo cuadrado (m/s²) para aceleración.
+                  <strong>Sistema Internacional (SI):</strong> Trabaja en metros (m) para distancia, kilogramos (kg)
+                  para masa, y metros por segundo cuadrado (m/s²) para aceleración.
                 </li>
                 <li>
-                  <strong>Sistema Inglés (US):</strong> Trabaja en pies (ft) para distancia, libras de masa (lb) para masa, y pies por segundo cuadrado (ft/s²) para aceleración.
+                  <strong>Sistema Inglés (US):</strong> Trabaja en pies (ft) para distancia, libras de masa (lb) para
+                  masa, y pies por segundo cuadrado (ft/s²) para aceleración.
                 </li>
               </ul>
               <div
@@ -299,7 +301,9 @@ const sections = [
               >
                 <h4 class="text-emerald-700 dark:text-emerald-300 font-bold mb-2">💡 ¿Cómo cambiar de sistema?</h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400 leading-relaxed mb-2">
-                  En el panel derecho (Panel de Contexto), verás un interruptor <strong>(SI / US)</strong>. Al hacer clic, el entorno completo cambiará sus unidades (incluidas las herramientas de medición, la telemetría, y la gravedad que pasará de 9.81 a 32.174).
+                  En el panel derecho (Panel de Contexto), verás un interruptor <strong>(SI / US)</strong>. Al hacer
+                  clic, el entorno completo cambiará sus unidades (incluidas las herramientas de medición, la
+                  telemetría, y la gravedad que pasará de 9.81 a 32.174).
                 </p>
               </div>
             </div>
@@ -311,7 +315,7 @@ const sections = [
                 <FolderOpen class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Plantillas y Ejemplos
               </h3>
               <p class="text-sm text-gray-700 dark:text-gray-300 mb-4 leading-relaxed">
-                El simulador incluye 16 archivos JSON de ejemplos integrados que abarcan desde conceptos básicos hasta
+                El simulador incluye 21 archivos JSON de ejemplos integrados que abarcan desde conceptos básicos hasta
                 montajes complejos (poleas, vehículos, péndulos dobles, rieles y catapultas).
               </p>
               <div
@@ -404,7 +408,9 @@ const sections = [
                   colapsar todo el panel en un diminuto círculo y liberar aún más pantalla.
                 </li>
                 <li>
-                  <strong>Temas y Modo Oscuro:</strong> El simulador soporta un tema claro (colorido) y un modo oscuro (elegante) estilo LaTeX. Para cambiar entre ellos, usa el interruptor situado en la esquina superior derecha de la aplicación.
+                  <strong>Temas y Modo Oscuro:</strong> El simulador soporta un tema claro (colorido) y un modo oscuro
+                  (elegante) estilo LaTeX. Para cambiar entre ellos, usa el interruptor situado en la esquina superior
+                  derecha de la aplicación.
                 </li>
               </ul>
             </div>
@@ -539,7 +545,9 @@ const sections = [
                   <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                  Arrastra el ratón desde cualquier punto del lienzo hasta otro. El simulador trazará una cota de arquitectura permanente, mostrando la distancia exacta entre ambos puntos en el sistema de unidades actual.
+                  Arrastra el ratón desde cualquier punto del lienzo hasta otro. El simulador trazará una cota de
+                  arquitectura permanente, mostrando la distancia exacta entre ambos puntos en el sistema de unidades
+                  actual.
                 </p>
               </div>
             </div>
@@ -552,7 +560,7 @@ const sections = [
                 class="flex flex-wrap items-center justify-between mb-4 border-b border-gray-200 dark:border-gray-700 pb-3 gap-2"
               >
                 <h3 class="text-2xl font-bold text-emerald-700 dark:text-emerald-400 flex items-center gap-3">
-                  <Anchor class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Fijador y 
+                  <Anchor class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Fijador y
                   <CircleDot class="w-6 h-6 text-emerald-600 dark:text-emerald-400" /> Rodillos
                 </h3>
               </div>
@@ -564,10 +572,14 @@ const sections = [
                   <Zap class="w-4 h-4 text-emerald-500" /> Uso Express
                 </h4>
                 <p class="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  <strong>Fijador (Anclaje):</strong> Da clic en cualquier cuerpo dinámico con la herramienta Fijador. Esto convertirá el objeto instantáneamente en un cuerpo estático de masa infinita (anclado en el espacio). Vuelve a dar clic para liberarlo.
+                  <strong>Fijador (Anclaje):</strong> Da clic en cualquier cuerpo dinámico con la herramienta Fijador.
+                  Esto convertirá el objeto instantáneamente en un cuerpo estático de masa infinita (anclado en el
+                  espacio). Vuelve a dar clic para liberarlo.
                 </p>
                 <p class="text-sm text-gray-600 dark:text-gray-400">
-                  <strong>Rodillos:</strong> Da clic en cualquier objeto estático o dinámico con la herramienta Rodillos. Esto le agregará un apoyo deslizante en la parte inferior, ideal para simular carritos de dinámica sin preocuparse por rotaciones complejas.
+                  <strong>Rodillos:</strong> Da clic en cualquier objeto estático o dinámico con la herramienta
+                  Rodillos. Esto le agregará un apoyo deslizante en la parte inferior, ideal para simular carritos de
+                  dinámica sin preocuparse por rotaciones complejas.
                 </p>
               </div>
             </div>

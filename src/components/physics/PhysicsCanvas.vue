@@ -48,7 +48,8 @@ function screenToWorld(cx, cy) {
 const activePointers = new Map()
 let initialPinchDistance = null
 let initialScale = null
-let pinchCenter = { cx: 0, cy: 0, wx: 0, wy: 0 }
+let initialPinchCenter = { cx: 0, cy: 0 }
+let initialCameraOffset = { x: 0, y: 0 }
 
 function handlePointerDown(e) {
   canvasRef.value.setPointerCapture(e.pointerId)
@@ -58,15 +59,11 @@ function handlePointerDown(e) {
     const ptrs = Array.from(activePointers.values())
     initialPinchDistance = Math.hypot(ptrs[0].x - ptrs[1].x, ptrs[0].y - ptrs[1].y)
     initialScale = props.scale
-    
-    const cx = (ptrs[0].x + ptrs[1].x) / 2
-    const cy = (ptrs[0].y + ptrs[1].y) / 2
-    const rect = canvasRef.value.getBoundingClientRect()
-    const localCx = cx - rect.left
-    const localCy = cy - rect.top
-    const wx = (localCx - originX()) / props.scale
-    const wy = (originY() - localCy) / props.scale
-    pinchCenter = { cx: localCx, cy: localCy, wx, wy }
+
+    initialPinchCenter.cx = (ptrs[0].x + ptrs[1].x) / 2
+    initialPinchCenter.cy = (ptrs[0].y + ptrs[1].y) / 2
+    initialCameraOffset.x = cameraOffsetX.value
+    initialCameraOffset.y = cameraOffsetY.value
     return
   }
 
@@ -89,15 +86,42 @@ function handlePointerMove(e) {
   if (activePointers.size === 2) {
     const ptrs = Array.from(activePointers.values())
     const currentDistance = Math.hypot(ptrs[0].x - ptrs[1].x, ptrs[0].y - ptrs[1].y)
-    
+    const currentPinchCenter = {
+      cx: (ptrs[0].x + ptrs[1].x) / 2,
+      cy: (ptrs[0].y + ptrs[1].y) / 2
+    }
+
     if (initialPinchDistance > 0) {
       const scaleFactor = currentDistance / initialPinchDistance
       const newScale = initialScale * scaleFactor
-      
+
       if (newScale >= 10 && newScale <= 5000) {
         emit('update-scale', newScale)
-        cameraOffsetX.value = pinchCenter.cx - currentWidth / 2 - pinchCenter.wx * newScale
-        cameraOffsetY.value = pinchCenter.cy - currentHeight + newScale * 2.5 + pinchCenter.wy * newScale
+
+        // El movimiento del centro nos da el paneo:
+        const panDx = currentPinchCenter.cx - initialPinchCenter.cx
+        const panDy = currentPinchCenter.cy - initialPinchCenter.cy
+
+        // Además de panear, hay que ajustar por el cambio de escala
+        // para que el punto bajo el centro del pinch inicial se quede ahí.
+        const rect = canvasRef.value.getBoundingClientRect()
+        const localCx = initialPinchCenter.cx - rect.left
+        const localCy = initialPinchCenter.cy - rect.top
+
+        // Posición base sin el nuevo zoom pero con el pan aplicado
+        let baseOffsetX = initialCameraOffset.x + panDx
+        let baseOffsetY = initialCameraOffset.y + panDy
+
+        // Coordenadas locales respecto al centro (origen en el lienzo) ANTES de escalar
+        const originX0 = currentWidth / 2 + initialCameraOffset.x
+        const originY0 = currentHeight - initialScale * 2.5 + initialCameraOffset.y
+
+        const wx = (localCx - originX0) / initialScale
+        const wy = (originY0 - localCy) / initialScale
+
+        // Ajustar offset de cámara con la nueva escala
+        cameraOffsetX.value = localCx + panDx - currentWidth / 2 - wx * newScale
+        cameraOffsetY.value = localCy + panDy - currentHeight + newScale * 2.5 + wy * newScale
       }
     }
     return
@@ -121,11 +145,11 @@ function handlePointerMove(e) {
 
 function handlePointerUp(e) {
   activePointers.delete(e.pointerId)
-  
+
   if (activePointers.size < 2) {
     initialPinchDistance = null
   }
-  
+
   if (activePointers.size === 0) {
     if (props.activeTool === 'pan') {
       isPanning.value = false
@@ -238,7 +262,7 @@ function drawGround(entry) {
   const isLatex = props.canvasTheme === 'latex'
   const latexLine = isDark.value ? '#ffffff' : '#000000'
   ctx.save()
-  ctx.strokeStyle = isLatex ? latexLine : (entry.color || '#9ca3af')
+  ctx.strokeStyle = isLatex ? latexLine : entry.color || '#9ca3af'
   ctx.lineWidth = isLatex ? 3 : 5
   ctx.lineCap = 'round'
   ctx.lineJoin = 'round'
@@ -289,7 +313,7 @@ function drawAnchor(entry) {
   // Etiqueta "Fijo": deja explícito que este punto NO se mueve —
   // es la razón por la que una polea/cuerda/resorte funciona con 1 sola caja.
   ctx.fillStyle = '#fde68a'
-  ctx.font = '9px monospace'
+  ctx.font = '11px KaTeX_Main, "Times New Roman", serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'top'
   ctx.fillText('Fijo', sx, sy + 8)
@@ -335,9 +359,9 @@ function drawBox(entry) {
   const isLatex = props.canvasTheme === 'latex'
   const latexLine = isDark.value ? '#ffffff' : '#000000'
   const latexBg = isDark.value ? '#111827' : '#ffffff'
-  ctx.fillStyle = isLatex ? latexBg : (entry.color || '#34d399')
-  ctx.strokeStyle = isLatex ? latexLine : (isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)')
-  ctx.lineWidth = isLatex ? 2.5 : (isSelected ? 3 : 2)
+  ctx.fillStyle = isLatex ? latexBg : entry.color || '#34d399'
+  ctx.strokeStyle = isLatex ? latexLine : isSelected ? '#fbbf24' : 'rgba(0,0,0,0.6)'
+  ctx.lineWidth = isLatex ? 2.5 : isSelected ? 3 : 2
   ctx.beginPath()
   if (entry.shape === 'circle') {
     ctx.arc(0, 0, wPx / 2, 0, Math.PI * 2)
@@ -364,7 +388,9 @@ function drawBox(entry) {
   const isLatexFont = props.canvasTheme === 'latex'
   const latexLineF = isDark.value ? '#ffffff' : '#000000'
   ctx.fillStyle = isLatexFont ? latexLineF : 'rgba(10,10,10,0.85)'
-  ctx.font = isLatexFont ? 'bold 12px serif' : 'bold 11px monospace'
+  ctx.font = isLatexFont
+    ? 'italic 15px KaTeX_Math, "Times New Roman", serif'
+    : 'italic 13px KaTeX_Math, "Times New Roman", serif'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
   const massVal = formatValue(entry.mass, 'mass', props.unitSystem, 1)
@@ -421,7 +447,7 @@ function drawPeakMarkers(entry, unitSystem) {
   ctx.stroke()
 
   ctx.fillStyle = '#f59e0b'
-  ctx.font = 'bold 9px monospace'
+  ctx.font = 'italic 11px KaTeX_Math, "Times New Roman", serif'
   ctx.textAlign = 'center'
   ctx.fillText(`h_max = ${val} ${unitLabel}`, sx, sy - 6)
   ctx.restore()
@@ -463,7 +489,9 @@ function drawMeasurementLine(m, unitSystem) {
   const midY = (p1.sy + p2.sy) / 2
   const text = `d = ${distFormatted} ${unitLabel}` + (Math.abs(dy) > 0.05 ? ` | h = ${dyFormatted} ${unitLabel}` : '')
 
-  ctx.font = isLatex ? 'bold 12px serif' : 'bold 11px monospace'
+  ctx.font = isLatex
+    ? 'italic 14px KaTeX_Math, "Times New Roman", serif'
+    : 'italic 12px KaTeX_Math, "Times New Roman", serif'
   const metrics = ctx.measureText(text)
   const tw = metrics.width + 14
   const th = 20
@@ -519,7 +547,7 @@ function drawForceAngleGuide(entry) {
     { deg: 270, label: '270°' }
   ]
   ctx.setLineDash([])
-  ctx.font = '9px monospace'
+  ctx.font = '11px KaTeX_Main, "Times New Roman", serif'
   ctx.fillStyle = 'rgba(251,146,60,0.6)'
   ctx.textAlign = 'center'
   ctx.textBaseline = 'middle'
@@ -556,7 +584,7 @@ function drawAppliedForceVector(entry) {
 
   ctx.save()
   ctx.fillStyle = '#fb923c'
-  ctx.font = 'bold 11px monospace'
+  ctx.font = 'italic 12px KaTeX_Math, "Times New Roman", serif'
   ctx.textAlign = 'left'
   ctx.textBaseline = 'bottom'
   ctx.fillText(`${f.magnitude.toFixed(1)} N · ${f.angleDeg.toFixed(0)}°`, toX + 6, toY)
@@ -770,7 +798,7 @@ function drawGroundPreview(points, groundInfo) {
     const pEnd = worldToScreen(points[points.length - 1].x, points[points.length - 1].y)
     ctx.save()
     ctx.fillStyle = '#e5e7eb'
-    ctx.font = 'bold 11px monospace'
+    ctx.font = 'italic 12px KaTeX_Math, "Times New Roman", serif'
     ctx.textAlign = 'left'
     ctx.textBaseline = 'bottom'
     ctx.fillText(`${groundInfo.angleDeg.toFixed(1)}° · ${groundInfo.length.toFixed(2)} m`, pEnd.sx + 8, pEnd.sy - 4)

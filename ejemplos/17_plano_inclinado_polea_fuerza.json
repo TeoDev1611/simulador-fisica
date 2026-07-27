@@ -1,0 +1,91 @@
+{
+  "gravity": 9.81,
+  "counter": 5,
+  "fixedMeasurements": [
+    {
+      "start": {"x": -8, "y": -4},
+      "end": {"x": 2, "y": 2}
+    }
+  ],
+  "bodies": [
+    {
+      "id": "ground_1",
+      "kind": "ground",
+      "label": "Plano Inclinado",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0.4,
+      "restitution": 0.1,
+      "color": "#9ca3af",
+      "position": null,
+      "angleRad": null,
+      "points": [{"x": -8, "y": -4}, {"x": 0, "y": 2}, {"x": 2, "y": 2}],
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "anchor_2",
+      "kind": "anchor",
+      "label": "Polea Superior",
+      "width": 0,
+      "height": 0,
+      "mass": 0,
+      "friction": 0,
+      "restitution": 0,
+      "color": "#facc15",
+      "position": {"x": 2.5, "y": 2.5},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": null,
+      "shape": null,
+      "vertices": null
+    },
+    {
+      "id": "box_3",
+      "kind": "box",
+      "label": "Masa en Plano",
+      "width": 1.5,
+      "height": 1,
+      "mass": 8,
+      "friction": 0.3,
+      "restitution": 0.1,
+      "color": "#3b82f6",
+      "position": {"x": -4, "y": -0.5},
+      "angleRad": -0.6435,
+      "points": null,
+      "appliedForce": {"enabled": false, "magnitude": 0, "angleDeg": 0},
+      "shape": "box",
+      "vertices": null
+    },
+    {
+      "id": "box_4",
+      "kind": "box",
+      "label": "Contrapeso",
+      "width": 1,
+      "height": 1.5,
+      "mass": 12,
+      "friction": 0.3,
+      "restitution": 0.1,
+      "color": "#ef4444",
+      "position": {"x": 2.5, "y": 6},
+      "angleRad": 0,
+      "points": null,
+      "appliedForce": {"enabled": true, "magnitude": 50, "angleDeg": -90},
+      "shape": "box",
+      "vertices": null
+    }
+  ],
+  "ropes": [
+    {
+      "id": "pulley_1",
+      "kind": "pulley",
+      "bodyAId": "box_3",
+      "bodyBId": "box_4",
+      "wheelId": "anchor_2",
+      "frequencyHz": 0,
+      "dampingRatio": 0
+    }
+  ]
+}

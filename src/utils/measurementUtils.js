@@ -3,12 +3,12 @@
 
 // Factores de conversión
 export const METRIC_TO_IMPERIAL = {
-  length: 3.28084,     // m -> ft
-  velocity: 3.28084,   // m/s -> ft/s
-  accel: 3.28084,      // m/s² -> ft/s²
-  mass: 2.20462,       // kg -> lb
-  force: 0.224809,     // N -> lbf
-  energy: 0.737562     // J -> ft·lb
+  length: 3.28084, // m -> ft
+  velocity: 3.28084, // m/s -> ft/s
+  accel: 3.28084, // m/s² -> ft/s²
+  mass: 2.20462, // kg -> lb
+  force: 0.224809, // N -> lbf
+  energy: 0.737562 // J -> ft·lb
 }
 
 /**
@@ -16,7 +16,7 @@ export const METRIC_TO_IMPERIAL = {
  */
 export function formatValue(value, type = 'length', unitSystem = 'metric', decimals = 2) {
   if (value === null || value === undefined || isNaN(value)) return '0.00'
-  
+
   let val = value
   if (unitSystem === 'imperial' && METRIC_TO_IMPERIAL[type]) {
     val = value * METRIC_TO_IMPERIAL[type]

@@ -287,8 +287,11 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     if (isNaN(width)) width = entry.width || 1
     if (isNaN(height)) height = entry.height || 1
 
-    const safeWidth = Math.max(0.05, Math.min(10, width))
-    const safeHeight = Math.max(0.05, Math.min(10, height))
+    const safeWidth = Math.max(0.05, Math.min(1000, width))
+    const safeHeight = Math.max(0.05, Math.min(1000, height))
+
+    entry.width = safeWidth
+    entry.height = safeHeight
 
     if (newShape) entry.shape = newShape
     if (newVertices) entry.vertices = newVertices
@@ -475,7 +478,11 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     return id
   }
 
-  function addSpring(idA, idB, { frequencyHz = 2.0, dampingRatio = 0.1, idOverride = null, customAnchorA = null, customAnchorB = null } = {}) {
+  function addSpring(
+    idA,
+    idB,
+    { frequencyHz = 2.0, dampingRatio = 0.1, idOverride = null, customAnchorA = null, customAnchorB = null } = {}
+  ) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
@@ -808,6 +815,23 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     }
   }
 
+  function updateGravity(newGravity) {
+    world.setGravity(Vec2(0, -newGravity))
+    for (let b = world.getBodyList(); b; b = b.getNext()) {
+      b.setAwake(true)
+    }
+  }
+
+  function updateBoxLabel(id, newLabel) {
+    const box = bodies.find((b) => b.id === id)
+    if (box) box.label = newLabel
+  }
+
+  function updateGroundLabel(id, newLabel) {
+    const ground = bodies.find((b) => b.id === id && b.kind === 'ground')
+    if (ground) ground.label = newLabel
+  }
+
   function exportState() {
     const bSnap = bodies.map((b) => {
       // Excluye "body" (Planck Object) y cosas dinámicas como normalForce, weightForce, tension
@@ -902,20 +926,21 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
       }
 
       // 2. Restaurar cuerdas y conexiones
-      for (const r of data.ropes) {
-        if (r.kind === 'rope') {
-          addRope(r.bodyAId, r.bodyBId, r.id, r.anchorA, r.anchorB)
-        } else if (r.kind === 'spring') {
-          addSpring(r.bodyAId, r.bodyBId, {
-            frequencyHz: r.frequencyHz,
-            dampingRatio: r.dampingRatio,
-            idOverride: r.id,
-            customAnchorA: r.anchorA,
-            customAnchorB: r.anchorB
-          })
+      if (data.ropes) {
+        for (const r of data.ropes) {
+          if (r.kind === 'rope') {
+            addRope(r.bodyAId, r.bodyBId, r.id, r.anchorA, r.anchorB)
+          } else if (r.kind === 'spring') {
+            addSpring(r.bodyAId, r.bodyBId, {
+              frequencyHz: r.frequencyHz,
+              dampingRatio: r.dampingRatio,
+              idOverride: r.id,
+              customAnchorA: r.anchorA,
+              customAnchorB: r.anchorB
+            })
+          } else if (r.kind === 'pulley') addPulley(r.bodyAId, r.bodyBId, r.wheelId, r.id)
+          else if (r.kind === 'track') addCircularTrack(r.bodyAId, r.bodyBId, r.id)
         }
-        else if (r.kind === 'pulley') addPulley(r.bodyAId, r.bodyBId, r.wheelId, r.id)
-        else if (r.kind === 'track') addCircularTrack(r.bodyAId, r.bodyBId, r.id)
       }
 
       return true
@@ -931,6 +956,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     ropes,
     addBox,
     updateBoxMass,
+    updateGravity,
+    updateBoxLabel,
+    updateGroundLabel,
     updateBoxFriction,
     updateBoxRestitution,
     toggleRollers,
