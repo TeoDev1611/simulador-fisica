@@ -199,6 +199,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxFriction(id, newFriction) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+    if (isNaN(newFriction)) newFriction = entry.friction || 0
     const safeFriction = Math.max(0, Math.min(2, newFriction))
     const fixture = entry.body.getFixtureList()
     if (fixture) {
@@ -211,6 +212,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxRestitution(id, newRestitution) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+    if (isNaN(newRestitution)) newRestitution = entry.restitution || 0
     const safeRestitution = Math.max(0, Math.min(1, newRestitution))
     const fixture = entry.body.getFixtureList()
     if (fixture) {
@@ -239,6 +241,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxMass(id, newMass) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+    if (isNaN(newMass)) newMass = entry.mass || 1
     const area = entry.width * entry.height
     const safeMass = Math.max(0.1, newMass)
     const density = area > 0 ? safeMass / area : 1
@@ -256,6 +259,7 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxAngle(id, angleDeg) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+    if (isNaN(angleDeg)) angleDeg = 0
     const rad = (angleDeg * Math.PI) / 180
     entry.body.setTransform(entry.body.getPosition(), rad)
     entry.angleRad = rad
@@ -265,6 +269,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxVelocity(id, magnitude, angleDeg) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+    if (isNaN(magnitude)) magnitude = 0
+    if (isNaN(angleDeg)) angleDeg = 0
+    entry.velocityAngle = angleDeg
     const rad = (angleDeg * Math.PI) / 180
     const vx = magnitude * Math.cos(rad)
     const vy = -magnitude * Math.sin(rad) // En el canvas, -y es hacia arriba. Pero en Planck, +y es hacia abajo. Wait, en Planck y canvas coinciden si lo configuraste así, pero en matemáticas estándar, vy = sin(rad). Reviso cómo lo renderizas.
@@ -276,6 +283,9 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function updateBoxDimensions(id, width, height, newShape = null, newVertices = null) {
     const entry = bodies.find((b) => b.id === id && b.kind === 'box')
     if (!entry) return
+
+    if (isNaN(width)) width = entry.width || 1
+    if (isNaN(height)) height = entry.height || 1
 
     const safeWidth = Math.max(0.05, Math.min(10, width))
     const safeHeight = Math.max(0.05, Math.min(10, height))
@@ -494,9 +504,11 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   function setSpringStiffness(id, frequencyHz, dampingRatio) {
     const entry = ropes.find((r) => r.id === id && r.kind === 'spring')
     if (!entry) return
-    entry.joint.setFrequency(frequencyHz)
+    if (frequencyHz !== undefined && isNaN(frequencyHz)) frequencyHz = entry.frequencyHz || 2.0
+    if (dampingRatio !== undefined && isNaN(dampingRatio)) dampingRatio = entry.dampingRatio || 0.1
+    if (frequencyHz !== undefined) entry.joint.setFrequency(frequencyHz)
     if (dampingRatio !== undefined) entry.joint.setDampingRatio(dampingRatio)
-    entry.frequencyHz = frequencyHz
+    if (frequencyHz !== undefined) entry.frequencyHz = frequencyHz
     if (dampingRatio !== undefined) entry.dampingRatio = dampingRatio
     for (const b of bodies) if (b.kind === 'box') b.body.setAwake(true)
   }

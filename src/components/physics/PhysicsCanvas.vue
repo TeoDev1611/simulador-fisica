@@ -819,9 +819,5 @@ defineExpose({ draw, resetCamera })
     @pointercancel="handlePointerUp"
     @wheel.prevent="handleWheel"
     @contextmenu.prevent
-    @touchstart="preventDefaultTouch"
-    @touchmove="preventDefaultTouch"
-    @touchend="preventDefaultTouch"
-    @touchcancel="preventDefaultTouch"
   ></canvas>
 </template>
