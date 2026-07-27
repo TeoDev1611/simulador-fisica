@@ -6,7 +6,7 @@
       "id": "anchor_1",
       "kind": "anchor",
       "label": "Pivote Central",
-      "position": {"x": 0, "y": 0}
+      "position": {"x": 0, "y": -0.5}
     },
     {
       "id": "box_2",

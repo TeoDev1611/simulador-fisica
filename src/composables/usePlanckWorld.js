@@ -442,13 +442,13 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
   // ----------------------------------------------------------------
   // Conectores
   // ----------------------------------------------------------------
-  function addRope(idA, idB, idOverride = null) {
+  function addRope(idA, idB, idOverride = null, customAnchorA = null, customAnchorB = null) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
 
-    const anchorA = entryA.body.getWorldCenter()
-    const anchorB = entryB.body.getWorldCenter()
+    const anchorA = customAnchorA ? Vec2(customAnchorA.x, customAnchorA.y) : entryA.body.getWorldCenter()
+    const anchorB = customAnchorB ? Vec2(customAnchorB.x, customAnchorB.y) : entryB.body.getWorldCenter()
     const length = Math.max(0.05, Vec2.distance(anchorA, anchorB))
 
     const joint = new DistanceJoint(
@@ -465,13 +465,13 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
     return id
   }
 
-  function addSpring(idA, idB, { frequencyHz = 2.0, dampingRatio = 0.1, idOverride = null } = {}) {
+  function addSpring(idA, idB, { frequencyHz = 2.0, dampingRatio = 0.1, idOverride = null, customAnchorA = null, customAnchorB = null } = {}) {
     const entryA = bodies.find((b) => b.id === idA)
     const entryB = bodies.find((b) => b.id === idB)
     if (!entryA || !entryB) return null
 
-    const anchorA = entryA.body.getWorldCenter()
-    const anchorB = entryB.body.getWorldCenter()
+    const anchorA = customAnchorA ? Vec2(customAnchorA.x, customAnchorA.y) : entryA.body.getWorldCenter()
+    const anchorB = customAnchorB ? Vec2(customAnchorB.x, customAnchorB.y) : entryB.body.getWorldCenter()
     const length = Math.max(0.05, Vec2.distance(anchorA, anchorB))
 
     const joint = new DistanceJoint({ frequencyHz, dampingRatio, length }, entryA.body, entryB.body, anchorA, anchorB)
@@ -891,13 +891,17 @@ export function usePlanckWorld(gravityMagnitude = DEFAULT_GRAVITY) {
 
       // 2. Restaurar cuerdas y conexiones
       for (const r of data.ropes) {
-        if (r.kind === 'rope') addRope(r.bodyAId, r.bodyBId, r.id)
-        else if (r.kind === 'spring')
+        if (r.kind === 'rope') {
+          addRope(r.bodyAId, r.bodyBId, r.id, r.anchorA, r.anchorB)
+        } else if (r.kind === 'spring') {
           addSpring(r.bodyAId, r.bodyBId, {
             frequencyHz: r.frequencyHz,
             dampingRatio: r.dampingRatio,
-            idOverride: r.id
+            idOverride: r.id,
+            customAnchorA: r.anchorA,
+            customAnchorB: r.anchorB
           })
+        }
         else if (r.kind === 'pulley') addPulley(r.bodyAId, r.bodyBId, r.wheelId, r.id)
         else if (r.kind === 'track') addCircularTrack(r.bodyAId, r.bodyBId, r.id)
       }

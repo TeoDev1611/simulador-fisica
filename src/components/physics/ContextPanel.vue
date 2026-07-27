@@ -94,14 +94,15 @@ const forceMagnitude = ref(10)
 const forceAngle = ref(0)
 
 watch(
-  () => props.selectedBox?.id,
+  () => [props.selectedBox?.id, props.selectedBox?.appliedForce?.angleDeg, props.selectedBox?.appliedForce?.magnitude],
   () => {
     const f = props.selectedBox?.appliedForce
     if (f && f.magnitude) {
-      forceMagnitude.value = f.magnitude
-      forceAngle.value = f.angleDeg
+      forceMagnitude.value = parseFloat(f.magnitude.toFixed(1))
+      forceAngle.value = parseFloat(f.angleDeg.toFixed(1))
     }
-  }
+  },
+  { deep: true }
 )
 
 function applyForceNow(enabled) {
