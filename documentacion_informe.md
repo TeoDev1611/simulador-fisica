@@ -1,118 +1,112 @@
-# Estructura y Arquitectura del Proyecto: Guía para el Informe Final
+# Documentación Exhaustiva de Arquitectura de Software: Frontend, Rendimiento y Desacoplamiento
 
-Este documento detalla la estructura profunda del proyecto "Simulador Cinemático y Dinámico". Está diseñado para que los miembros del equipo de desarrollo comprendan exactamente la separación de responsabilidades del código (dónde es lógica, dónde es interfaz, cómo se calculan las físicas) y cuenten con la base técnica para redactar el informe o tesis final.
+El **Simulador Cinemático y Dinámico V1** es una aplicación sumamente intensiva en términos computacionales, operando en el cliente miles de cálculos espaciales vectoriales, resoluciones trigonométricas e integraciones de fuerzas continuas a una alta tasa de refresco (generalmente 60 hercios). Afrontar el reto de construir este ecosistema sobre tecnologías web requerió el diseño de una arquitectura impecable que mitigara totalmente los *cuellos de botella* comunes en el navegador, prestando especial atención a cómo las cargas lógicas (Dinámica y Matemática Pura) interactúan con la capa de presentación (DOM/Vue).
 
-> **💡 Prompt para IA Generadora de Informes:** Se ha incluido el archivo dedicado [`PROMPT_GUIA_INFORME_IA.md`](file:///c:/Users/Mateo/Desktop/Fisica/PROMPT_GUIA_INFORME_IA.md) con todo el contexto técnico, físico y matemático listo para copiar y pegar en ChatGPT/Claude/Gemini.
-
----
-
-## 1. Arquitectura General: Desacoplamiento Lógica vs Vista
-
-El proyecto emplea el framework **Vue.js 3** estructurado bajo el paradigma de separación de responsabilidades. Nunca se mezcla la matemática pesada dentro de los archivos que dibujan los botones. 
-
-El código fuente se divide esencialmente en dos grandes áreas:
-- **Lógica Pura (`src/composables/`):** Archivos que contienen únicamente algoritmos y estados numéricos. No saben que existen pantallas, navegadores o colores. Su único trabajo es procesar matemáticas.
-- **Interfaz y Orquestación (`src/components/`):** Archivos `.vue` que se encargan de capturar el clic del usuario, enviarlo a la lógica, recoger los resultados numéricos de vuelta y finalmente pintar la pantalla.
+Este documento está concebido como la bitácora arquitectónica definitiva para los ingenieros de software, delineando exactamente el "por qué" y el "cómo" de cada decisión estructural adoptada en el proyecto.
 
 ---
 
-## 2. Módulo Cinemático 1D (Galileo Lab)
+## 1. El Desafío Reactivo: Abstracción Aislada de Vue.js y Planck.js
 
-Este módulo resuelve analíticamente el movimiento en un solo grado de libertad ($x$).
+En cualquier entorno web interactivo moderno (como React, Angular o Vue), la reactividad juega un rol crítico: cada variable que se actualiza dispara un ciclo de re-renderizado para plasmar el cambio visual en la pantalla. Sin embargo, al combinar *frameworks* de interfaz de usuario con motores físicos, surge un grave peligro arquitectónico.
 
-### 2.1 El Cerebro Lógico (Cálculo)
-El motor de este módulo es la librería `math.js`. No usamos derivadas numéricas por pasos de tiempo porque acumulan errores de truncamiento; usamos un motor de **Álgebra Computacional (CAS)**. 
+### 1.1. El Colapso de los Proxies Iterativos y el Cómputo Circulante
+Vue 3, en su núcleo, interpone manejadores denominados **Proxies** (nativos de ES6) a cada objeto que se le instruye observar (`ref` o `reactive`). Estos Proxies rastrean exhaustivamente cada *getter* y *setter* de las propiedades anidadas del objeto.
+En paralelo, `Planck.js` basa su supremo rendimiento geométrico en una red infinitamente compleja de objetos que poseen **referencias cruzadas recíprocas**:
+*   Un `World` almacena arreglos de iteración hacia cada `Body`.
+*   Cada `Body` guarda punteros dobles hacia sus propios polígonos de impacto (`Fixtures`).
+*   Cada `Fixture` anida referencias apuntando de retorno a su propio `Body` o a los `Joints` (Restricciones) que posee.
 
-- **¿Cómo se calcula?:** Cuando el usuario ingresa una ecuación de texto plana (ej: `x(t) = A*sin(w*t)`), el sistema la compila en un **Árbol de Sintaxis Abstracta (AST)**. El AST entiende las operaciones matemáticas. El componente llama a `math.derivative('ecuacion', 't')` y la librería aplica reglas de cadena puras para escupir la derivada analítica exacta de la velocidad y aceleración en memoria.
+**El Fallo Catastrófico:** Si un objeto de esta naturaleza topológica circular es inyectado sin filtros a un arreglo reactivo de Vue.js, el compilador inicia un rastreo profundo y agresivo de cada nivel de anidación intentando convertir todo el motor físico en propiedades reactivas. Esta cascada infinita de llamadas satura violentamente la Pila de Ejecuciones (Call Stack) provocando un error fulminante: `Maximum call stack size exceeded`. El hilo de ejecución (Main Thread) del motor V8 del navegador colapsa al instante.
 
-### 2.2 El Orquestador y la Interfaz (`KinematicsSimulator.vue`)
-Este archivo actúa como puente:
-- **Discretización (Evaluación):** Genera un bucle `for` interno que incrementa la variable `$t$` en pequeños pasos (ej. desde 0 hasta 10 segundos). En cada ciclo, inyecta el valor de `$t$` en el nodo compilado por Math.js. Genera tres enormes arreglos de datos `(x, y)` para las posiciones, velocidades y aceleraciones a lo largo del tiempo.
-- **Inyección Visual:** Pasa estos arreglos puros al componente **`ChartsPanel.vue`**. Este componente estrictamente visual utiliza **Chart.js** para inyectar estos puntos en un `<canvas>` HTML5 y generar las tres gráficas sincronizadas.
+### 1.2. El Patrón "Raw Proxy" (Blindaje mediante `markRaw`)
+La arquitectura esquiva este abismo implementando rigurosamente el comando `markRaw()` (proveniente del núcleo de Vue 3). Este método actúa como un escudo o etiqueta semántica en la memoria RAM, impidiendo que el motor reactivo convierta un objeto subyacente en Proxy.
+Este patrón se aplica desde la capa base `src/composables/usePlanckWorld.js`:
 
----
+```javascript
+import { markRaw } from 'vue'
 
-## 3. Módulo Dinámico 2D (Newton Lab)
+// 1. Blindaje del Mundo Físico Entero
+// Vue será ciego a las operaciones gravitatorias e iteraciones Eulerianas que ocurran aquí dentro.
+const world = markRaw(new World({ gravity: Vec2(0, -9.81) }))
 
-Este es el sistema más complejo del proyecto. Aquí se resuelve mecánica de cuerpos rígidos con rotación, colisiones, resortes y cuerdas. Se usó una arquitectura de tres capas:
-
-### Capa 1: Lógica Física Pura (`usePlanckWorld.js`)
-Aquí reside absolutamente toda la matemática vectorial de las físicas.
-- **¿Qué motor usamos y por qué?:** Se integra `Planck.js`, un port web del legendario motor `Box2D`. Se eligió porque no es un "motor falso" de videojuegos; es un **integrador numérico estricto (Symplectic Euler)** iterativo que respeta la conservación del momento y aproxima las soluciones a las ecuaciones diferenciales de Newton-Euler usando pasos discretos (time-steps).
-- **El Bucle Matemático:** Exporta la función `step(1/60)`. Al llamarla, resuelve fuerzas, choques, fricciones estáticas/cinéticas de Coulomb de todos los cuerpos y avanza el tiempo simulado en `0.016` segundos. 
-- **Inercias Reales:** Al dar de alta un bloque o un polígono (Fixture), este archivo le asigna una densidad estricta y Planck calcula de forma automática su centroide exacto y su tensor de inercia real (la resistencia a girar dependiendo de dónde reciba el golpe).
-
-### Capa 2: El Orquestador Intermedio (`PhysicsSandbox2D.vue`)
-Es el archivo jefe del simulador, el cual une al usuario con la física.
-- **El Bucle Principal (Game Loop):** Inicia un `requestAnimationFrame` que se ejecuta 60 veces por segundo. 
-  1. En cada iteración, ordena a `usePlanckWorld.js` hacer un `step()` físico matemático.
-  2. Luego, rastrea la memoria del motor físico, pidiéndole las coordenadas actuales ($x,y$, y ángulo $\theta$) a cada objeto.
-  3. Le envía esos datos al dibujante (Capa 3).
-- **El Sistema de Raycasting Inverso:** Si el usuario hace clic en un píxel en pantalla (Interfaz), este componente hace una matemática inversa: le resta el centro de la pantalla y divide por la escala (zoom) para transformar el punto de "Píxeles" a "Metros físicos reales". Finalmente, le manda ese punto al mundo físico de Planck (`queryPoint`) preguntando: *"¿Existe algún sólido en estas coordenadas matemáticas?"*.
-- **Historial (Ctrl+Z):** Este orquestador toma una copia instantánea del estado físico completo (`bodies`, `joints`) cada vez que hay una modificación, empacándola como un objeto serializado ligero. Para el "Deshacer", destruye el mundo lógico y ordena la recreación total del mismo.
-
-### Capa 3: El Renderizador Visual (`PhysicsCanvas.vue`)
-Es un componente 100% "tonto" o agnóstico de la física.
-- Su única labor es recibir un listado JSON inmenso de objetos (Cajas, Anclajes, Cuerdas) con sus números de posiciones y ángulos ya calculados.
-- **Transformación Visual:** Utiliza la API nativa de `<canvas>` HTML5 (`ctx`). Escala el origen central del canvas usando matrices de traslación. Pinta las cajas (Multiplicando metros por píxeles) y rota el contexto usando el `angleRad` puro proporcionado por la Capa 2. 
-
-**Resumen del Flujo Dinámico (Para el reporte final):**
-1. El Motor Lógico (`Planck.js`) calcula el paso $\rightarrow$ Produce variables $x, y, \theta$ puras.
-2. El Orquestador (`PhysicsSandbox2D.vue`) extrae esas variables.
-3. El Dibujante (`PhysicsCanvas.vue`) multiplica esas variables por una escala, y pinta cuadrados y líneas en un `<canvas>` web.
-*(Nota arquitectónica importante: El Cerebro Lógico se encapsula dentro del comando `markRaw()` de Vue, previniendo que Vue rastree cada molécula microscópica 60 veces por segundo, lo cual quemaría los recursos de hardware).*
+// 2. Inyección Aislada de Cuerpos Físicos
+// Al crear una entidad para ser "dibujada" en la pantalla, la UI necesita interactuar con ella.
+// Se envuelve el objeto Body crudo dentro de markRaw(), pero la capa superior (id, kind) sí puede ser reactiva.
+bodies.push({
+  id: generateUniqueId(),
+  kind: 'box',
+  body: markRaw(body),
+  color: '#2ecc71',
+  label: 'Polígono Dinámico'
+})
+```
+**Flujo Híbrido Resultante:** El *Canvas* interactivo y el Componente (`PhysicsSandbox2D.vue`) se limitan a leer pasivamente las variables. Al invocar el fotograma en `requestAnimationFrame`, Vue interroga velozmente las coordenadas matemáticas del bloque en la memoria cruda (`body.getPosition()`), y las dibuja en pantalla. Las millones de operaciones internas por choque e integración impulsiva del motor se ejecutan en silencio absoluto, maximizando los FPS (Frames Per Second).
 
 ---
 
-## 4. Telemetría y Extracción de Datos (El porqué académico)
+## 2. Persistencia y Mitigación de Errores: History Stack Estricto
 
-Para darle la rigurosidad a este simulador exigida en laboratorios físicos universitarios, se programó la adquisición de datos crudos.
+En aplicaciones de dibujo, topografía o construcción, es estadísticamente inevitable el fallo del operador humano. Por consiguiente, la capacidad de *Deshacer (Undo)* y *Rehacer (Redo)* acciones es un pilar de la Experiencia del Usuario (UX). No obstante, clonar un universo bidimensional interconectado con tensores (cuerdas y poleas) no es trivial, y si no se regula, agota la memoria *Heap* del cliente.
 
-- **¿Dónde ocurre?** Dentro del orquestador (`PhysicsSandbox2D.vue`).
-- **¿Cómo se calcula?** Al activar la grabación, el bucle principal abre un colector temporal en la memoria RAM. En cada paso de tiempo (frame), extrae directo de las ecuaciones de estado interno de Planck.js: velocidad lineal absoluta de los centroides $(v_x, v_y)$ y velocidades angulares instantáneas $\omega$ antes de que sean dibujadas. 
-- **¿Para qué sirve?** Empaqueta esta inmensa matriz muestreada a 30 Hz y la inyecta mediante librerías de conversión en un archivo `.CSV`. Esto delega el procesamiento matemático final (Validación empírica, Energía, Conservación del momento, Integración) al estudiante usuario final usando Microsoft Excel, Python o Matlab.
+### 2.1. Arquitectura de Deserialización y Apilamiento Espacial
+En `PhysicsSandbox2D.vue`, el ciclo de rescate de estado no se ejecuta cada fotograma (lo cual colapsaría el rendimiento), sino **sólo cuando se interrumpe un comportamiento mutante**. Se diseñaron interrupciones (*listeners*) que reaccionan tras culminar la eliminación de un ente, al final del arrastre prolongado de un nodo maestro (`MouseUp`), o tras la inserción de un resorte.
+
+**Estrategia de Almacenaje:**
+1.  **Serialización Plana:** Se extrae una biometría topológica (Vértices $X,Y$, propiedades, anclas gravitatorias, tipos estáticos) y se comprime en un masivo String JSON plano mediante `JSON.stringify()`.
+2.  **Unión de Dominios Matemáticos y Gráficos:** Las estructuras visuales (Cotas, Herramientas Euclidanas de Medición) también sufren una serialización y se empaquetan en bloque hacia el mismo objeto abstracto.
+3.  **Filtrado por Recolección de Basura (LIFO Controlado):**
+    ```javascript
+    function saveHistoryState() {
+      // 1. Evitar ciclos vacíos: no hacer push si no hay mutación real.
+      // 2. Ejecutar abstracción del mundo a JSON.
+      const currentSnapshot = exportStateToJson(); 
+      history.value.push(currentSnapshot);
+      
+      // 3. Purga Estricta: Garantizar consumo local de memoria predecible.
+      if (history.value.length > 50) {
+        history.value.shift(); // Evacúa los estados más viejos (FIFO cleanup).
+      }
+    }
+    ```
+Esta estrategia otorga una robusta garantía de 50 pasos espaciales al estudiante, requiriendo en el peor escenario apenas decenas de Megabytes de memoria *Heap*, lo cual es totalmente despreciable para las computadoras y dispositivos móviles contemporáneos.
 
 ---
 
-## 5. Anatomía de las Herramientas: ¿Cómo se programa cada objeto?
+## 3. Dinámica del DOM y *Listeners* de Alta Prioridad
 
-Si en la defensa del proyecto se pregunta *"¿Cómo hicieron el resorte o la polea?"*, la respuesta no es *"Usamos un componente de Vue"*. La respuesta debe explicar la **matemática de la Restricción (Joint)** dentro de `usePlanckWorld.js`. A continuación se detalla exactamente qué código y qué principios físicos se ejecutan detrás de cada botón de la interfaz.
+Para satisfacer las altas demandas de velocidad requeridas por operadores de simuladores (típicamente ingenieros y técnicos), se prescindió del uso de interminables clics de ratón en favor de Atajos de Teclado Asíncronos (*Hotkeys*).
 
-### 5.1 Cajas y Masas (`addBox`)
-- **Lógica en el código:** Cuando el usuario dibuja una caja, la función `addBox(width, height, mass, x, y)` crea una instancia pura de `planck.Body` de tipo `dynamic`. 
-- **La matemática:** Inmediatamente se le anexa un "Fixture" (la geometría) usando `planck.Box`. Al asignarle masa, el motor internamente calcula el **Tensor de Inercia** (su resistencia matemática a rotar basándose en el teorema de ejes paralelos). No programamos rotaciones falsas; la caja rota de acuerdo a las leyes de Newton-Euler gracias a esta densidad matemática.
+### 3.1. Delegación Segura e Interceptación Condicional
+El código base engancha las interrupciones en el evento raíz superior: `window.addEventListener('keydown', ...)`. 
+Sin embargo, dado que el sistema posee paneles de edición paramétrica (inputs para editar la masa, campos de texto, editores de funciones algebraicas como $x(t)$), existía la severa colisión funcional donde presionar la letra "V" para tipear la variable $V_0$ desencadenaba por error la herramienta de "Mover Vectorial".
+El código remedia esto implementando una compuerta estricta pasiva:
 
-### 5.2 El Terreno Fijo (`addGround`)
-- **Lógica en el código:** La función `addGround(points)` genera un cuerpo `static`. 
-- **La matemática:** Se le asigna una geometría de tipo `Edge` (si es un plano recto) o `Chain` (si son varios polígonos unidos). Al ser un cuerpo *static*, el integrador Symplectic Euler le asigna masa infinita e inercia infinita. Ninguna fuerza en el universo simulado puede moverlo. Todo cálculo de colisión contra el terreno absorberá la energía de las cajas basado en el coeficiente de restitución.
+```javascript
+const handleKeydown = (e) => {
+  // Validación de nodo superior: 
+  // Ignorar interrupción si el foco pertenece a formularios
+  if (
+    e.target.tagName === 'INPUT' || 
+    e.target.tagName === 'TEXTAREA' || 
+    e.target.isContentEditable
+  ) return;
 
-### 5.3 Cuerdas y Resortes (`addRope` y `addSpring`)
-Ambos objetos utilizan exactamente la misma restricción matemática subyacente: el `DistanceJoint` (Restricción de Distancia) de Planck.js.
-- **La Cuerda (`addRope`):** Conecta los centroides de dos cuerpos. Matemáticamente le asignamos una `frequencyHz = 0`. Esto significa que es **completamente rígida**, funcionando como un cable ideal de masa nula que impide estrictamente que los dos objetos se separen más allá de la longitud inicial.
-- **El Resorte (`addSpring`):** También conecta dos cuerpos, pero usamos `frequencyHz > 0` (por defecto 2.0 Hz) y un `dampingRatio` (tasa de amortiguamiento, ej: 0.1). Esto transforma la restricción rígida en una ecuación de oscilador armónico subamortiguado. Así es como logramos que el bloque rebote matemáticamente perfecto simulando la **Ley de Hooke ($F = -kx - cv$)** sin tener que programar fuerzas manuales en cada iteración.
+  // Rutador de comandos acelerados
+  switch(e.key.toLowerCase()) {
+    case 'v': case '1': emit('select-tool', 'move'); break;
+    case 'b': case '2': emit('select-tool', 'box'); break;
+    // ... rest of tools
+  }
+}
+```
+Esta validación in-situ asegura que la captura semántica funcione de forma indetectable sin mermar en lo absoluto las tareas de edición textual o numérica.
 
-### 5.4 Poleas Ideales (`addPulley`)
-- **Lógica en el código:** La función `addPulley(bodyA, bodyB, anchor)` utiliza el modelo avanzado `PulleyJoint`.
-- **La matemática:** No dibujamos un círculo que da vueltas; programamos un sistema de transmisión de tensión pura. La ecuación que el motor resuelve 60 veces por segundo es: $Longitud_A + Longitud_B = Constante$. 
-Esto asegura que si la Caja A baja 1 metro debido a la gravedad, la tensión se transmite perfectamente por el anclaje central y empuja a la Caja B exactamente 1 metro hacia arriba. Es el modelo perfecto de una *Máquina de Atwood* ideal, asumiendo masa y fricción nulas en el punto de apoyo.
+---
 
-### 5.5 Rieles / Collarines (`addCircularTrack`)
-- **Lógica en el código:** La interfaz muestra un aro por donde se desliza una anilla, pero bajo el capó (en `addCircularTrack`), programamos una ilusión matemática.
-- **La matemática:** Aplicamos nuevamente un `DistanceJoint` con `frequencyHz = 0` (hilo rígido) conectando la Anilla (Caja) con el centro fijo del riel (Anclaje). ¿Qué produce esto? Prohíbe que la anilla se aleje o se acerque al centro (manteniendo el radio intacto), pero deja la rotación completamente libre. Físicamente, el comportamiento es **idéntico al de una cuenta o collarín ensartado en un alambre circular ideal sin fricción**, que ejerce fuerza normal hacia adentro o hacia afuera para mantener a la partícula en su órbita.
+## 4. Rendimiento en el Subsistema Cinemático (1D y Gráficos)
 
-### 5.6 Fuerzas e Impulsos Dinámicos (`applyForce` y `applyImpulse`)
-Cuando el usuario arrastra la flecha de la herramienta Fuerza (➤):
-- **La Fuerza Constante:** Llama a `body.applyForceToCenter(vector)`. Esto suma un vector de Newtons continuo al sumatorio de fuerzas de la caja ($\Sigma F$). Genera una aceleración sostenida a lo largo de los cuadros por segundo.
-- **El Impulso (Empujón):** Llama a `body.applyLinearImpulse(vector)`. Esto no aplica aceleración progresiva, sino un salto de energía instantáneo (Delta de Momento Lineal, $\Delta p$). Se usa para simular "golpes" o explosiones en una fracción de segundo.
-
-### 5.7 Fijador (Anclajes Rígidos)
-- **Lógica en el código:** Cuando se aplica la herramienta Fijador sobre un cuerpo (o se quita), la función `toggleAnchor(bodyId)` altera el estado fundamental del objeto.
-- **La matemática:** Cambia dinámicamente el tipo de cuerpo en el integrador (de `dynamic` a `static` o viceversa). Al cambiar a `static`, Box2D descarta inmediatamente las sumatorias de fuerzas y momentos, obligando a sus derivadas a ser cero. Esto fija el cuerpo en su posición y rotación actual sin necesidad de añadir restricciones (Joints) que consuman cómputo adicional.
-
-### 5.8 Rodillos (Apoyos Deslizantes)
-- **Lógica en el código:** Similar al Fijador, la herramienta Rodillos utiliza `toggleRollers(bodyId)` para modificar las condiciones de contorno superficial del cuerpo.
-- **La matemática:** Reemplaza el coeficiente de fricción ($\mu$) del "Fixture" base a $0.0$, y bloquea cinemáticamente la rotación del cuerpo (`setFixedRotation(true)`). Esto transforma matemáticamente un sólido arbitrario en un deslizador ideal o carro de laboratorio libre de rozamiento que solo puede trasladarse y es inmune al torque, algo sumamente útil para estudiar conservación de la cantidad de movimiento puro en choques unidimensionales.
-
-### 5.9 Cotas de Medición (Telemetría de Distancia)
-- **Lógica en el código:** La herramienta Medición crea entidades puramente visuales (Cotas) almacenadas en el estado global.
-- **La matemática:** No interactúan con el motor Box2D ni afectan la simulación. En cada *frame* de dibujo, calculan en tiempo real la norma (distancia euclidiana) del vector diferencia entre dos puntos del espacio de mundo: $| \vec{r_2} - \vec{r_1} | = \sqrt{(x_2 - x_1)^2 + (y_2 - y_1)^2}$. El resultado se formatea dinámicamente según el Sistema de Unidades activo (SI o US Customary).
+El componente `KinematicsSimulator.vue` evita el ciclo tradicional del servidor. El *Renderizado Cartesiano* provisto por **Chart.js** tiene que manipular *Datasets* densos.
+1.  **Parseo Previo (AST Validation):** Al inyectar un input $x(t)$ (por ejemplo, `5*sin(3*t)`), un analizador lo verifica instantáneamente pre-compilando los operadores algebraicos mediante MathJS (`math.parse`).
+2.  **Iteraciones Acumuladas:** La resolución numérica transcurre bajo una matriz discreta densa (ej. bucle FOR iterando por $T_{max}$ con paso $dt=0.05$). Al generarse 3 arrays densos para [x, v, a], Chart.js los inyecta asíncronamente mutando reactivamente sus arreglos observables (`ref`).
+3.  La utilización estricta de CSR (Client Side Rendering) evita por completo el envío del String matemático al servidor para ser procesado vía *REST APIs*, retornando los datos transformados en pocos milisegundos y permitiendo un control en tiempo real mediante los controles deslizantes que el usuario maneje, operando al vuelo las recomposiciones vectoriales.

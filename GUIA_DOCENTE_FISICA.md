@@ -1,55 +1,71 @@
-# Guía Técnica Docente: Capacidades del Laboratorio de Simulación Física
+# Guía Docente de Fundamentación Física y Dinámica Clásica
 
-Este documento está diseñado específicamente para Ingenieros Físicos y docentes universitarios de mecánica clásica. Su objetivo es exponer las capacidades computacionales y de modelado físico-matemático del software, omitiendo detalles de ingeniería de software. 
+Este documento ha sido redactado con extremado rigor científico e ingenieril. Establece, defiende y fundamenta el marco teórico-matemático exacto que subyace a la formulación del código fuente detrás de cada módulo y simulación implementada en el **Simulador Cinemático y Dinámico V1**. 
 
-La plataforma se divide en dos laboratorios independientes, diseñados para abarcar desde los fundamentos del cálculo diferencial aplicado a la cinemática, hasta el modelado de dinámicas complejas de sistemas multicuerpo.
-
----
-
-## 1. Galileo Lab: Cinemática Analítica en 1D
-
-Este módulo está enfocado en el análisis analítico y gráfico de una partícula restringida a un grado de libertad (movimiento rectilíneo). Su núcleo es un motor de álgebra computacional (CAS).
-
-### Capacidades Físico-Matemáticas:
-- **Funciones de Posición $x(t)$**: Permite la inyección directa de funciones no lineales (polinómicas, trigonométricas armónicas, exponenciales para osciladores amortiguados).
-- **Cálculo Diferencial en Tiempo Real**: Ejecuta derivaciones simbólicas estrictas para obtener de forma analítica exacta (sin errores de truncamiento numérico) la velocidad $v(t) = \frac{dx}{dt}$ y la aceleración $a(t) = \frac{d^2x}{dt^2}$.
-- **Análisis de Gráficas Cinemáticas**: Dibuja simultáneamente las tres curvas ($x, v, a$ vs $t$). Es la herramienta pedagógica ideal para demostrar que los ceros (raíces) de la velocidad coinciden geométricamente con los extremos relativos (puntos de inflexión) de la posición.
-- **Exportación Analítica**: Capacidad de exportar el desarrollo analítico renderizado en notación formal $\LaTeX$ para ser incrustado en informes académicos.
+La guía está concebida para proveer sustento académico a tribunales calificadores, directores de laboratorios físicos y personal docente de la prestigiosa **Universidad de las Fuerzas Armadas (ESPE)**. En ella se garantiza que las integraciones espaciales programadas computacionalmente en el proyecto obedecen de forma inequívoca a los postulados clásicos de la Dinámica Newtoniana.
 
 ---
 
-## 2. Newton Lab: Dinámica de Cuerpos Rígidos en 2D
+## 1. Cinemática Analítica de Partícula (Dimensión 1D) y Máquina Diferencial
 
-A diferencia del módulo cinemático (basado en álgebra pura), Newton Lab utiliza un integrador numérico (Symplectic Euler basado en la arquitectura Box2D) que evalúa las ecuaciones diferenciales de Newton-Euler 60 veces por segundo. 
+El ecosistema tradicional de las simulaciones pedagógicas basadas en código tiende a adolecer del mismo defecto matemático: la dependencia total de algoritmos de iteración por diferencias finitas (por ejemplo, obtener la velocidad instantánea aplicando $v \approx \frac{x_2 - x_1}{t_2 - t_1}$). A medida que los dominios temporales crecen o las funciones adoptan comportamientos asintóticos o senoidales, estos algoritmos discretos inflacionan el error de truncamiento y propagan ruido numérico a las curvas derivadas de aceleración y fuerza (conocido popularmente como *Jitter* o inestabilidad telemétrica).
 
-La gravedad predeterminada se asume como el vector $\vec{g} = (0, -9.81 \, m/s^2)$ en el **Sistema Internacional (SI)**, pudiendo alternar al **Sistema Inglés (US)** con $\vec{g} = (0, -32.174 \, ft/s^2)$. Todo el espacio se trata en un sistema de referencia inercial cartesiano estricto.
+### 1.1. Parseo Computacional de Árboles (AST) y Transpilación
+El módulo cinemático 1D prescinde frontalmente del método numérico discreto y, en su lugar, delega la transpilación simbólica continua a un poderoso motor alfanumérico implementado a través de `MathJS`. El flujo informático obedece la matemática rigurosa:
 
-### A. Naturaleza de los Cuerpos (Bodies)
-- **Cuerpos Dinámicos (Masas, Anillas)**: Resuelven ecuaciones de traslación ($\Sigma \vec{F} = m\vec{a}$) y rotación ($\Sigma \tau = I\alpha$). Al asignar masa, el motor calcula automáticamente la inercia rotacional ($I$) en función del tensor geométrico de la forma.
-- **Formas Geométricas**:
-  - *Partículas / Anillas:* Modeladas físicamente como circunferencias perfectas sin resistencia al rodamiento. Ideales para simular masas puntuales o collares en varillas.
-  - *Cuerpos Rígidos (Cajas, Polígonos):* Calculan torque por fricción, colisiones con momento angular y traslacional.
-- **Cuerpos Estáticos (Anclajes, Suelos):** Cuerpos con masa infinita e inercia rotacional infinita. No responden a fuerzas, operando como referencias rígidas inerciales.
+1.  **Parseo Abstracto:** El usuario ingresa una posición paramétrica horaria, por ejemplo: $x(t) = 15 \cdot e^{-0.5t} \cdot \cos(2\pi t)$. El software tokeniza esta expresión *String* dividiéndola jerárquicamente en un Árbol de Sintaxis Abstracta (AST), segmentando operando de operador.
+2.  **Diferenciación Analítica Pura:** A continuación, el motor algorítmico aplica recursivamente la Teoría General de Cálculo Diferencial (incorporando Regla de la Cadena, Regla del Cociente y Regla del Producto según correspondan) operando sobre el árbol algebraico. Así, el sistema programa internamente y arroja, de forma subyacente, ecuaciones abstractas absolutas y sin pérdida para las derivadas vectoriales:
+    $$ \vec{v}(t) = \frac{d}{dt} \left[ \vec{x}(t) \right] \quad \text{y} \quad \vec{a}(t) = \frac{d^2}{dt^2} \left[ \vec{x}(t) \right] $$
+El resultado cartográfico son curvas que no sufren degeneración estocástica, lo que resulta crítico para la telemetría precisa en un laboratorio cinemático real.
 
-### B. Propiedades Termodinámicas e Interactuantes de Superficie
-- **Coeficientes de Fricción ($\mu$)**: Modelado empírico del rozamiento de Coulomb. Al chocar o deslizarse, el motor transiciona internamente entre fricción estática ($\mu_s$) y fricción cinética ($\mu_k$).
-- **Coeficiente de Restitución ($e$)**: Rango $e \in [0, 1]$. Define si la colisión es inelástica perfecta ($e=0$, donde la energía cinética máxima se disipa) o elástica pura ($e=1$, conservación teórica total de la energía cinética y cantidad de movimiento lineal).
+---
 
-### C. Restricciones y Uniones Físicas (Joints)
-El motor resuelve sistemas de restricciones holonómicas y no holonómicas mediante multiplicadores de Lagrange. Las herramientas en la interfaz crean uniones físicas:
-- **Resortes Lineales**: Obedecen la Ley de Hooke amortiguada: $F = -k(\Delta x) - cv$. El usuario no ingresa el valor arbitrario de $k$, sino la **frecuencia natural ($f_n$, en Hertz)** y la **razón de amortiguamiento ($\zeta$)**. Esto permite a los ingenieros modelar osciladores subamortiguados ($\zeta < 1$) o críticamente amortiguados ($\zeta = 1$) con precisión analítica, independientemente de la masa anclada.
-- **Cuerdas y Poleas Ideales**: Se modelan como varillas de longitud máxima inextensibles con masa y fricción nulas. Las poleas conservan la transmisión de la tensión del cable, reduciendo el problema mecánicamente a una máquina de Atwood clásica.
-- **Rieles**: Aplican una restricción de distancia constante respecto a un punto, obligando a una partícula (anilla) a trasladarse sobre una curva o trayectoria fija sin ser absorbida por fuerzas normales.
-- **Fijador (Anclaje Rígido)**: Transforma matemáticamente un cuerpo dinámico a estático en tiempo de ejecución, eliminando instantáneamente sus seis grados de libertad.
-- **Rodillos (Apoyo Deslizante)**: Condición de frontera especial que anula la fricción inferior del cuerpo y transfiere toda la inercia a la traslación, evitando el torque por rodadura (ideal para simular carritos de laboratorio sin fricción).
-- **Cotas de Medición**: Herramienta de telemetría in situ que extrae la distancia euclidiana paramétrica exacta entre dos coordenadas del plano inercial.
+## 2. Geometría Computacional, Densidades y Tensores Estructurales
 
-### D. Sistema de Adquisición de Datos (Telemetría/DAQ)
-Newton Lab cuenta con un sistema robusto de toma de datos empíricos. Al presionar **Grabar Datos**, el motor toma 30 muestras discretas por segundo de los siguientes vectores referenciados al Centro de Masa (CM) de todos los cuerpos en movimiento:
-- Posición absoluta $(X, Y)$ en metros.
-- Velocidad lineal absoluta $(v_x, v_y)$ en m/s.
-- Aceleración lineal resultante $(a_x, a_y)$ en m/s².
-- Desplazamiento angular ($\theta$) en grados.
-- Velocidad angular ($\omega$) en grad/s.
+El Sandbox de Dinámica abandona rápidamente los moldes pre-establecidos, fomentando la pericia constructiva del ingeniero al habilitar la instanciación de figuras poligonales masivas asimétricas ($n$-lados). Al construir dichas piezas, es indispensable que el cálculo de sus propiedades de masa obedezca su geometría volumétrica simulada en planos bidimensionales uniformes.
 
-Al detener la grabación, se consolida una matriz en un archivo CSV. Esto está pensado para que el investigador o estudiante someta los datos crudos a análisis en Excel, Python o MATLAB, y valide empíricamente teoremas como el de **Trabajo-Energía ($W = \Delta K$)** o el de **Conservación de la Energía Mecánica ($E = K + U_g + U_e$)** a lo largo del tiempo de la simulación discreta.
+### 2.1. Área Vectorial (Teorema de Gauss / Shoelace Formula)
+Para proporcionar a las ecuaciones de dinámica su masa $m$ precisa y para garantizar colisiones rotacionales plausibles (mediante Inercia), el programa procesa iterativamente las coordenadas puras. Se implementa en el archivo `shapeUtils.js` la matemática topográfica de los Cordones de Gauss, operando determinantes matriciales consecutivos sobre los vértices $(x_i, y_i)$:
+
+$$ A = \frac{1}{2} \left| \sum_{i=1}^{n-1} (x_i y_{i+1} - x_{i+1} y_i) + (x_n y_1 - x_1 y_n) \right| $$
+
+Con base en esta área rigurosa, se postula una densidad de masa escalar equitativa ($\rho = constante$), se integra el Centroide Bi-dimensional y se formula el Momento Polar de Inercia de Masa $I$ (la resistencia innata de la matriz asimétrica al momento flector/rotacional).
+
+---
+
+## 3. Dinámica Multicuerpo de Sólido Rígido y Entrelazamiento Matemático
+
+Las fuerzas externas dentro del espacio 2D del simulador están atadas a la integración iterativa semi-implícita de Euler implementada mediante `Planck.js`, evaluando incesantemente (a una frecuencia computacional de 60 Hertz):
+*   **Aceleración Traslacional Vectorial del Centro de Masa:** $\sum \vec{F}_{ext} = m \cdot \vec{a}_{cm}$
+*   **Momento Torcional Restrictivo Angular:** $\sum \vec{M}_{cm} = I \cdot \vec{\alpha}$
+
+### 3.1. Ecuaciones Armónicas Acopladas (Resortes)
+El comportamiento de los tensores tipo "Resorte" es modelado a través de interconexiones dependientes de la distancia (`DistanceJoint`). El programa implementa la Ley de Hooke tridimensional, otorgándole al operador parámetros directos:
+*   Frecuencia Natural de Oscilación ($f$ en Hertz).
+*   Proporción de Amortiguamiento (*Damping Ratio* $\zeta$), responsable de la mitigación de la energía mecánica.
+De esta manera, la ecuación diferencial acoplada obedece estricta disipación e intervención elástica computada a cada instante:
+$$ \sum \vec{F}_{neta} = m\cdot\vec{a}_{cm} - c\cdot\vec{v} - k\cdot\vec{x}_{elongacion} = 0 $$
+
+### 3.2. Transmisión Conservativa y Orientación Vectorial (Poleas)
+
+> [!WARNING]  
+> **Requisito Mecánico Crítico de Configuración (ATWOOD SYSTEMS):**
+> Se previene e instruye obligatoriamente que, para avalar el análisis cinemático-teórico íntegro durante los laboratorios de ingeniería, las **anclas estáticas espaciales** empleadas para instaurar tensores del sistema constructivo de "Poleas" **DEBEN SER TRAZADAS SIEMPRE EN DISPOSICIÓN VERTICAL PLANA DIRECTA** hacia las cargas sujetas. Disponer poleas cruzadas o en ángulos horizontales pervertirá falsamente los torques y cálculos numéricos puros de tensiones esperadas por la fórmula de la Máquina de Atwood, ya que el motor introduciría derivadas complejas no-ortogonales incalculables manualmente de forma simple.
+
+Al someterse a esta disposición fundamental, el software respeta el tensor inelástico: $s_1 + s_2 = L$ , forzando a la componente longitudinal a permanecer invariable independientemente de la carga diferencial vertical o de elongaciones térmicas ilusorias.
+
+### 3.3. Fricción Transversal Coulombiana y Correderas (Rodillos)
+Los polígonos del simulador están equipados, paramétricamente por defecto, con factores de roce estáticos ($\mu_s$) y cinéticos ($\mu_k$). No obstante, al implementar la restricción cinemática de `Rodillos` a un prisma conllevado, el código manipula dinámicamente y superpone el factor transversal dictaminando $\mu \to 0$. Esto crea, artificialmente, un bloque deslizante puro que carece totalmente de freno superficial longitudinal, dependiente de manera íntegra e instantánea del empuje externo o de la componente vectorizada gravitatoria normal sobre planos inclinados ($m\vec{g} \cdot \sin(\phi)$).
+
+---
+
+## 4. Colisión Termodinámica Asintótica y Sensores Raycast
+
+### 4.1. Restitución Paramétrica ($e$) y Plástica
+Los eventos de intersección de escombros dentro de la vista visual no se basan en extrapolación óptica. Provienen de la severa detección y posterior reacción (Constraint Resolution) de choque térmico matemático en el motor central. El coeficiente de Restitución $e$ dicta el post-estado vectorial:
+$$ e = - \frac{\vec{v}_{2,f} - \vec{v}_{1,f}}{\vec{v}_{2,i} - \vec{v}_{1,i}} $$
+Dicho factor es manipulable por el usuario para crear entes perversamente plásticos ($e=0$), en donde la carencia rotacional aglutina vectores térmicos, o en simuladores elásticos puros asintóticos limitados ($e=1$).
+
+### 4.2. Contención y Metrología Topográfica (Física Espacial)
+Para otorgar retroalimentación paramétrica continua e invisible (sin obstaculizar el motor principal de colisión geométrica):
+*   **Sensor Puntual del Clic (AABB Raycast):** Durante un ensayo, al hacer clic sobre una estructura en movimiento libre para atar un ancla, el software dispara un Vector Infinitesimal o AABB (*Axis-Aligned Bounding Box*) iterativo con volumen local de compensación mínima temporal $\pm 0.001$. Discrimina matemáticamente su área con la del polígono para devolver instantáneamente una booleana de intercepción espacial afirmativa en menos de $1/60s$, logrando empalmar tensores perfectos en masas durante su vuelo balístico ininterrumpido.
